@@ -4,6 +4,7 @@ import { prisma } from "./infrastructure/database/prisma.js";
 // routes
 import { projectRoutes } from "./modules/projects/project.routes.js";
 import { monitorRoutes } from "./modules/monitors/monitor.routes.js";
+import { scanRoutes } from "./modules/scans/scan.routes.js";
 
 // swagger
 import swagger from "@fastify/swagger";
@@ -47,8 +48,9 @@ export function buildApp() {
   void app.register(healthPlugin);
 
   // register routes
-  void app.register(projectRoutes, { prefix: "/api/projects" });
+  void app.register(projectRoutes, { prefix: "/api" });
   void app.register(monitorRoutes, { prefix: "/api" });
+  void app.register(scanRoutes, { prefix: "/api" });
 
   // Gracefully disconnect from the database when the application is shutting down
   app.addHook("onClose", async () => {

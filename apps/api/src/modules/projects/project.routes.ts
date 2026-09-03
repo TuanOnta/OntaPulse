@@ -14,13 +14,13 @@ export const projectRoutes: FastifyPluginAsync = async (app) => {
   const projectController = new ProjectController(projectService);
 
   app.post(
-    "/",
+    "/projects",
     { schema: createProjectRouteSchema },
     projectController.create,
   );
 
   app.get(
-    "/",
+    "/projects",
     { schema: findAllProjectsRouteSchema },
     projectController.findAll,
   );
