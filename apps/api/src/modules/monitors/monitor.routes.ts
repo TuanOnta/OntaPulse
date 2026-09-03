@@ -1,10 +1,7 @@
 import type { FastifyPluginAsync } from "fastify";
 
 import { MonitorController } from "./monitor.controller.js";
-import {
-  createMonitorRouteSchema,
-  findAllMonitorsRouteSchema,
-} from "./monitor.openapi.js";
+import { createMonitorRouteSchema, findAllMonitorsRouteSchema } from "./monitor.openapi.js";
 import { MonitorRepository } from "./monitor.repository.js";
 import { MonitorService } from "./monitor.service.js";
 

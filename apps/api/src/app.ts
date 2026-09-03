@@ -22,15 +22,15 @@ export function buildApp() {
     logger: loggerOptions,
 
     ajv: {
-    customOptions: {
-      coerceTypes: false,
-      removeAdditional: false,
+      customOptions: {
+        coerceTypes: false,
+        removeAdditional: false,
+      },
     },
-  },
   });
 
   registerErrorHandlers(app);
-  
+
   void app.register(swagger, {
     openapi: {
       info: {

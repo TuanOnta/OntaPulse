@@ -1,23 +1,13 @@
-import {
-  afterAll,
-  beforeAll,
-  beforeEach,
-  describe,
-  expect,
-  it,
-} from "vitest";
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 
 import { buildApp } from "../src/app.js";
 import { resetDatabase } from "./helpers/database.js";
 
 const app = buildApp();
 
-const NON_EXISTENT_PROJECT_ID =
-  "00000000-0000-4000-8000-000000000000";
+const NON_EXISTENT_PROJECT_ID = "00000000-0000-4000-8000-000000000000";
 
-async function createProject(
-  name = "Monitor Test Project",
-): Promise<string> {
+async function createProject(name = "Monitor Test Project"): Promise<string> {
   const response = await app.inject({
     method: "POST",
     url: "/api/projects",
@@ -133,8 +123,7 @@ describe("Monitor API", () => {
     it("accepts a URL containing a path and query parameters", async () => {
       const projectId = await createProject();
 
-      const targetUrl =
-        "https://example.com/health?service=api&region=id";
+      const targetUrl = "https://example.com/health?service=api&region=id";
 
       const response = await app.inject({
         method: "POST",
@@ -161,28 +150,25 @@ describe("Monitor API", () => {
         intervalSeconds: 86_400,
         description: "maximum interval",
       },
-    ])(
-      "accepts the $description",
-      async ({ intervalSeconds }) => {
-        const projectId = await createProject();
+    ])("accepts the $description", async ({ intervalSeconds }) => {
+      const projectId = await createProject();
 
-        const response = await app.inject({
-          method: "POST",
-          url: `/api/projects/${projectId}/monitors`,
-          payload: {
-            name: `Monitor ${intervalSeconds}`,
-            targetUrl: `https://example.com/${intervalSeconds}`,
-            intervalSeconds,
-          },
-        });
-
-        expect(response.statusCode).toBe(201);
-
-        expect(response.json()).toMatchObject({
+      const response = await app.inject({
+        method: "POST",
+        url: `/api/projects/${projectId}/monitors`,
+        payload: {
+          name: `Monitor ${intervalSeconds}`,
+          targetUrl: `https://example.com/${intervalSeconds}`,
           intervalSeconds,
-        });
-      },
-    );
+        },
+      });
+
+      expect(response.statusCode).toBe(201);
+
+      expect(response.json()).toMatchObject({
+        intervalSeconds,
+      });
+    });
 
     it("accepts a name with exactly 120 characters", async () => {
       const projectId = await createProject();
@@ -479,10 +465,7 @@ describe("Monitor API", () => {
         },
       };
 
-      const responses = await Promise.all([
-        app.inject(request),
-        app.inject(request),
-      ]);
+      const responses = await Promise.all([app.inject(request), app.inject(request)]);
 
       const statusCodes = responses
         .map((response) => response.statusCode)

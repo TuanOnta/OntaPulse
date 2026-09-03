@@ -9,11 +9,7 @@ export class MonitorService {
     const project = await this.monitorRepository.findProjectById(projectId);
 
     if (!project) {
-      throw new AppError(
-        "Project not found",
-        404,
-        "PROJECT_NOT_FOUND",
-      );
+      throw new AppError("Project not found", 404, "PROJECT_NOT_FOUND");
     }
 
     const existingMonitor = await this.monitorRepository.findByTargetUrl(
@@ -36,11 +32,7 @@ export class MonitorService {
     const project = await this.monitorRepository.findProjectById(projectId);
 
     if (!project) {
-      throw new AppError(
-        "Project not found",
-        404,
-        "PROJECT_NOT_FOUND",
-      );
+      throw new AppError("Project not found", 404, "PROJECT_NOT_FOUND");
     }
 
     return this.monitorRepository.findAllByProjectId(projectId);

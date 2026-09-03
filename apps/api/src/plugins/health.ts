@@ -1,16 +1,13 @@
 import type { FastifyPluginAsync } from "fastify";
 import { prisma } from "../infrastructure/database/prisma.js";
 
-import {
-  healthSchema,
-  databaseReadySchema,
-} from "./health.openapi.js"
+import { healthSchema, databaseReadySchema } from "./health.openapi.js";
 
 export const healthPlugin: FastifyPluginAsync = async (app) => {
   app.get(
     "/health",
     {
-      schema: healthSchema
+      schema: healthSchema,
     },
     async () => ({ status: "ok" }),
   );

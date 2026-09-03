@@ -9,39 +9,34 @@ import {
 import { ScanRepository } from "./scan.repository.js";
 import { ScanService } from "./scan.service.js";
 
-export const scanRoutes: FastifyPluginAsync =
-  async (app) => {
-    const scanRepository = new ScanRepository();
+export const scanRoutes: FastifyPluginAsync = async (app) => {
+  const scanRepository = new ScanRepository();
 
-    const scanService = new ScanService(
-      scanRepository,
-    );
+  const scanService = new ScanService(scanRepository);
 
-    const scanController = new ScanController(
-      scanService,
-    );
+  const scanController = new ScanController(scanService);
 
-    app.post(
-      "/monitors/:monitorId/scans",
-      {
-        schema: triggerScanRouteSchema,
-      },
-      scanController.trigger,
-    );
+  app.post(
+    "/monitors/:monitorId/scans",
+    {
+      schema: triggerScanRouteSchema,
+    },
+    scanController.trigger,
+  );
 
-    app.get(
-      "/monitors/:monitorId/scans",
-      {
-        schema: findAllScansRouteSchema,
-      },
-      scanController.findAll,
-    );
+  app.get(
+    "/monitors/:monitorId/scans",
+    {
+      schema: findAllScansRouteSchema,
+    },
+    scanController.findAll,
+  );
 
-    app.get(
-      "/scans/:scanId",
-      {
-        schema: findScanByIdRouteSchema,
-      },
-      scanController.findById,
-    );
-  };
+  app.get(
+    "/scans/:scanId",
+    {
+      schema: findScanByIdRouteSchema,
+    },
+    scanController.findById,
+  );
+};

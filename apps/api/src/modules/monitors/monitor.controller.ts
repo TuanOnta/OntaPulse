@@ -1,10 +1,7 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 
 import { AppError } from "../../infrastructure/errors/app-error.js";
-import {
-  createMonitorBodySchema,
-  projectIdParamsSchema,
-} from "./monitor.schema.js";
+import { createMonitorBodySchema, projectIdParamsSchema } from "./monitor.schema.js";
 import { MonitorService } from "./monitor.service.js";
 
 export class MonitorController {
@@ -15,21 +12,13 @@ export class MonitorController {
     const body = createMonitorBodySchema.safeParse(request.body);
 
     if (!params.success || !body.success) {
-      throw new AppError(
-        "Request validation failed",
-        400,
-        "VALIDATION_ERROR",
-        {
-          params: params.success ? undefined : params.error.flatten(),
-          body: body.success ? undefined : body.error.flatten(),
-        },
-      );
+      throw new AppError("Request validation failed", 400, "VALIDATION_ERROR", {
+        params: params.success ? undefined : params.error.flatten(),
+        body: body.success ? undefined : body.error.flatten(),
+      });
     }
 
-    const monitor = await this.monitorService.create(
-      params.data.projectId,
-      body.data,
-    );
+    const monitor = await this.monitorService.create(params.data.projectId, body.data);
 
     return reply.status(201).send(monitor);
   };

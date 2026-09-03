@@ -3,12 +3,7 @@ import type { FastifySchema } from "fastify";
 const scanStatusSchema = {
   type: "string",
 
-  enum: [
-    "QUEUED",
-    "RUNNING",
-    "SUCCEEDED",
-    "FAILED",
-  ],
+  enum: ["QUEUED", "RUNNING", "SUCCEEDED", "FAILED"],
 } as const;
 
 const scanResponseSchema = {
@@ -105,12 +100,7 @@ const findingResponseSchema = {
     severity: {
       type: "string",
 
-      enum: [
-        "LOW",
-        "MEDIUM",
-        "HIGH",
-        "CRITICAL",
-      ],
+      enum: ["LOW", "MEDIUM", "HIGH", "CRITICAL"],
     },
 
     description: {
@@ -133,10 +123,7 @@ const findingResponseSchema = {
 const scanDetailsResponseSchema = {
   ...scanResponseSchema,
 
-  required: [
-    ...scanResponseSchema.required,
-    "findings",
-  ],
+  required: [...scanResponseSchema.required, "findings"],
 
   properties: {
     ...scanResponseSchema.properties,
@@ -177,12 +164,7 @@ const scanIdParamsSchema = {
 const errorResponseSchema = {
   type: "object",
 
-  required: [
-    "statusCode",
-    "code",
-    "message",
-    "requestId",
-  ],
+  required: ["statusCode", "code", "message", "requestId"],
 
   properties: {
     statusCode: {
@@ -222,8 +204,7 @@ const errorResponseSchema = {
 export const triggerScanRouteSchema: FastifySchema = {
   tags: ["Scans"],
   summary: "Trigger a monitor scan",
-  description:
-    "Creates a queued scan for the selected monitor.",
+  description: "Creates a queued scan for the selected monitor.",
 
   params: monitorIdParamsSchema,
 

@@ -1,11 +1,4 @@
-import {
-  afterAll,
-  beforeAll,
-  beforeEach,
-  describe,
-  expect,
-  it,
-} from "vitest";
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 
 import { buildApp } from "../src/app.js";
 import { Prisma } from "../src/generated/prisma/client.js";
@@ -14,12 +7,9 @@ import { resetDatabase } from "./helpers/database.js";
 
 const app = buildApp();
 
-const NON_EXISTENT_ID =
-  "00000000-0000-4000-8000-000000000000";
+const NON_EXISTENT_ID = "00000000-0000-4000-8000-000000000000";
 
-async function createProject(
-  name = "Scan Test Project",
-): Promise<string> {
+async function createProject(name = "Scan Test Project"): Promise<string> {
   const response = await app.inject({
     method: "POST",
     url: "/api/projects",
@@ -142,9 +132,7 @@ describe("Scan API", () => {
       expect(firstResponse.statusCode).toBe(202);
       expect(secondResponse.statusCode).toBe(202);
 
-      expect(firstResponse.json().id).not.toBe(
-        secondResponse.json().id,
-      );
+      expect(firstResponse.json().id).not.toBe(secondResponse.json().id);
 
       const scanCount = await prisma.scan.count({
         where: {
@@ -289,10 +277,7 @@ describe("Scan API", () => {
 
       const body = response.json();
 
-      expect(body.map((scan: { id: string }) => scan.id)).toEqual([
-        newerScan.id,
-        olderScan.id,
-      ]);
+      expect(body.map((scan: { id: string }) => scan.id)).toEqual([newerScan.id, olderScan.id]);
     });
 
     it("does not return scans belonging to another monitor", async () => {
@@ -341,11 +326,9 @@ describe("Scan API", () => {
       const projectId = await createProject();
       const monitorId = await createMonitor(projectId);
 
-      const startedAt =
-        new Date("2026-01-01T10:00:00.000Z");
+      const startedAt = new Date("2026-01-01T10:00:00.000Z");
 
-      const finishedAt =
-        new Date("2026-01-01T10:00:01.000Z");
+      const finishedAt = new Date("2026-01-01T10:00:01.000Z");
 
       const scan = await prisma.scan.create({
         data: {
@@ -383,11 +366,9 @@ describe("Scan API", () => {
       const projectId = await createProject();
       const monitorId = await createMonitor(projectId);
 
-      const startedAt =
-        new Date("2026-01-01T10:00:00.000Z");
+      const startedAt = new Date("2026-01-01T10:00:00.000Z");
 
-      const finishedAt =
-        new Date("2026-01-01T10:00:05.000Z");
+      const finishedAt = new Date("2026-01-01T10:00:05.000Z");
 
       const scan = await prisma.scan.create({
         data: {
@@ -490,11 +471,9 @@ describe("Scan API", () => {
       const projectId = await createProject();
       const monitorId = await createMonitor(projectId);
 
-      const startedAt =
-        new Date("2026-01-01T10:00:00.000Z");
+      const startedAt = new Date("2026-01-01T10:00:00.000Z");
 
-      const finishedAt =
-        new Date("2026-01-01T10:00:00.250Z");
+      const finishedAt = new Date("2026-01-01T10:00:00.250Z");
 
       const scan = await prisma.scan.create({
         data: {
@@ -513,10 +492,8 @@ describe("Scan API", () => {
           code: "MISSING_SECURITY_HEADER",
           title: "Missing Content-Security-Policy header",
           severity: "HIGH",
-          description:
-            "The response does not contain a Content-Security-Policy header.",
-          recommendation:
-            "Configure a restrictive Content-Security-Policy header.",
+          description: "The response does not contain a Content-Security-Policy header.",
+          recommendation: "Configure a restrictive Content-Security-Policy header.",
           evidence: {
             header: "content-security-policy",
             present: false,
@@ -550,10 +527,8 @@ describe("Scan API", () => {
             code: "MISSING_SECURITY_HEADER",
             title: "Missing Content-Security-Policy header",
             severity: "HIGH",
-            description:
-              "The response does not contain a Content-Security-Policy header.",
-            recommendation:
-              "Configure a restrictive Content-Security-Policy header.",
+            description: "The response does not contain a Content-Security-Policy header.",
+            recommendation: "Configure a restrictive Content-Security-Policy header.",
             evidence: {
               header: "content-security-policy",
               present: false,
@@ -575,33 +550,27 @@ describe("Scan API", () => {
         },
       });
 
-      const olderFinding =
-        await prisma.scanFinding.create({
-          data: {
-            scanId: scan.id,
-            code: "OLDER_FINDING",
-            title: "Older finding",
-            severity: "LOW",
-            description: "Older finding description",
-            createdAt: new Date(
-              "2026-01-01T00:00:00.000Z",
-            ),
-          },
-        });
+      const olderFinding = await prisma.scanFinding.create({
+        data: {
+          scanId: scan.id,
+          code: "OLDER_FINDING",
+          title: "Older finding",
+          severity: "LOW",
+          description: "Older finding description",
+          createdAt: new Date("2026-01-01T00:00:00.000Z"),
+        },
+      });
 
-      const newerFinding =
-        await prisma.scanFinding.create({
-          data: {
-            scanId: scan.id,
-            code: "NEWER_FINDING",
-            title: "Newer finding",
-            severity: "MEDIUM",
-            description: "Newer finding description",
-            createdAt: new Date(
-              "2026-01-02T00:00:00.000Z",
-            ),
-          },
-        });
+      const newerFinding = await prisma.scanFinding.create({
+        data: {
+          scanId: scan.id,
+          code: "NEWER_FINDING",
+          title: "Newer finding",
+          severity: "MEDIUM",
+          description: "Newer finding description",
+          createdAt: new Date("2026-01-02T00:00:00.000Z"),
+        },
+      });
 
       const response = await app.inject({
         method: "GET",
@@ -610,16 +579,9 @@ describe("Scan API", () => {
 
       expect(response.statusCode).toBe(200);
 
-      const findingIds = response
-        .json()
-        .findings.map(
-          (finding: { id: string }) => finding.id,
-        );
+      const findingIds = response.json().findings.map((finding: { id: string }) => finding.id);
 
-      expect(findingIds).toEqual([
-        olderFinding.id,
-        newerFinding.id,
-      ]);
+      expect(findingIds).toEqual([olderFinding.id, newerFinding.id]);
     });
 
     it("preserves null values in a finding", async () => {

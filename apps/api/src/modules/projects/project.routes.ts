@@ -1,10 +1,7 @@
 import type { FastifyPluginAsync } from "fastify";
 
 import { ProjectController } from "./project.controller.js";
-import {
-  createProjectRouteSchema,
-  findAllProjectsRouteSchema,
-} from "./project.openapi.js";
+import { createProjectRouteSchema, findAllProjectsRouteSchema } from "./project.openapi.js";
 import { ProjectRepository } from "./project.repository.js";
 import { ProjectService } from "./project.service.js";
 
@@ -13,15 +10,7 @@ export const projectRoutes: FastifyPluginAsync = async (app) => {
   const projectService = new ProjectService(projectRepository);
   const projectController = new ProjectController(projectService);
 
-  app.post(
-    "/projects",
-    { schema: createProjectRouteSchema },
-    projectController.create,
-  );
+  app.post("/projects", { schema: createProjectRouteSchema }, projectController.create);
 
-  app.get(
-    "/projects",
-    { schema: findAllProjectsRouteSchema },
-    projectController.findAll,
-  );
+  app.get("/projects", { schema: findAllProjectsRouteSchema }, projectController.findAll);
 };

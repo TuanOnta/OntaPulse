@@ -28,10 +28,7 @@ export function registerErrorHandlers(app: FastifyInstance): void {
 
     const fastifyError = error as ValidationFastifyError;
 
-    if (
-      fastifyError.validation ||
-      fastifyError.code === "FST_ERR_VALIDATION"
-    ) {
+    if (fastifyError.validation || fastifyError.code === "FST_ERR_VALIDATION") {
       return reply.status(400).send({
         statusCode: 400,
         code: "VALIDATION_ERROR",

@@ -10,11 +10,14 @@ export class ProjectController {
     const parsedBody = createProjectBodySchema.safeParse(request.body);
 
     if (!parsedBody.success) {
-      request.log.error({
-        err: parsedBody.error,
-        requestId: request.id,
-      }, "Request validation failed");
-      
+      request.log.error(
+        {
+          err: parsedBody.error,
+          requestId: request.id,
+        },
+        "Request validation failed",
+      );
+
       throw new AppError(
         "Request validation failed",
         400,
@@ -23,10 +26,7 @@ export class ProjectController {
       );
     }
 
-    request.log.info(
-      { projectName: parsedBody.data.name},
-      "New project creation request",
-    );
+    request.log.info({ projectName: parsedBody.data.name }, "New project creation request");
 
     const project = await this.projectService.create(parsedBody.data);
 

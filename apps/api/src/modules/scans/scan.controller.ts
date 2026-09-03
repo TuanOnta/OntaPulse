@@ -1,26 +1,14 @@
-import type {
-  FastifyReply,
-  FastifyRequest,
-} from "fastify";
+import type { FastifyReply, FastifyRequest } from "fastify";
 
 import { AppError } from "../../infrastructure/errors/app-error.js";
-import {
-  monitorIdParamsSchema,
-  scanIdParamsSchema,
-} from "./scan.schema.js";
+import { monitorIdParamsSchema, scanIdParamsSchema } from "./scan.schema.js";
 import { ScanService } from "./scan.service.js";
 
 export class ScanController {
-  constructor(
-    private readonly scanService: ScanService,
-  ) {}
+  constructor(private readonly scanService: ScanService) {}
 
-  trigger = async (
-    request: FastifyRequest,
-    reply: FastifyReply,
-  ) => {
-    const parsedParams =
-      monitorIdParamsSchema.safeParse(request.params);
+  trigger = async (request: FastifyRequest, reply: FastifyReply) => {
+    const parsedParams = monitorIdParamsSchema.safeParse(request.params);
 
     if (!parsedParams.success) {
       throw new AppError(
@@ -31,9 +19,7 @@ export class ScanController {
       );
     }
 
-    const scan = await this.scanService.trigger(
-      parsedParams.data.monitorId,
-    );
+    const scan = await this.scanService.trigger(parsedParams.data.monitorId);
 
     request.log.info(
       {
@@ -46,12 +32,8 @@ export class ScanController {
     return reply.status(202).send(scan);
   };
 
-  findAll = async (
-    request: FastifyRequest,
-    reply: FastifyReply,
-  ) => {
-    const parsedParams =
-      monitorIdParamsSchema.safeParse(request.params);
+  findAll = async (request: FastifyRequest, reply: FastifyReply) => {
+    const parsedParams = monitorIdParamsSchema.safeParse(request.params);
 
     if (!parsedParams.success) {
       throw new AppError(
@@ -62,19 +44,13 @@ export class ScanController {
       );
     }
 
-    const scans = await this.scanService.findAll(
-      parsedParams.data.monitorId,
-    );
+    const scans = await this.scanService.findAll(parsedParams.data.monitorId);
 
     return reply.send(scans);
   };
 
-  findById = async (
-    request: FastifyRequest,
-    reply: FastifyReply,
-  ) => {
-    const parsedParams =
-      scanIdParamsSchema.safeParse(request.params);
+  findById = async (request: FastifyRequest, reply: FastifyReply) => {
+    const parsedParams = scanIdParamsSchema.safeParse(request.params);
 
     if (!parsedParams.success) {
       throw new AppError(
@@ -85,9 +61,7 @@ export class ScanController {
       );
     }
 
-    const scan = await this.scanService.findById(
-      parsedParams.data.scanId,
-    );
+    const scan = await this.scanService.findById(parsedParams.data.scanId);
 
     return reply.send(scan);
   };

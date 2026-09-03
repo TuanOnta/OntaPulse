@@ -18,10 +18,10 @@ const validationErrorSchema = {
   required: ["statusCode", "code", "message", "requestId"],
 
   properties: {
-    statusCode: { type: "integer"},
-    code: {type: "string"},
-    message: {type: "string"},
-    requestId: {type: "string"},
+    statusCode: { type: "integer" },
+    code: { type: "string" },
+    message: { type: "string" },
+    requestId: { type: "string" },
 
     details: {
       anyOf: [
