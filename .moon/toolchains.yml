@@ -1,0 +1,12 @@
+javascript:
+  packageManager: pnpm
+  inferTasksFromScripts: true
+
+node:
+  version: "24.14.0"
+
+pnpm:
+  version: "11.22.0"
+
+unstable_python:
+  version: "3.13.2"

@@ -1,1 +1,20 @@
 language: typescript
+
+tasks:
+  dev:
+    command: "pnpm run dev"
+    preset: server
+    toolchains:
+      - javascript
+      - node
+      - pnpm
+    options:
+      envFile: "/.env"
+
+  typecheck:
+    command: "pnpm run typecheck"
+    toolchains:
+      - javascript
+      - node
+      - pnpm
+
