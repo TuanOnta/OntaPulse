@@ -9,8 +9,6 @@ export class ProjectController {
   create = async (request: FastifyRequest, reply: FastifyReply) => {
     const parsedBody = createProjectBodySchema.safeParse(request.body);
 
-    request.log.info(`new project creation request: ${JSON.stringify(request.body)}`);
-
     if (!parsedBody.success) {
       request.log.error({
         err: parsedBody.error,
@@ -24,6 +22,11 @@ export class ProjectController {
         parsedBody.error.flatten().fieldErrors,
       );
     }
+
+    request.log.info(
+      { projectName: parsedBody.data.name},
+      "New project creation request",
+    );
 
     const project = await this.projectService.create(parsedBody.data);
 

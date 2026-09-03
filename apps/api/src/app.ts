@@ -19,6 +19,13 @@ import { registerErrorHandlers } from "./plugins/error-handler.js";
 export function buildApp() {
   const app = Fastify({
     logger: loggerOptions,
+
+    ajv: {
+    customOptions: {
+      coerceTypes: false,
+      removeAdditional: false,
+    },
+  },
   });
 
   registerErrorHandlers(app);

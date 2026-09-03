@@ -14,12 +14,29 @@ const projectResponseSchema = {
 
 const validationErrorSchema = {
   type: "object",
-  required: ["message", "errors"],
+
+  required: ["statusCode", "code", "message", "requestId"],
+
   properties: {
-    message: { type: "string" },
-    errors: {
-      type: "object",
-      additionalProperties: true,
+    statusCode: { type: "integer"},
+    code: {type: "string"},
+    message: {type: "string"},
+    requestId: {type: "string"},
+
+    details: {
+      anyOf: [
+        {
+          type: "object",
+          additionalProperties: true,
+        },
+        {
+          type: "array",
+          items: {
+            type: "object",
+            additionalProperties: true,
+          },
+        },
+      ],
     },
   },
 } as const;

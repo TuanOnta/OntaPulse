@@ -8,11 +8,17 @@ tasks:
       - javascript
       - node
       - pnpm
-    options:
-      envFile: "/.env"
+
 
   typecheck:
     command: "pnpm run typecheck"
+    toolchains:
+      - javascript
+      - node
+      - pnpm
+
+  test:
+    command: "pnpm run test"
     toolchains:
       - javascript
       - node

@@ -1,17 +1,10 @@
-import type { FastifyInstance } from "fastify";
+import type { FastifyError, FastifyInstance } from "fastify";
 
-import { env } from "../config/env.js";
 import { AppError } from "../infrastructure/errors/app-error.js";
 
-function hasValidationDetails(
-  error: unknown,
-): error is { validation: unknown } {
-  return (
-    typeof error === "object" &&
-    error !== null &&
-    "validation" in error
-  );
-}
+type ValidationFastifyError = FastifyError & {
+  validation?: unknown;
+};
 
 export function registerErrorHandlers(app: FastifyInstance): void {
   app.setErrorHandler((error, request, reply) => {
@@ -33,12 +26,17 @@ export function registerErrorHandlers(app: FastifyInstance): void {
       });
     }
 
-    if (hasValidationDetails(error)) {
+    const fastifyError = error as ValidationFastifyError;
+
+    if (
+      fastifyError.validation ||
+      fastifyError.code === "FST_ERR_VALIDATION"
+    ) {
       return reply.status(400).send({
         statusCode: 400,
         code: "VALIDATION_ERROR",
         message: "Request validation failed",
-        details: error.validation,
+        details: fastifyError.validation,
         requestId: request.id,
       });
     }
@@ -46,12 +44,7 @@ export function registerErrorHandlers(app: FastifyInstance): void {
     return reply.status(500).send({
       statusCode: 500,
       code: "INTERNAL_SERVER_ERROR",
-      message:
-        env.NODE_ENV === "production"
-          ? "An unexpected error occurred"
-          : error instanceof Error
-            ? error.message
-            : "An unexpected error occurred",
+      message: "An unexpected error occurred",
       requestId: request.id,
     });
   });

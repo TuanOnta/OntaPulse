@@ -4,9 +4,10 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const currentDir = dirname(fileURLToPath(import.meta.url));
+const envFile = process.env.NODE_ENV === "test" ? ".env.test" : ".env";
 
 config({
-  path: resolve(currentDir, "../../.env"),
+  path: resolve(currentDir, "../../", envFile),
   override: true,
 })
 
