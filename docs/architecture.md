@@ -13,7 +13,7 @@
 
 ## Implementation status
 
-The TypeScript API currently implements Project, Monitor, and Scan persistence and the RabbitMQ producer. The Python worker and web client are future milestones. Because no consumer is running yet, a scan can be accepted and remain `QUEUED` indefinitely without indicating a producer failure.
+The TypeScript API currently implements Project, Monitor, and Scan persistence and the RabbitMQ producer. The Python worker has configuration, PostgreSQL connectivity, and test tooling, but its RabbitMQ consumer and scan execution are future milestones. The web client is also planned. Because no consumer is running yet, a scan can be accepted and remain `QUEUED` indefinitely without indicating a producer failure.
 
 ## Domain model
 

@@ -2,7 +2,7 @@
 
 ## Initial setup
 
-From the repository root, copy `.env.example` to `.env` and replace the placeholder passwords. Then run:
+From the repository root, copy `.env.example` to `.env` and replace the placeholder passwords. The repository uses `uv` for Python dependency management. Then run:
 
 ```bash
 pnpm install
@@ -52,17 +52,23 @@ The API creates and binds the scan exchanges and queues on its first enqueue. A 
 
 ## Commands
 
-| Task                   | Command                                        |
-| ---------------------- | ---------------------------------------------- |
-| Start infrastructure   | `docker compose up -d`                         |
-| Inspect infrastructure | `docker compose ps`                            |
-| Run API                | `moon run api:dev`                             |
-| Type-check API         | `moon run api:typecheck`                       |
-| Run API tests          | `pnpm --filter @ontapulse/api test`            |
-| Watch API tests        | `pnpm --filter @ontapulse/api test:watch`      |
-| Apply test migrations  | `pnpm --filter @ontapulse/api test:db:migrate` |
-| Format files           | `pnpm format`                                  |
-| Check formatting       | `pnpm format:check`                            |
+| Task                        | Command                                        |
+| --------------------------- | ---------------------------------------------- |
+| Start infrastructure        | `docker compose up -d`                         |
+| Inspect infrastructure      | `docker compose ps`                            |
+| Run API                     | `moon run api:dev`                             |
+| Type-check API              | `moon run api:typecheck`                       |
+| Run API tests               | `pnpm --filter @ontapulse/api test`            |
+| Watch API tests             | `pnpm --filter @ontapulse/api test:watch`      |
+| Apply test migrations       | `pnpm --filter @ontapulse/api test:db:migrate` |
+| Seed local database         | `pnpm --filter @ontapulse/api db:seed`         |
+| Format files                | `pnpm format`                                  |
+| Check formatting            | `pnpm format:check`                            |
+| Install worker dependencies | `cd apps/worker && uv sync --locked`           |
+| Check worker database       | `moon run worker:check-db`                     |
+| Run worker tests            | `moon run worker:test`                         |
+| Lint worker                 | `moon run worker:lint`                         |
+| Check worker formatting     | `moon run worker:format-check`                 |
 
 ## Database changes
 
@@ -74,6 +80,20 @@ The API creates and binds the scan exchanges and queues on its first enqueue. A 
 
 Do not manually edit generated Prisma Client files or an already-applied migration.
 
+## Development seed
+
+Run `pnpm --filter @ontapulse/api db:seed` after applying migrations to populate a local development database with deterministic fake data. The seed creates two projects, three monitors, four scans covering every status, and four findings covering every severity.
+
+The script uses fixed UUIDs and `upsert`, so repeated runs update the seeded records without duplicating or deleting other data. It refuses to run unless `NODE_ENV=development`, the PostgreSQL host is local, and the database name does not end in `_test`. It must never be used as a production data migration.
+
+## Worker foundation
+
+The Python worker package lives under `apps/worker/src/ontapulse_worker`. It reads the root `.env` in development and production, or `.env.test` when `NODE_ENV=test`. Only `NODE_ENV`, `DATABASE_URL`, and `RABBITMQ_URL` are consumed by the worker. RabbitMQ is optional in test mode so unit tests do not require a broker.
+
+Run `moon run worker:check-db` to validate configuration and execute `SELECT 1` against PostgreSQL. The command emits only a structured readiness event, never prints connection strings or credentials, and applies a five-second connection timeout. It exits after the check; the long-running process will be added with the RabbitMQ consumer milestone.
+
+SQLAlchemy uses psycopg 3. The shared `postgresql://` URL is normalized to `postgresql+psycopg://` inside the worker, so `.env` remains compatible with Prisma and the Python service.
+
 ## Tests
 
 - Integration tests call `Fastify.inject()` and do not start a TCP server.
@@ -83,6 +103,7 @@ Do not manually edit generated Prisma Client files or an already-applied migrati
 - Database-backed test files run serially to prevent one file resetting another file's data.
 - RabbitMQ is replaced with a fake queue in application tests.
 - Infrastructure tests that use real PostgreSQL or RabbitMQ must be clearly separated.
+- Worker unit tests must construct engines without opening real PostgreSQL connections.
 
 `buildApp()` defaults to `NoopScanQueue`, so ordinary application tests never open a broker connection. Scan integration tests inject `FakeScanQueue` to assert the exact `{ scanId, monitorId }` job, simulate publish failures, verify the persisted `FAILED` state, and confirm queue shutdown.
 
@@ -132,6 +153,7 @@ Then register the routes under the `/api` prefix and add integration tests for s
 | Symptom                                           | Check                                                                                                                                               |
 | ------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
 | API fails environment validation                  | Compare `.env` with `.env.example`; RabbitMQ variables are required outside test mode                                                               |
+| Worker emits `worker.database_unavailable`        | Start Docker Desktop, check `docker compose ps postgres`, and verify `DATABASE_URL`                                                                 |
 | Scan trigger returns `503 SCAN_QUEUE_UNAVAILABLE` | Check `docker compose ps`, broker credentials, `RABBITMQ_URL`, and port mapping                                                                     |
 | Scan remains `QUEUED`                             | This is expected until the Python worker exists; otherwise inspect consumer health and the `scan.jobs` queue                                        |
 | Tests attempt to use development data             | Ensure `NODE_ENV=test` and verify that `DATABASE_URL` names the dedicated test database                                                             |

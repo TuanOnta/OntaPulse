@@ -9,7 +9,8 @@ OntaPulse is a website and API monitoring platform. Users organize targets into 
 | Project, Monitor, and Scan API modules          | Implemented                            |
 | PostgreSQL persistence and migrations           | Implemented                            |
 | RabbitMQ scan producer and dead-letter topology | Implemented                            |
-| Python scan worker                              | Planned; messages are not consumed yet |
+| Python scan worker foundation                   | Implemented                            |
+| RabbitMQ consumer and scan execution            | Planned; messages are not consumed yet |
 | Web interface                                   | Planned                                |
 
 Triggering a scan currently persists it and publishes a confirmed RabbitMQ message. Until the worker is implemented, successfully published scans remain `QUEUED`.
@@ -20,7 +21,7 @@ Triggering a scan currently persists it and publishes a confirmed RabbitMQ messa
 - PostgreSQL for persistent domain data
 - RabbitMQ for scan jobs
 - Redis for cache and temporary state
-- Python worker (planned/in progress) for executing scans
+- Python worker foundation with SQLAlchemy and validated configuration
 - pnpm and Moon for the monorepo workflow
 
 ## Repository layout
@@ -45,6 +46,7 @@ Create `.env` from `.env.example` and replace the local passwords, then run:
 pnpm install
 docker compose up -d
 pnpm --filter @ontapulse/api exec prisma migrate dev
+pnpm --filter @ontapulse/api db:seed
 moon run api:dev
 ```
 
