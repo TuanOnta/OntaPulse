@@ -9,6 +9,7 @@
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc --noEmit",
     "db:migrate": "prisma migrate",
+    "db:seed": "prisma db seed --config prisma7.config.ts",
     "test": "cross-env NODE_ENV=test vitest run",
     "test:watch": "cross-env NODE_ENV=test vitest",
     "test:db:migrate": "cross-env NODE_ENV=test prisma migrate deploy"
