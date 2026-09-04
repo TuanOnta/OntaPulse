@@ -1,1 +1,32 @@
 language: python
+
+tasks:
+  sync:
+    command: "uv sync --locked --link-mode=copy"
+    options:
+      cache: false
+
+  check-db:
+    command: "uv run --locked --no-sync ontapulse-worker-check"
+    deps:
+      - "worker:sync"
+
+  lint:
+    command: "uv run --locked --no-sync ruff check ."
+    deps:
+      - "worker:sync"
+
+  format:
+    command: "uv run --locked --no-sync ruff format ."
+    deps:
+      - "worker:sync"
+
+  format-check:
+    command: "uv run --locked --no-sync ruff format --check ."
+    deps:
+      - "worker:sync"
+
+  test:
+    command: "uv run --locked --no-sync pytest"
+    deps:
+      - "worker:sync"
