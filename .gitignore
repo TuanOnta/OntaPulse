@@ -22,6 +22,11 @@ apps/api/generated/prisma/
 .venv/
 __pycache__/
 *.py[cod]
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+*.egg-info/
 
 # Logs and operating-system files
 *.log
@@ -37,6 +42,7 @@ Thumbs.db
 .windsurf/
 .agents/
 skills-lock.json
+AGENTS.md
 
 
 .env.test
