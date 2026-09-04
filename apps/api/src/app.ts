@@ -1,5 +1,7 @@
 import Fastify from "fastify";
 import { prisma } from "./infrastructure/database/prisma.js";
+import { NoopScanQueue } from "./infrastructure/queue/noop-scan-queue.js";
+import type { ScanQueue } from "./infrastructure/queue/scan-queue.js";
 
 // routes
 import { projectRoutes } from "./modules/projects/project.routes.js";
@@ -17,7 +19,13 @@ import { loggerOptions } from "./infrastructure/logger/logger.js";
 import { healthPlugin } from "./plugins/health.js";
 import { registerErrorHandlers } from "./plugins/error-handler.js";
 
-export function buildApp() {
+interface BuildAppOptions {
+  scanQueue?: ScanQueue;
+}
+
+export function buildApp(options: BuildAppOptions = {}) {
+  const scanQueue = options.scanQueue ?? new NoopScanQueue();
+
   const app = Fastify({
     logger: loggerOptions,
 
@@ -50,11 +58,11 @@ export function buildApp() {
   // register routes
   void app.register(projectRoutes, { prefix: "/api" });
   void app.register(monitorRoutes, { prefix: "/api" });
-  void app.register(scanRoutes, { prefix: "/api" });
+  void app.register(scanRoutes, { prefix: "/api", scanQueue });
 
   // Gracefully disconnect from the database when the application is shutting down
   app.addHook("onClose", async () => {
-    await prisma.$disconnect();
+    await Promise.all([scanQueue.close(), prisma.$disconnect()]);
   });
 
   return app;

@@ -1,5 +1,6 @@
 import type { FastifyPluginAsync } from "fastify";
 
+import type { ScanQueue } from "../../infrastructure/queue/scan-queue.js";
 import { ScanController } from "./scan.controller.js";
 import {
   findAllScansRouteSchema,
@@ -9,10 +10,14 @@ import {
 import { ScanRepository } from "./scan.repository.js";
 import { ScanService } from "./scan.service.js";
 
-export const scanRoutes: FastifyPluginAsync = async (app) => {
+interface ScanRoutesOptions {
+  scanQueue: ScanQueue;
+}
+
+export const scanRoutes: FastifyPluginAsync<ScanRoutesOptions> = async (app, options) => {
   const scanRepository = new ScanRepository();
 
-  const scanService = new ScanService(scanRepository);
+  const scanService = new ScanService(scanRepository, options.scanQueue);
 
   const scanController = new ScanController(scanService);
 

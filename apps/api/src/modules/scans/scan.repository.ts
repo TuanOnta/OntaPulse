@@ -21,6 +21,20 @@ export class ScanRepository {
     });
   }
 
+  markFailed(scanId: string, errorMessage: string) {
+    return prisma.scan.update({
+      where: {
+        id: scanId,
+      },
+
+      data: {
+        status: "FAILED",
+        errorMessage,
+        finishedAt: new Date(),
+      },
+    });
+  }
+
   findAllByMonitorId(monitorId: string) {
     return prisma.scan.findMany({
       where: {

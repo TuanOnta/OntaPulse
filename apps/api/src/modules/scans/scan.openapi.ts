@@ -212,6 +212,7 @@ export const triggerScanRouteSchema: FastifySchema = {
     202: scanResponseSchema,
     400: errorResponseSchema,
     404: errorResponseSchema,
+    503: errorResponseSchema,
   },
 };
 

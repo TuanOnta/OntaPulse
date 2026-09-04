@@ -1,7 +1,12 @@
 import { buildApp } from "./app.js";
 import { env } from "./config/env.js";
+import { NoopScanQueue } from "./infrastructure/queue/noop-scan-queue.js";
+import { RabbitMqScanQueue } from "./infrastructure/queue/rabbitmq-scan-queue.js";
 
-const app = buildApp();
+const scanQueue =
+  env.NODE_ENV === "test" ? new NoopScanQueue() : new RabbitMqScanQueue(env.RABBITMQ_URL);
+
+const app = buildApp({ scanQueue });
 
 async function start() {
   try {

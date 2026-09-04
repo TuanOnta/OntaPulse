@@ -25,6 +25,9 @@ importers:
       "@prisma/client":
         specifier: 7.10.0
         version: 7.10.0(prisma@7.10.0(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(typescript@5.9.3))(typescript@5.9.3)
+      amqplib:
+        specifier: ^2.0.1
+        version: 2.0.1
       dotenv:
         specifier: 17.4.2
         version: 17.4.2
@@ -38,6 +41,9 @@ importers:
         specifier: ^4.5.4
         version: 4.5.4
     devDependencies:
+      "@types/amqplib":
+        specifier: 0.10.8
+        version: 0.10.8
       "@types/node":
         specifier: ^24.0.0
         version: 24.13.3
@@ -777,6 +783,12 @@ packages:
         integrity: sha512-l2aFy5jALhniG5HgqrD6jXLi/rUWrKvqN/qJx6yoJsgKhblVd+iqqU4RCXavm/jPityDo5TCvKMnpjKnOriy0w==,
       }
 
+  "@types/amqplib@0.10.8":
+    resolution:
+      {
+        integrity: sha512-vtDp8Pk1wsE/AuQ8/Rgtm6KUZYqcnTgNvEHwzCkX8rL7AGsC6zqAfKAAJhUZXFhM/Pp++tbnUHiam/8vVpPztA==,
+      }
+
   "@types/chai@5.2.3":
     resolution:
       {
@@ -1025,6 +1037,13 @@ packages:
       {
         integrity: sha512-Thbli+OlOj+iMPYFBVBfJ3OmCAnaSyNn4M1vz9T6Gka5Jt9ba/HIR56joy65tY6kx/FCF5VXNB819Y7/GUrBGA==,
       }
+
+  amqplib@2.0.1:
+    resolution:
+      {
+        integrity: sha512-a3P2MgfCf9nzVis12VxWEn0dS6hcqve7dlEAhXDtIWR27BlhtMkILOc+H9aeHjDi6i6r94dYKc2Kx2OFe3avvg==,
+      }
+    engines: { node: ">=18" }
 
   assertion-error@2.0.1:
     resolution:
@@ -2860,6 +2879,10 @@ snapshots:
 
   "@standard-schema/spec@1.1.0": {}
 
+  "@types/amqplib@0.10.8":
+    dependencies:
+      "@types/node": 24.13.3
+
   "@types/chai@5.2.3":
     dependencies:
       "@types/deep-eql": 4.0.2
@@ -3047,6 +3070,8 @@ snapshots:
       fast-uri: 3.1.6
       json-schema-traverse: 1.0.0
       require-from-string: 2.0.2
+
+  amqplib@2.0.1: {}
 
   assertion-error@2.0.1: {}
 
