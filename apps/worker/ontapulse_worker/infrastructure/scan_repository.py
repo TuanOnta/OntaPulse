@@ -1,3 +1,5 @@
+"""SQLAlchemy persistence for scan lifecycle state."""
+
 from collections.abc import Callable
 from datetime import UTC, datetime
 from enum import StrEnum

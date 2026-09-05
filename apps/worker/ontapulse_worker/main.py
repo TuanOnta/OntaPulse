@@ -1,3 +1,5 @@
+"""Worker process entrypoint."""
+
 import json
 import sys
 

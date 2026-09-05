@@ -88,7 +88,7 @@ The script uses fixed UUIDs and `upsert`, so repeated runs update the seeded rec
 
 ## Worker foundation
 
-The Python worker package lives under `apps/worker/src/ontapulse_worker`. It reads the root `.env` in development and production, or `.env.test` when `NODE_ENV=test`. Only `NODE_ENV`, `DATABASE_URL`, and `RABBITMQ_URL` are consumed by the worker. RabbitMQ is optional in test mode so unit tests do not require a broker.
+The Python worker package lives under `apps/worker/ontapulse_worker`. It reads the root `.env` in development and production, or `.env.test` when `NODE_ENV=test`. Only `NODE_ENV`, `DATABASE_URL`, and `RABBITMQ_URL` are consumed by the worker. RabbitMQ is optional in test mode so unit tests do not require a broker.
 
 Worker code is grouped by ownership:
 

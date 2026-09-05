@@ -1,1 +1,0 @@
-"""OntaPulse scan worker."""

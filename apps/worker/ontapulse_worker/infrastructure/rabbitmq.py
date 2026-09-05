@@ -1,3 +1,5 @@
+"""RabbitMQ scan job transport."""
+
 import json
 from collections.abc import Callable
 from typing import Protocol

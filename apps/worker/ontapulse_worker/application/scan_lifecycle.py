@@ -1,3 +1,5 @@
+"""Orchestrate the lifecycle of a scan job."""
+
 from typing import Protocol
 from uuid import UUID
 

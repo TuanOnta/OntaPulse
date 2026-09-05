@@ -1,3 +1,5 @@
+"""PostgreSQL connection helpers."""
+
 from sqlalchemy import Engine, create_engine, text
 from sqlalchemy.orm import Session, sessionmaker
 

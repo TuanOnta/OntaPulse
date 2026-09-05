@@ -23,6 +23,9 @@ dev = [
   "ruff>=0.12,<1",
 ]
 
+[tool.hatch.build.targets.wheel]
+packages = ["ontapulse_worker"]
+
 [tool.pytest.ini_options]
 addopts = "-q -p no:cacheprovider"
 testpaths = ["tests"]

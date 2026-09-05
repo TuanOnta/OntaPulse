@@ -5,7 +5,8 @@ from typing import Literal, Self
 from pydantic import AnyUrl, Field, PostgresDsn, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-REPOSITORY_ROOT = Path(__file__).resolve().parents[4]
+WORKER_ROOT = Path(__file__).resolve().parent.parent
+REPOSITORY_ROOT = WORKER_ROOT.parents[1]
 
 
 class Settings(BaseSettings):

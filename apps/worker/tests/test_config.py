@@ -3,7 +3,17 @@ from pathlib import Path
 import pytest
 from pydantic import ValidationError
 
-from ontapulse_worker.config import REPOSITORY_ROOT, Settings, default_env_file, load_settings
+from ontapulse_worker.config import (
+    REPOSITORY_ROOT,
+    WORKER_ROOT,
+    Settings,
+    default_env_file,
+    load_settings,
+)
+
+
+def test_package_paths_point_to_the_worker_and_repository() -> None:
+    assert WORKER_ROOT == REPOSITORY_ROOT / "apps" / "worker"
 
 
 def test_test_settings_do_not_require_rabbitmq() -> None:
