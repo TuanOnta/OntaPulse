@@ -11,10 +11,11 @@ OntaPulse is a website and API monitoring platform. Users organize targets into 
 | RabbitMQ scan producer and dead-letter topology | Implemented                            |
 | Python scan worker foundation                   | Implemented                            |
 | RabbitMQ consumer transport                     | Implemented but not activated          |
-| Scan execution and bounded retry                | Planned; messages are not consumed yet |
+| Idempotent scan database lifecycle              | Implemented behind inactive consumer   |
+| HTTP checks, findings, and bounded retry        | Planned; messages are not consumed yet |
 | Web interface                                   | Planned                                |
 
-Triggering a scan currently persists it and publishes a confirmed RabbitMQ message. Until the worker is implemented, successfully published scans remain `QUEUED`.
+Triggering a scan currently persists it and publishes a confirmed RabbitMQ message. Until HTTP execution and bounded retry are implemented and the worker entrypoint is activated, successfully published scans remain `QUEUED`.
 
 ## Stack
 
