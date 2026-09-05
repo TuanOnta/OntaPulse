@@ -3,11 +3,11 @@ from uuid import UUID
 
 import pytest
 
-from ontapulse_worker.scan_job import ScanJob
-from ontapulse_worker.scan_lifecycle import (
+from ontapulse_worker.application.scan_lifecycle import ScanLifecycleService
+from ontapulse_worker.domain.scan import (
     ClaimedScan,
     ScanExecutionError,
-    ScanLifecycleService,
+    ScanJob,
     ScanResult,
 )
 

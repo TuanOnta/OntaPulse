@@ -3,8 +3,8 @@ from unittest.mock import Mock, call
 import pytest
 from pika.spec import BasicProperties
 
-from ontapulse_worker.consumer import declare_scan_topology, process_delivery
-from ontapulse_worker.scan_job import PermanentScanJobError
+from ontapulse_worker.domain.scan import PermanentScanJobError
+from ontapulse_worker.infrastructure.rabbitmq import declare_scan_topology, process_delivery
 
 SCAN_ID = "f7ad663f-bde8-4dc9-8281-5594d6c73c28"
 MONITOR_ID = "3edca2bb-c92c-4ac8-a5ed-75630416f604"

@@ -1,34 +1,7 @@
-from dataclasses import dataclass
 from typing import Protocol
 from uuid import UUID
 
-from ontapulse_worker.scan_job import ScanJob
-
-
-@dataclass(frozen=True)
-class ClaimedScan:
-    scan_id: UUID
-    target_url: str
-
-
-@dataclass(frozen=True)
-class ScanResult:
-    status_code: int
-    response_time_ms: int
-
-
-class ScanExecutionError(Exception):
-    def __init__(self, safe_message: str) -> None:
-        super().__init__(safe_message)
-        self.safe_message = safe_message
-
-
-class ScanJobInProgressError(RuntimeError):
-    """Raised when another delivery has already claimed the scan."""
-
-
-class ScanStateConflictError(RuntimeError):
-    """Raised when a scan changes state outside the active lifecycle."""
+from ontapulse_worker.domain.scan import ClaimedScan, ScanExecutionError, ScanJob, ScanResult
 
 
 class ScanLifecycleRepository(Protocol):

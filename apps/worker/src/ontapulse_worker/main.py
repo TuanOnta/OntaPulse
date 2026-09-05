@@ -4,7 +4,7 @@ import sys
 from sqlalchemy import Engine
 
 from ontapulse_worker.config import load_settings
-from ontapulse_worker.database import check_database, create_database_engine
+from ontapulse_worker.infrastructure.database import check_database, create_database_engine
 
 
 def main() -> None:

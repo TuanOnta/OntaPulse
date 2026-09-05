@@ -3,7 +3,7 @@ from uuid import UUID
 
 import pytest
 
-from ontapulse_worker.scan_job import InvalidScanMessage, parse_scan_job
+from ontapulse_worker.infrastructure.rabbitmq import InvalidScanMessage, parse_scan_job
 
 SCAN_ID = "f7ad663f-bde8-4dc9-8281-5594d6c73c28"
 MONITOR_ID = "3edca2bb-c92c-4ac8-a5ed-75630416f604"

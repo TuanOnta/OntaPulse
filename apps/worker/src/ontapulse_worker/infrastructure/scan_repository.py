@@ -6,9 +6,10 @@ from uuid import UUID
 from sqlalchemy import text
 from sqlalchemy.orm import Session, sessionmaker
 
-from ontapulse_worker.scan_job import PermanentScanJobError, ScanJob
-from ontapulse_worker.scan_lifecycle import (
+from ontapulse_worker.domain.scan import (
     ClaimedScan,
+    PermanentScanJobError,
+    ScanJob,
     ScanJobInProgressError,
     ScanResult,
     ScanStateConflictError,

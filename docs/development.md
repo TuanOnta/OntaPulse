@@ -90,6 +90,17 @@ The script uses fixed UUIDs and `upsert`, so repeated runs update the seeded rec
 
 The Python worker package lives under `apps/worker/src/ontapulse_worker`. It reads the root `.env` in development and production, or `.env.test` when `NODE_ENV=test`. Only `NODE_ENV`, `DATABASE_URL`, and `RABBITMQ_URL` are consumed by the worker. RabbitMQ is optional in test mode so unit tests do not require a broker.
 
+Worker code is grouped by ownership:
+
+```text
+ontapulse_worker/
+  domain/          Scan types and domain errors
+  application/     Scan lifecycle orchestration and ports
+  infrastructure/  PostgreSQL and RabbitMQ adapters
+  config.py        Environment configuration
+  main.py          Process entrypoint and composition
+```
+
 Run `moon run worker:check-db` to validate configuration and execute `SELECT 1` against PostgreSQL. The command emits only a structured readiness event, never prints connection strings or credentials, and applies a five-second connection timeout. It exits after the check; the long-running process will be added after HTTP execution and bounded retry are implemented.
 
 The worker database lifecycle locks a matching Scan row before changing `QUEUED` to `RUNNING`. Completed scans are handled idempotently, a job whose Scan and Monitor do not match is permanent, and unexpected executor failures return the claimed Scan to `QUEUED`. Terminal updates require the Scan to remain `RUNNING`, preventing stale work from overwriting another state transition.

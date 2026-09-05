@@ -4,13 +4,14 @@ from uuid import UUID
 
 import pytest
 
-from ontapulse_worker.scan_job import PermanentScanJobError, ScanJob
-from ontapulse_worker.scan_lifecycle import (
+from ontapulse_worker.domain.scan import (
+    PermanentScanJobError,
+    ScanJob,
     ScanJobInProgressError,
     ScanResult,
     ScanStateConflictError,
 )
-from ontapulse_worker.scan_repository import SqlAlchemyScanRepository
+from ontapulse_worker.infrastructure.scan_repository import SqlAlchemyScanRepository
 
 SCAN_ID = UUID("f7ad663f-bde8-4dc9-8281-5594d6c73c28")
 MONITOR_ID = UUID("3edca2bb-c92c-4ac8-a5ed-75630416f604")
