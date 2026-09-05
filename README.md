@@ -10,7 +10,8 @@ OntaPulse is a website and API monitoring platform. Users organize targets into 
 | PostgreSQL persistence and migrations           | Implemented                            |
 | RabbitMQ scan producer and dead-letter topology | Implemented                            |
 | Python scan worker foundation                   | Implemented                            |
-| RabbitMQ consumer and scan execution            | Planned; messages are not consumed yet |
+| RabbitMQ consumer transport                     | Implemented but not activated          |
+| Scan execution and bounded retry                | Planned; messages are not consumed yet |
 | Web interface                                   | Planned                                |
 
 Triggering a scan currently persists it and publishes a confirmed RabbitMQ message. Until the worker is implemented, successfully published scans remain `QUEUED`.
@@ -21,7 +22,7 @@ Triggering a scan currently persists it and publishes a confirmed RabbitMQ messa
 - PostgreSQL for persistent domain data
 - RabbitMQ for scan jobs
 - Redis for cache and temporary state
-- Python worker foundation with SQLAlchemy and validated configuration
+- Python worker with SQLAlchemy, validated configuration, and RabbitMQ transport
 - pnpm and Moon for the monorepo workflow
 
 ## Repository layout
