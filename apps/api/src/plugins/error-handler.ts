@@ -38,6 +38,24 @@ export function registerErrorHandlers(app: FastifyInstance): void {
       });
     }
 
+    const frameworkStatusCode =
+      typeof fastifyError.statusCode === "number" &&
+      fastifyError.statusCode >= 400 &&
+      fastifyError.statusCode < 500
+        ? fastifyError.statusCode
+        : null;
+
+    if (frameworkStatusCode) {
+      request.log.warn({ err: error, requestId: request.id }, "Request rejected");
+
+      return reply.status(frameworkStatusCode).send({
+        statusCode: frameworkStatusCode,
+        code: typeof fastifyError.code === "string" ? fastifyError.code : "REQUEST_ERROR",
+        message: fastifyError.message,
+        requestId: request.id,
+      });
+    }
+
     return reply.status(500).send({
       statusCode: 500,
       code: "INTERNAL_SERVER_ERROR",
