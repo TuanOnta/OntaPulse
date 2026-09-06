@@ -4,7 +4,7 @@ This document is the shared contract between the TypeScript API producer and Pyt
 
 ## Implementation status
 
-The API producer declares the complete topology, publishes persistent messages through a confirm channel, handles backpressure, and closes the broker connection during Fastify shutdown. The active Python worker implements matching topology declaration, strict message parsing, protected HTTP GET execution, bounded retry, delivery settlement, and an idempotent `QUEUED` to terminal-state database lifecycle. Findings, reconnect backoff, and graceful draining remain later milestones.
+The API producer declares the complete topology, publishes persistent messages through a confirm channel, handles backpressure, and closes the broker connection during Fastify shutdown. The active Python worker implements matching topology declaration, strict message parsing, protected HTTP GET execution, findings, bounded retry, reconnect backoff, delivery settlement, and an idempotent `QUEUED` to terminal-state database lifecycle. Graceful draining remains a later milestone.
 
 ## RabbitMQ topology
 

@@ -13,7 +13,7 @@
 
 ## Implementation status
 
-The TypeScript API implements Project, Monitor, and Scan persistence and the RabbitMQ producer. The Python worker has an active RabbitMQ consumer, protected HTTP GET execution, an idempotent database lifecycle, and bounded delayed retry. Scan findings, reconnect backoff, and graceful draining on shutdown remain future milestones. The web client is also planned.
+The TypeScript API implements Project, Monitor, and Scan persistence and the RabbitMQ producer. The Python worker has an active RabbitMQ consumer, protected HTTP GET execution, findings, an idempotent database lifecycle, bounded delayed retry, and reconnect backoff. Graceful draining on shutdown remains a future milestone. The web client is also planned.
 
 ## Domain model
 
