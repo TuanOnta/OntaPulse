@@ -2,7 +2,7 @@ language: typescript
 
 tasks:
   dev:
-    command: "pnpm run dev"
+    command: "tsx watch src/server.ts"
     preset: server
     toolchains:
       - javascript
@@ -10,14 +10,21 @@ tasks:
       - pnpm
 
   typecheck:
-    command: "pnpm run typecheck"
+    command: "tsc --noEmit"
     toolchains:
       - javascript
       - node
       - pnpm
 
   test:
-    command: "pnpm run test"
+    command: "cross-env NODE_ENV=test vitest run"
+    toolchains:
+      - javascript
+      - node
+      - pnpm
+
+  format:
+    command: "prettier --write ."
     toolchains:
       - javascript
       - node
