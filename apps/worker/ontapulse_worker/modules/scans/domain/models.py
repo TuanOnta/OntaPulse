@@ -1,6 +1,5 @@
-"""Scan domain values."""
-
 from dataclasses import dataclass
+from enum import StrEnum
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -19,7 +18,25 @@ class ClaimedScan:
     target_url: str
 
 
+class FindingSeverity(StrEnum):
+    LOW = "LOW"
+    MEDIUM = "MEDIUM"
+    HIGH = "HIGH"
+    CRITICAL = "CRITICAL"
+
+
+@dataclass(frozen=True)
+class ScanFinding:
+    code: str
+    title: str
+    severity: FindingSeverity
+    description: str
+    recommendation: str | None = None
+    evidence: dict[str, object] | None = None
+
+
 @dataclass(frozen=True)
 class ScanResult:
     status_code: int
     response_time_ms: int
+    findings: tuple[ScanFinding, ...] = ()

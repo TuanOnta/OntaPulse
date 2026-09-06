@@ -1,9 +1,10 @@
 """SQLAlchemy persistence for scan lifecycle state."""
 
+import json
 from collections.abc import Callable
 from datetime import UTC, datetime
 from enum import StrEnum
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from sqlalchemy import text
 from sqlalchemy.orm import Session, sessionmaker
@@ -13,7 +14,12 @@ from ontapulse_worker.modules.scans.domain.errors import (
     ScanJobInProgressError,
     ScanStateConflictError,
 )
-from ontapulse_worker.modules.scans.domain.models import ClaimedScan, ScanJob, ScanResult
+from ontapulse_worker.modules.scans.domain.models import (
+    ClaimedScan,
+    ScanFinding,
+    ScanJob,
+    ScanResult,
+)
 
 LOAD_SCAN_FOR_UPDATE = text(
     """
@@ -54,6 +60,32 @@ RELEASE_SCAN = text(
     UPDATE "Scan"
     SET status = 'QUEUED', "startedAt" = NULL
     WHERE id = :scan_id AND status = 'RUNNING'
+    """
+)
+INSERT_SCAN_FINDING = text(
+    """
+    INSERT INTO "ScanFinding" (
+        id,
+        "scanId",
+        code,
+        title,
+        severity,
+        description,
+        recommendation,
+        evidence,
+        "createdAt"
+    )
+    VALUES (
+        :id,
+        :scan_id,
+        :code,
+        :title,
+        :severity,
+        :description,
+        :recommendation,
+        CAST(:evidence AS JSONB),
+        :created_at
+    )
     """
 )
 
@@ -109,6 +141,8 @@ class SqlAlchemyScanRepository:
             return ClaimedScan(scan_id=job.scan_id, target_url=str(row["targetUrl"]))
 
     def succeed(self, scan_id: UUID, result: ScanResult) -> None:
+        finished_at = self._clock()
+
         with self._sessions.begin() as session:
             updated = session.execute(
                 MARK_SCAN_SUCCEEDED,
@@ -116,10 +150,19 @@ class SqlAlchemyScanRepository:
                     "scan_id": scan_id,
                     "status_code": result.status_code,
                     "response_time_ms": result.response_time_ms,
-                    "finished_at": self._clock(),
+                    "finished_at": finished_at,
                 },
             )
             self._require_changed_row(updated.rowcount)
+
+            if result.findings:
+                session.execute(
+                    INSERT_SCAN_FINDING,
+                    [
+                        self._finding_params(scan_id, finding, finished_at)
+                        for finding in result.findings
+                    ],
+                )
 
     def fail(self, scan_id: UUID, error_message: str) -> None:
         with self._sessions.begin() as session:
@@ -142,3 +185,23 @@ class SqlAlchemyScanRepository:
     def _require_changed_row(rowcount: int) -> None:
         if rowcount != 1:
             raise ScanStateConflictError("scan state changed unexpectedly")
+
+    @staticmethod
+    def _finding_params(
+        scan_id: UUID,
+        finding: ScanFinding,
+        created_at: datetime,
+    ) -> dict[str, object]:
+        evidence = json.dumps(finding.evidence) if finding.evidence is not None else None
+
+        return {
+            "id": uuid4(),
+            "scan_id": scan_id,
+            "code": finding.code,
+            "title": finding.title,
+            "severity": finding.severity.value,
+            "description": finding.description,
+            "recommendation": finding.recommendation,
+            "evidence": evidence,
+            "created_at": created_at,
+        }
