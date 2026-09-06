@@ -1,6 +1,7 @@
 generator client {
-  provider = "prisma-client"
-  output   = "../src/generated/prisma"
+  provider        = "prisma-client"
+  output          = "../src/generated/prisma"
+  previewFeatures = ["partialIndexes"]
 }
 
 datasource db {
@@ -58,6 +59,7 @@ model WorkspaceMember {
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@id([workspaceId, userId])
+  @@unique([workspaceId], where: { role: "OWNER" }, map: "WorkspaceMember_single_owner")
   @@index([userId])
   @@index([workspaceId, role])
 }

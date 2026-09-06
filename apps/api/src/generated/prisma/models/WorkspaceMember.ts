@@ -188,17 +188,17 @@ export type WorkspaceMemberOrderByWithRelationInput = {
 }
 
 export type WorkspaceMemberWhereUniqueInput = Prisma.AtLeast<{
+  workspaceId?: string
   workspaceId_userId?: Prisma.WorkspaceMemberWorkspaceIdUserIdCompoundUniqueInput
   AND?: Prisma.WorkspaceMemberWhereInput | Prisma.WorkspaceMemberWhereInput[]
   OR?: Prisma.WorkspaceMemberWhereInput[]
   NOT?: Prisma.WorkspaceMemberWhereInput | Prisma.WorkspaceMemberWhereInput[]
-  workspaceId?: Prisma.UuidFilter<"WorkspaceMember"> | string
   userId?: Prisma.UuidFilter<"WorkspaceMember"> | string
   role?: Prisma.EnumWorkspaceRoleFilter<"WorkspaceMember"> | $Enums.WorkspaceRole
   joinedAt?: Prisma.DateTimeFilter<"WorkspaceMember"> | Date | string
   workspace?: Prisma.XOR<Prisma.WorkspaceScalarRelationFilter, Prisma.WorkspaceWhereInput>
   user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
-}, "workspaceId_userId">
+}, "workspaceId_userId" | "workspaceId">
 
 export type WorkspaceMemberOrderByWithAggregationInput = {
   workspaceId?: Prisma.SortOrder
