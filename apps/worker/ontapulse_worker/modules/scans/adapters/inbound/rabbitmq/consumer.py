@@ -45,10 +45,6 @@ class DeliveryChannel(Protocol):
     ) -> bool: ...
 
 
-class RetryPublishError(RuntimeError):
-    """Raised when RabbitMQ does not confirm a retry publication."""
-
-
 def process_delivery(
     channel: DeliveryChannel,
     delivery_tag: int,
@@ -111,16 +107,13 @@ def retry_or_reject(
         channel.basic_reject(delivery_tag=delivery_tag, requeue=False)
         return
 
-    confirmed = channel.basic_publish(
+    channel.basic_publish(
         exchange=SCAN_RETRY_EXCHANGE,
         routing_key=step.routing_key,
         body=body,
         properties=create_retry_properties(properties, step.number),
         mandatory=True,
     )
-
-    if confirmed is not True:
-        raise RetryPublishError("RabbitMQ did not confirm retry publication")
 
     logger.warning(
         "scan.retry_scheduled",
