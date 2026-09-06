@@ -13,7 +13,25 @@
 
 ## Implementation status
 
-The TypeScript API implements Project, Monitor, and Scan persistence and the RabbitMQ producer. The Python worker has an active RabbitMQ consumer, protected HTTP GET execution, findings, an idempotent database lifecycle, bounded delayed retry, and reconnect backoff. Graceful draining on shutdown remains a future milestone. The web client is also planned.
+The TypeScript API implements Project, Monitor, and Scan persistence together
+with confirmed RabbitMQ publication.
+
+The Python worker is active and implements:
+
+- strict scan message validation;
+- idempotent Scan claiming;
+- HTTP GET execution with explicit timeouts;
+- URL and SSRF safety checks;
+- response-time measurement;
+- finding generation and persistence;
+- bounded delayed retries;
+- dead-letter routing;
+- connection recovery;
+- shutdown resource cleanup;
+- structured logging;
+- unit and RabbitMQ integration tests.
+
+Authentication and the web client are the next implementation milestones.
 
 ## Domain model
 
@@ -59,6 +77,30 @@ RabbitMQ delivery is at-least-once. The worker must therefore treat `scanId` as 
 
 The database insert and RabbitMQ publish are separate operations. They cannot provide atomic commit semantics: an interrupted or ambiguous publish can leave a database record whose state does not perfectly represent broker delivery. A transactional outbox is the intended upgrade if stronger delivery guarantees become necessary.
 
+### Failure flow
+
+Transient infrastructure errors are retried through dedicated delay queues:
+
+```text
+scan.jobs
+→ scan.jobs.retry.5s
+→ scan.jobs
+→ scan.jobs.retry.30s
+→ scan.jobs
+→ scan.jobs.retry.120s
+→ scan.jobs
+→ scan.jobs.dead
+```
+
+The database remains the source of truth for scan state. RabbitMQ provides
+durable delivery but does not replace database idempotency.
+
+A target transport failure, such as a timeout or DNS error, is persisted as a
+terminal Scan failure. An HTTP response, including a 4xx or 5xx response, completes
+the Scan successfully and may produce a finding. RabbitMQ retry is reserved for
+infrastructure failures that prevent the worker from safely finishing the database
+lifecycle.
+
 ## API module boundaries
 
 ```text
@@ -83,6 +125,35 @@ the domain does not import HTTPX, Pika, or SQLAlchemy.
 business rules. `bootstrap/container.py` composes the scan dependencies and owns their
 resources. `entrypoints` controls process startup, shutdown, and database readiness.
 Tests mirror these boundaries; current adapter tests use mocks, not live infrastructure.
+
+```text
+modules/scans/domain
+  Scan jobs, results, findings, policies, and errors
+
+modules/scans/application
+  Lifecycle orchestration and dependency ports
+
+modules/scans/adapters/inbound
+  RabbitMQ contract, topology, retry, and consumer
+
+modules/scans/adapters/outbound/http
+  HTTP execution and URL security
+
+modules/scans/adapters/outbound/persistence
+  SQLAlchemy Scan and finding persistence
+
+platform
+  Configuration, database setup, logging, and resilience
+
+bootstrap
+  Dependency construction and resource ownership
+
+entrypoints
+  Long-running worker and operational commands
+```
+
+Domain and application code do not import Pika, HTTPX, SQLAlchemy, or process
+configuration. Concrete dependencies are assembled in the bootstrap layer.
 
 ## Validation and errors
 

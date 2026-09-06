@@ -4,23 +4,50 @@ This document is the shared contract between the TypeScript API producer and Pyt
 
 ## Implementation status
 
-The API producer declares the complete topology, publishes persistent messages through a confirm channel, handles backpressure, and closes the broker connection during Fastify shutdown. The active Python worker implements matching topology declaration, strict message parsing, protected HTTP GET execution, findings, bounded retry, reconnect backoff, delivery settlement, and an idempotent `QUEUED` to terminal-state database lifecycle. Graceful draining remains a later milestone.
+The TypeScript API producer and Python worker consumer are implemented and
+active.
+
+The producer publishes persistent messages through a confirm channel. The worker
+performs strict message validation, idempotent database claiming, HTTP execution,
+finding persistence, bounded delayed retries, and explicit delivery settlement.
 
 ## RabbitMQ topology
 
-| Resource                | Value            |
-| ----------------------- | ---------------- |
-| Exchange                | `scan`           |
-| Exchange type           | `direct`         |
-| Routing key             | `scan.requested` |
-| Queue                   | `scan.jobs`      |
-| Dead-letter exchange    | `scan.dlx`       |
-| Dead-letter routing key | `scan.dead`      |
-| Dead-letter queue       | `scan.jobs.dead` |
+| Resource                | Value                  |
+| ----------------------- | ---------------------- |
+| Main exchange           | `scan`                 |
+| Main exchange type      | `direct`               |
+| Main routing key        | `scan.requested`       |
+| Main queue              | `scan.jobs`            |
+| Retry exchange          | `scan.retry`           |
+| First retry queue       | `scan.jobs.retry.5s`   |
+| Second retry queue      | `scan.jobs.retry.30s`  |
+| Third retry queue       | `scan.jobs.retry.120s` |
+| Dead-letter exchange    | `scan.dlx`             |
+| Dead-letter routing key | `scan.dead`            |
+| Dead-letter queue       | `scan.jobs.dead`       |
 
-Exchanges and queues are durable. Published scan messages are persistent.
+Exchanges and queues are durable. Published scan and retry messages are
+persistent.
 
-The producer declares this topology idempotently on its first enqueue. Existing resources must have compatible types, durability, bindings, and queue arguments; RabbitMQ rejects conflicting declarations.
+Retry queues are quorum queues configured with `at-least-once` dead-lettering
+and `reject-publish` overflow behavior.
+
+### Retry schedule
+
+| Retry number | Routing key    | Queue                  | Delay |
+| ------------ | -------------- | ---------------------- | ----- |
+| 1            | `scan.retry.1` | `scan.jobs.retry.5s`   | 5s    |
+| 2            | `scan.retry.2` | `scan.jobs.retry.30s`  | 30s   |
+| 3            | `scan.retry.3` | `scan.jobs.retry.120s` | 120s  |
+
+The worker stores the retry number in the `x-scan-retry-count` message header.
+
+Each retry queue applies a fixed message TTL and dead-letters expired messages
+back to the `scan` exchange using the `scan.requested` routing key.
+
+After the third retry fails, the worker rejects the delivery without requeueing
+it. RabbitMQ then routes the message to `scan.jobs.dead`.
 
 ## Message
 
@@ -64,12 +91,29 @@ The database write and broker publish are not atomic. Publisher confirms establi
 
 ## Delivery and failure rules
 
-RabbitMQ provides at-least-once delivery, so duplicate delivery is expected and must be safe.
+RabbitMQ provides at-least-once delivery, so duplicate delivery is expected and
+must be safe.
 
-- ACK after successful persistence.
-- For a transient failure, retry with a bounded policy; do not requeue forever in a tight loop.
-- For invalid payloads, missing permanent data, or exhausted retries, reject without requeue so the message reaches `scan.jobs.dead`.
-- Never log credentials, authorization headers, cookies, or response bodies that may contain secrets.
+| Failure type                   | Worker behavior                                    |
+| ------------------------------ | -------------------------------------------------- |
+| Successful scan                | Persist result and findings, then ACK              |
+| Target HTTP failure            | Persist Scan as `FAILED`, then ACK                 |
+| Invalid message                | Reject without requeue                             |
+| Missing permanent data         | Reject without requeue                             |
+| Transient infrastructure error | Publish to the next retry queue, confirm, then ACK |
+| Exhausted retries              | Reject without requeue                             |
+| Retry publication failure      | Leave the original delivery unacknowledged         |
+
+The worker must confirm a retry publication before acknowledging the original
+delivery. If retry publication fails, closing the connection allows RabbitMQ to
+redeliver the unacknowledged original message.
+
+HTTP target failures such as timeouts, connection failures, or invalid target
+responses are scan results, not worker infrastructure failures. They mark the
+Scan as `FAILED` and do not trigger RabbitMQ retry.
+
+Never log credentials, authorization headers, cookies, or response bodies that
+may contain secrets.
 
 ### Bounded retry
 
@@ -113,4 +157,22 @@ The Scan API integration suite must prove:
 
 ## Operational inspection
 
-With the example local configuration, open `http://localhost:15672` and inspect `scan.jobs` and `scan.jobs.dead`. Queue depth can confirm whether messages are being published, but a growing `scan.jobs` count is expected until a worker is running. Never expose the management UI or its credentials publicly.
+Open the RabbitMQ management UI using the configured
+`RABBITMQ_MANAGEMENT_PORT`.
+
+The following queues should exist while the worker is active:
+
+```text
+scan.jobs
+scan.jobs.retry.5s
+scan.jobs.retry.30s
+scan.jobs.retry.120s
+scan.jobs.dead
+```
+
+A growing scan.jobs count indicates that consumers are unavailable or slower
+than producers. A growing retry queue indicates transient infrastructure
+failures. Messages in scan.jobs.dead require investigation or an explicit
+redrive procedure.
+
+Never expose the management UI or its credentials publicly.
