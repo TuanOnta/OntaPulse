@@ -13,7 +13,7 @@
 
 ## Implementation status
 
-The TypeScript API currently implements Project, Monitor, and Scan persistence and the RabbitMQ producer. The Python worker has configuration, PostgreSQL connectivity, test tooling, an inactive RabbitMQ consumer transport, and an idempotent database lifecycle around an injected scan executor. HTTP checks, findings, bounded retry, and the long-running worker entrypoint are future milestones. The web client is also planned. Because no consumer is running yet, a scan can be accepted and remain `QUEUED` indefinitely without indicating a producer failure.
+The TypeScript API implements Project, Monitor, and Scan persistence and the RabbitMQ producer. The Python worker has an active RabbitMQ consumer, protected HTTP GET execution, an idempotent database lifecycle, and bounded delayed retry. Scan findings, reconnect backoff, and graceful draining on shutdown remain future milestones. The web client is also planned.
 
 ## Domain model
 
@@ -71,6 +71,18 @@ repository Performs Prisma queries
 Infrastructure implementations are accessed through interfaces where tests need substitutes. For example, `ScanService` depends on `ScanQueue`, while production uses `RabbitMqScanQueue` and tests use a fake queue.
 
 `server.ts` is the composition root. Development and production construct `RabbitMqScanQueue`; test mode uses `NoopScanQueue`, while scan integration tests inject a recording fake. The RabbitMQ connection is opened lazily and is closed together with Prisma during Fastify shutdown.
+
+## Worker module boundaries
+
+Worker features live under `ontapulse_worker/modules/<feature>`. The scan module owns
+its domain models and errors, application ports and lifecycle service, and inbound
+RabbitMQ and outbound HTTP/SQLAlchemy adapters. Adapters depend on application/domain;
+the domain does not import HTTPX, Pika, or SQLAlchemy.
+
+`platform` provides shared settings, connection factories, and logging without scan
+business rules. `bootstrap/container.py` composes the scan dependencies and owns their
+resources. `entrypoints` controls process startup, shutdown, and database readiness.
+Tests mirror these boundaries; current adapter tests use mocks, not live infrastructure.
 
 ## Validation and errors
 

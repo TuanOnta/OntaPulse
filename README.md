@@ -4,18 +4,19 @@ OntaPulse is a website and API monitoring platform. Users organize targets into 
 
 ## Current status
 
-| Area                                            | Status                                 |
-| ----------------------------------------------- | -------------------------------------- |
-| Project, Monitor, and Scan API modules          | Implemented                            |
-| PostgreSQL persistence and migrations           | Implemented                            |
-| RabbitMQ scan producer and dead-letter topology | Implemented                            |
-| Python scan worker foundation                   | Implemented                            |
-| RabbitMQ consumer transport                     | Implemented but not activated          |
-| Idempotent scan database lifecycle              | Implemented behind inactive consumer   |
-| HTTP checks, findings, and bounded retry        | Planned; messages are not consumed yet |
-| Web interface                                   | Planned                                |
+| Area                                            | Status                    |
+| ----------------------------------------------- | ------------------------- |
+| Project, Monitor, and Scan API modules          | Implemented               |
+| PostgreSQL persistence and migrations           | Implemented               |
+| RabbitMQ scan producer and dead-letter topology | Implemented               |
+| Python scan worker foundation                   | Implemented               |
+| RabbitMQ consumer transport                     | Implemented and activated |
+| Idempotent scan database lifecycle              | Implemented               |
+| HTTP checks and bounded retry                   | Implemented               |
+| Scan findings                                   | Planned                   |
+| Web interface                                   | Planned                   |
 
-Triggering a scan currently persists it and publishes a confirmed RabbitMQ message. Until HTTP execution and bounded retry are implemented and the worker entrypoint is activated, successfully published scans remain `QUEUED`.
+Triggering a scan persists it and publishes a confirmed RabbitMQ message. A running worker consumes the message, performs a protected HTTP GET, and persists its terminal state. Start it with `moon run worker:dev`.
 
 ## Stack
 

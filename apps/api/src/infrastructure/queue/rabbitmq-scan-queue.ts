@@ -104,6 +104,23 @@ export class RabbitMqScanQueue implements ScanQueue {
 
     await channel.bindQueue(SCAN_QUEUE, SCAN_EXCHANGE, SCAN_ROUTING_KEY);
 
+    await channel.assertExchange("scan.retry", "direct", { durable: true });
+    for (const delay of [5, 30, 120]) {
+      const queue = `scan.jobs.retry.${delay}s`;
+      await channel.assertQueue(queue, {
+        durable: true,
+        arguments: {
+          "x-queue-type": "quorum",
+          "x-message-ttl": delay * 1000,
+          "x-dead-letter-exchange": SCAN_EXCHANGE,
+          "x-dead-letter-routing-key": SCAN_ROUTING_KEY,
+          "x-dead-letter-strategy": "at-least-once",
+          "x-overflow": "reject-publish",
+        },
+      });
+      await channel.bindQueue(queue, "scan.retry", `scan.retry.${delay}s`);
+    }
+
     connection.on("close", () => {
       this.connection = null;
       this.channel = null;

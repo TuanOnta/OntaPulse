@@ -1,15 +1,23 @@
 language: python
 
 tasks:
+  check-db:
+    command: "uv run --locked --no-sync python -m ontapulse_worker.entrypoints.commands.database_check"
+    deps:
+      - "worker:sync"
+    options:
+      cache: false
+
+  dev:
+    command: "uv run --locked --no-sync python -m ontapulse_worker.entrypoints.worker"
+    preset: server
+    deps:
+      - "worker:sync"
+
   sync:
     command: "uv sync --locked --link-mode=copy"
     options:
       cache: false
-
-  check-db:
-    command: "uv run --locked --no-sync ontapulse-worker-check"
-    deps:
-      - "worker:sync"
 
   lint:
     command: "uv run --locked --no-sync ruff check ."
@@ -20,6 +28,8 @@ tasks:
     command: "uv run --locked --no-sync ruff format ."
     deps:
       - "worker:sync"
+    options:
+      cache: false
 
   format-check:
     command: "uv run --locked --no-sync ruff format --check ."

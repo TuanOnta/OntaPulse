@@ -4,7 +4,7 @@ This document is the shared contract between the TypeScript API producer and Pyt
 
 ## Implementation status
 
-The API producer is implemented. It declares the topology, publishes persistent messages through a confirm channel, handles backpressure, and closes the broker connection during Fastify shutdown. The Python worker implements matching topology declaration, strict message parsing, delivery settlement, and the idempotent `QUEUED` to terminal-state database lifecycle around an injected executor. It is not activated as a long-running process until HTTP checks and bounded retry are implemented; the remaining consumer rules below are normative requirements for that milestone.
+The API producer declares the complete topology, publishes persistent messages through a confirm channel, handles backpressure, and closes the broker connection during Fastify shutdown. The active Python worker implements matching topology declaration, strict message parsing, protected HTTP GET execution, bounded retry, delivery settlement, and an idempotent `QUEUED` to terminal-state database lifecycle. Findings, reconnect backoff, and graceful draining remain later milestones.
 
 ## RabbitMQ topology
 
@@ -71,7 +71,33 @@ RabbitMQ provides at-least-once delivery, so duplicate delivery is expected and 
 - For invalid payloads, missing permanent data, or exhausted retries, reject without requeue so the message reaches `scan.jobs.dead`.
 - Never log credentials, authorization headers, cookies, or response bodies that may contain secrets.
 
-The current topology provides a dead-letter path but does not itself schedule delayed retries. Any retry queue or delay mechanism must be documented here before implementation.
+### Bounded retry
+
+There are four execution attempts: the initial delivery followed by retries after 5,
+30, and 120 seconds. `x-scan-retry-count` is an AMQP header, not a JSON payload field.
+It is absent (equivalent to zero) on API publications and must be an integer from zero
+through three. Invalid values are permanent message failures.
+
+Both producer and consumer declare the durable direct exchange `scan.retry` and three
+durable quorum queues: `scan.jobs.retry.5s`, `scan.jobs.retry.30s`, and
+`scan.jobs.retry.120s`. Their routing keys are `scan.retry.5s`, `scan.retry.30s`, and
+`scan.retry.120s`; queue TTLs are 5000, 30000, and 120000 milliseconds. Each queue
+dead-letters to `scan` / `scan.requested`, with `x-dead-letter-strategy=at-least-once`
+and `x-overflow=reject-publish` so expired retries are retained until their transfer
+is confirmed. This requires RabbitMQ quorum queue support (the local RabbitMQ 4 image
+supports it). Existing main and dead-letter queues retain their definitions.
+
+On an internal failure, the consumer publishes the unchanged body with an incremented
+retry header, persistent delivery, mandatory routing, and publisher confirmation,
+then ACKs the original. An ambiguous confirmation can duplicate delivery, so terminal
+scans remain idempotent. Failed publication leaves the original unacknowledged for
+redelivery after the consumer connection is restored. After the fourth failed execution, reject without requeue to
+`scan.jobs.dead`. Invalid payloads and permanent job errors go directly to that queue.
+An expected GET execution error is persisted as `FAILED` and ACKed, without retry.
+
+The final rejection uses the existing main queue's dead-letter mechanism; unlike the
+new quorum retry queues, its classic queue dead-letter transfer is not replicated or
+publisher-confirmed. Do not delete existing queues to change their type.
 
 ## Testing boundary
 
