@@ -60,7 +60,7 @@ export function buildApp(options: BuildAppOptions = {}) {
   });
 
   void app.register(healthPlugin);
-  
+
   void app.register(authRoutes, { prefix: "/api", sessionStore });
   void app.register(projectRoutes, { prefix: "/api" });
   void app.register(monitorRoutes, { prefix: "/api" });

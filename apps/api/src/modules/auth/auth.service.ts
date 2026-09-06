@@ -3,7 +3,7 @@ import * as argon2 from "argon2";
 import { AppError } from "../../infrastructure/errors/app-error.js";
 import type { SessionStore } from "../../infrastructure/session/session-store.js";
 import { AuthRepository } from "./auth.repository.js";
-import type { RegisterInput } from "./auth.schema.js";
+import type { LoginInput, RegisterInput } from "./auth.schema.js";
 
 export class AuthService {
   constructor(
@@ -55,6 +55,46 @@ export class AuthService {
       ...registration,
       sessionToken,
     };
+  }
+
+  async login(input: LoginInput) {
+    const user = await this.authRepository.findUserForLogin(input.email);
+
+    if (!user || !(await argon2.verify(user.passwordHash, input.password))) {
+      throw new AppError("Invalid email or password", 401, "INVALID_CREDENTIALS");
+    }
+
+    const sessionToken = await this.sessionStore.create(user.id);
+    const { passwordHash, ...safeUser } = user;
+
+    return { user: safeUser, sessionToken };
+  }
+
+  async getCurrentUser(sessionToken: string | undefined) {
+    if (!sessionToken) {
+      throw new AppError("Authentication required", 401, "UNAUTHENTICATED");
+    }
+
+    const userId = await this.sessionStore.findUserId(sessionToken);
+
+    if (!userId) {
+      throw new AppError("Authentication required", 401, "UNAUTHENTICATED");
+    }
+
+    const user = await this.authRepository.findUserById(userId);
+
+    if (!user) {
+      await this.sessionStore.delete(sessionToken);
+      throw new AppError("Authentication required", 401, "UNAUTHENTICATED");
+    }
+
+    return user;
+  }
+
+  async logout(sessionToken: string | undefined): Promise<void> {
+    if (sessionToken) {
+      await this.sessionStore.delete(sessionToken);
+    }
   }
 }
 

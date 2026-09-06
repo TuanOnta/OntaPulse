@@ -17,4 +17,7 @@ export const authRoutes: FastifyPluginAsync<AuthRoutesOptions> = async (app, opt
   const authController = new AuthController(authService);
 
   app.post("/auth/register", authController.register);
+  app.post("/auth/login", authController.login);
+  app.get("/auth/me", authController.me);
+  app.post("/auth/logout", authController.logout);
 };

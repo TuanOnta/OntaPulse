@@ -7,14 +7,35 @@ interface CreateUserInput {
 }
 
 export class AuthRepository {
-  findUserByEmail(email: string) {
+  findUserById(userId: string) {
     return prisma.user.findUnique({
-      where: {
-        email,
-      },
+      where: { id: userId },
       select: {
         id: true,
+        name: true,
+        email: true,
+        createdAt: true,
+        workspaceMemberships: {
+          select: {
+            role: true,
+            joinedAt: true,
+            workspace: { select: { id: true, name: true, createdAt: true } },
+          },
+        },
       },
+    });
+  }
+  findUserByEmail(email: string) {
+    return prisma.user.findUnique({
+      where: { email },
+      select: { id: true },
+    });
+  }
+
+  findUserForLogin(email: string) {
+    return prisma.user.findUnique({
+      where: { email },
+      select: { id: true, name: true, email: true, passwordHash: true, createdAt: true },
     });
   }
 
