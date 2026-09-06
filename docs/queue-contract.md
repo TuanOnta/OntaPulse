@@ -80,8 +80,8 @@ through three. Invalid values are permanent message failures.
 
 Both producer and consumer declare the durable direct exchange `scan.retry` and three
 durable quorum queues: `scan.jobs.retry.5s`, `scan.jobs.retry.30s`, and
-`scan.jobs.retry.120s`. Their routing keys are `scan.retry.5s`, `scan.retry.30s`, and
-`scan.retry.120s`; queue TTLs are 5000, 30000, and 120000 milliseconds. Each queue
+`scan.jobs.retry.120s`. Their routing keys are `scan.retry.1`, `scan.retry.2`, and
+`scan.retry.3`; queue TTLs are 5000, 30000, and 120000 milliseconds. Each queue
 dead-letters to `scan` / `scan.requested`, with `x-dead-letter-strategy=at-least-once`
 and `x-overflow=reject-publish` so expired retries are retained until their transfer
 is confirmed. This requires RabbitMQ quorum queue support (the local RabbitMQ 4 image

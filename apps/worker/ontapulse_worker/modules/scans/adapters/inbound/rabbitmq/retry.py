@@ -1,37 +1,54 @@
-"""Confirmed publication to bounded, broker-delayed retry queues."""
+"""Bounded retry policy for scan deliveries."""
 
-from copy import copy
+from dataclasses import dataclass
 
-from pika.adapters.blocking_connection import BlockingChannel
 from pika.spec import BasicProperties
 
 from ontapulse_worker.modules.scans.adapters.inbound.rabbitmq.contract import InvalidScanMessage
 
-RETRY_DELAYS_SECONDS = (5, 30, 120)
-RETRY_EXCHANGE = "scan.retry"
 RETRY_COUNT_HEADER = "x-scan-retry-count"
 
 
-def retry_count(properties: BasicProperties) -> int:
-    count = (properties.headers or {}).get(RETRY_COUNT_HEADER, 0)
-    if type(count) is not int or not 0 <= count <= len(RETRY_DELAYS_SECONDS):
+@dataclass(frozen=True)
+class RetryStep:
+    number: int
+    queue: str
+    routing_key: str
+    delay_ms: int
+
+
+RETRY_STEPS = (
+    RetryStep(1, "scan.jobs.retry.5s", "scan.retry.1", 5_000),
+    RetryStep(2, "scan.jobs.retry.30s", "scan.retry.2", 30_000),
+    RetryStep(3, "scan.jobs.retry.120s", "scan.retry.3", 120_000),
+)
+
+
+def get_retry_count(properties: BasicProperties) -> int:
+    value = (properties.headers or {}).get(RETRY_COUNT_HEADER, 0)
+
+    if isinstance(value, bool) or not isinstance(value, int) or not 0 <= value <= len(RETRY_STEPS):
         raise InvalidScanMessage("invalid retry count")
-    return count
+
+    return value
 
 
-def publish_retry(channel: BlockingChannel, body: bytes, properties: BasicProperties) -> bool:
-    count = retry_count(properties)
-    if count == len(RETRY_DELAYS_SECONDS):
-        return False
-    retry_properties = copy(properties)
-    retry_properties.headers = {**(properties.headers or {}), RETRY_COUNT_HEADER: count + 1}
-    retry_properties.delivery_mode = 2
-    retry_properties.expiration = None
-    channel.basic_publish(
-        exchange=RETRY_EXCHANGE,
-        routing_key=f"scan.retry.{RETRY_DELAYS_SECONDS[count]}s",
-        body=body,
-        properties=retry_properties,
-        mandatory=True,
+def get_next_retry(properties: BasicProperties) -> RetryStep | None:
+    retry_count = get_retry_count(properties)
+    return RETRY_STEPS[retry_count] if retry_count < len(RETRY_STEPS) else None
+
+
+def create_retry_properties(properties: BasicProperties, retry_number: int) -> BasicProperties:
+    headers = dict(properties.headers or {})
+    headers[RETRY_COUNT_HEADER] = retry_number
+
+    return BasicProperties(
+        content_type=properties.content_type,
+        content_encoding=properties.content_encoding,
+        headers=headers,
+        delivery_mode=2,
+        message_id=properties.message_id,
+        timestamp=properties.timestamp,
+        type=properties.type,
+        app_id=properties.app_id,
     )
-    return True

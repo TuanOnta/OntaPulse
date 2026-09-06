@@ -25,8 +25,9 @@ def test_declare_scan_topology_matches_the_producer() -> None:
 
     declare_scan_topology(channel)
 
-    assert channel.exchange_declare.call_args_list[:2] == [
+    assert channel.exchange_declare.call_args_list == [
         call(exchange="scan", exchange_type="direct", durable=True),
+        call(exchange="scan.retry", exchange_type="direct", durable=True),
         call(exchange="scan.dlx", exchange_type="direct", durable=True),
     ]
     assert channel.queue_declare.call_args_list[:2] == [
@@ -98,7 +99,7 @@ def test_process_delivery_dead_letters_a_permanent_failure(caplog) -> None:
 def test_process_delivery_confirms_retry_before_ack() -> None:
     events = []
     channel = Mock()
-    channel.basic_publish.side_effect = lambda **_: events.append("confirmed")
+    channel.basic_publish.side_effect = lambda **_: (events.append("confirmed"), True)[1]
     channel.basic_ack.side_effect = lambda **_: events.append("ack")
     handler = Mock(side_effect=RuntimeError("temporary database failure"))
     process_delivery(channel, 10, valid_properties(), VALID_BODY, handler)
@@ -127,15 +128,16 @@ def test_invalid_retry_header_is_permanent(count):
     channel.basic_reject.assert_called_once_with(delivery_tag=10, requeue=False)
 
 
-@pytest.mark.parametrize("count,delay", [(0, 5), (1, 30), (2, 120)])
-def test_retry_delays_and_header_are_bounded(count, delay):
+@pytest.mark.parametrize("count,number", [(0, 1), (1, 2), (2, 3)])
+def test_retry_delays_and_header_are_bounded(count, number):
     channel = Mock()
+    channel.basic_publish.return_value = True
     properties = valid_properties()
     properties.headers = {"x-scan-retry-count": count}
     process_delivery(channel, 10, properties, VALID_BODY, Mock(side_effect=RuntimeError()))
     published = channel.basic_publish.call_args.kwargs
-    assert published["routing_key"] == f"scan.retry.{delay}s"
-    assert published["properties"].headers["x-scan-retry-count"] == count + 1
+    assert published["routing_key"] == f"scan.retry.{number}"
+    assert published["properties"].headers["x-scan-retry-count"] == number
     assert published["body"] == VALID_BODY
     assert published["mandatory"] is True
     assert published["properties"].delivery_mode == 2
