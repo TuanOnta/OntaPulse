@@ -5,4 +5,9 @@ export const createProjectBodySchema = z.object({
   description: z.string().trim().max(500).optional(),
 });
 
+export const workspaceIdParamsSchema = z.object({
+  workspaceId: z.uuid(),
+});
+
 export type CreateProjectInput = z.infer<typeof createProjectBodySchema>;
+export type WorkspaceIdParams = z.infer<typeof workspaceIdParamsSchema>;

@@ -2,14 +2,20 @@ import { prisma } from "../../infrastructure/database/prisma.js";
 import type { CreateProjectInput } from "./project.schema.js";
 
 export class ProjectRepository {
-  create(input: CreateProjectInput) {
+  create(workspaceId: string, input: CreateProjectInput) {
     return prisma.project.create({
-      data: input,
+      data: {
+        ...input,
+        workspaceId,
+      },
     });
   }
 
-  findAll() {
+  findAll(workspaceId: string) {
     return prisma.project.findMany({
+      where: {
+        workspaceId,
+      },
       orderBy: {
         createdAt: "desc",
       },

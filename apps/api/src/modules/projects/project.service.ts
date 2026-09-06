@@ -4,11 +4,11 @@ import { ProjectRepository } from "./project.repository.js";
 export class ProjectService {
   constructor(private readonly projectRepository: ProjectRepository) {}
 
-  create(input: CreateProjectInput) {
-    return this.projectRepository.create(input);
+  create(workspaceId: string, input: CreateProjectInput) {
+    return this.projectRepository.create(workspaceId, input);
   }
 
-  findAll() {
-    return this.projectRepository.findAll();
+  findAll(workspaceId: string) {
+    return this.projectRepository.findAll(workspaceId);
   }
 }

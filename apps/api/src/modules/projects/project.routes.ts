@@ -10,7 +10,15 @@ export const projectRoutes: FastifyPluginAsync = async (app) => {
   const projectService = new ProjectService(projectRepository);
   const projectController = new ProjectController(projectService);
 
-  app.post("/projects", { schema: createProjectRouteSchema }, projectController.create);
+  app.post(
+    "/workspaces/:workspaceId/projects",
+    { schema: createProjectRouteSchema },
+    projectController.create,
+  );
 
-  app.get("/projects", { schema: findAllProjectsRouteSchema }, projectController.findAll);
+  app.get(
+    "/workspaces/:workspaceId/projects",
+    { schema: findAllProjectsRouteSchema },
+    projectController.findAll,
+  );
 };
