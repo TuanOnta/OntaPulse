@@ -10,6 +10,12 @@ STANDARD_FIELDS = frozenset(logging.makeLogRecord({}).__dict__) | {
     "asctime",
 }
 
+DEPENDENCY_LOG_LEVELS = {
+    "pika": logging.WARNING,
+    "httpx": logging.WARNING,
+    "httpcore": logging.WARNING,
+}
+
 
 class JsonFormatter(logging.Formatter):
     def format(self, record: logging.LogRecord) -> str:
@@ -38,6 +44,9 @@ def configure_logging(level: int = logging.INFO) -> None:
     root_logger.handlers.clear()
     root_logger.addHandler(handler)
     root_logger.setLevel(level)
+
+    for name, level in DEPENDENCY_LOG_LEVELS.items():
+        logging.getLogger(name).setLevel(level)
 
 
 def log_event(level: str, event: str, **details: object) -> None:
