@@ -4,19 +4,28 @@ OntaPulse is a website and API monitoring platform. Users organize targets into 
 
 ## Current status
 
-| Area                                            | Status                    |
-| ----------------------------------------------- | ------------------------- |
-| Project, Monitor, and Scan API modules          | Implemented               |
-| PostgreSQL persistence and migrations           | Implemented               |
-| RabbitMQ scan producer and dead-letter topology | Implemented               |
-| Python scan worker foundation                   | Implemented               |
-| RabbitMQ consumer transport                     | Implemented and activated |
-| Idempotent scan database lifecycle              | Implemented               |
-| HTTP checks and bounded retry                   | Implemented               |
-| Scan findings                                   | Planned                   |
-| Web interface                                   | Planned                   |
+| Area                                       | Status      |
+| ------------------------------------------ | ----------- |
+| Project, Monitor, and Scan API modules     | Implemented |
+| PostgreSQL persistence and migrations      | Implemented |
+| RabbitMQ producer and dead-letter topology | Implemented |
+| Python scan worker                         | Implemented |
+| Idempotent scan database lifecycle         | Implemented |
+| HTTP GET execution and URL safety          | Implemented |
+| Scan findings                              | Implemented |
+| Bounded delayed retry                      | Implemented |
+| Connection recovery                        | Implemented |
+| Graceful shutdown with active-job draining | Planned     |
+| Worker unit and RabbitMQ integration tests | Implemented |
+| Authentication                             | Planned     |
+| Web interface                              | Planned     |
 
-Triggering a scan persists it and publishes a confirmed RabbitMQ message. A running worker consumes the message, performs a protected HTTP GET, and persists its terminal state. Start it with `moon run worker:dev`.
+Triggering a scan persists a `QUEUED` Scan and publishes a confirmed RabbitMQ
+message. The worker consumes the message, performs the HTTP check, generates
+findings, persists the result, and acknowledges the delivery.
+
+Transient infrastructure failures use bounded delayed retries. Invalid messages,
+permanent data errors, and exhausted retries are routed to `scan.jobs.dead`.
 
 ## Stack
 
@@ -51,6 +60,7 @@ docker compose up -d
 pnpm --filter @ontapulse/api exec prisma migrate dev
 pnpm --filter @ontapulse/api db:seed
 moon run api:dev
+moon run worker:dev
 ```
 
 The API documentation is available at `http://localhost:<API_PORT>/docs`.
