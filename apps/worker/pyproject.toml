@@ -30,7 +30,10 @@ packages = ["ontapulse_worker"]
 [tool.pytest.ini_options]
 addopts = "-q -p no:cacheprovider"
 testpaths = ["tests"]
-markers = ["infrastructure: explicitly selected tests using isolated PostgreSQL and RabbitMQ resources"]
+markers = [
+  "infrastructure: explicitly selected tests using isolated PostgreSQL and RabbitMQ resources",
+  "integration: tests requiring external infrastructure",
+]
 
 [tool.ruff]
 line-length = 100
