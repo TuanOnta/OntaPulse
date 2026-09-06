@@ -77,8 +77,16 @@ The API connects to RabbitMQ lazily when the first scan is triggered. RabbitMQ m
 
 ```bash
 moon run api:typecheck
-pnpm --filter @ontapulse/api test
-pnpm format:check
+moon run api:test
+moon run worker:format-check
+moon run worker:lint
+moon run worker:test
+```
+
+### RabbitMQ integration tests are opt-in:
+
+```bash
+moon run worker:integration-test
 ```
 
 Tests use `.env.test` and a separate PostgreSQL database. They must not modify development data or require a live RabbitMQ connection.
