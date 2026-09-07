@@ -16,6 +16,7 @@ import { authRoutes } from "./modules/auth/auth.routes.js";
 import { projectRoutes } from "./modules/projects/project.routes.js";
 import { monitorRoutes } from "./modules/monitors/monitor.routes.js";
 import { scanRoutes } from "./modules/scans/scan.routes.js";
+import { workspaceRoutes } from "./modules/workspaces/workspace.routes.js";
 
 import { healthPlugin } from "./plugins/health.js";
 import { registerAuthentication } from "./plugins/authenticate.js";
@@ -64,10 +65,10 @@ export function buildApp(options: BuildAppOptions = {}) {
   void app.register(healthPlugin);
 
   void app.register(authRoutes, { prefix: "/api", sessionStore });
-  void app.register(projectRoutes, { prefix: "/api" });
   void app.register(monitorRoutes, { prefix: "/api" });
   void app.register(scanRoutes, { prefix: "/api", scanQueue });
-
+  void app.register(workspaceRoutes, { prefix: "/api" });
+  void app.register(projectRoutes, { prefix: "/api" });
   app.addHook("onClose", async () => {
     await Promise.all([scanQueue.close(), sessionStore.close(), prisma.$disconnect()]);
   });
