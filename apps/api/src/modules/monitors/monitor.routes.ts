@@ -6,6 +6,8 @@ import { MonitorRepository } from "./monitor.repository.js";
 import { MonitorService } from "./monitor.service.js";
 
 export const monitorRoutes: FastifyPluginAsync = async (app) => {
+  app.addHook("preHandler", app.authenticate);
+
   const monitorRepository = new MonitorRepository();
   const monitorService = new MonitorService(monitorRepository);
   const monitorController = new MonitorController(monitorService);

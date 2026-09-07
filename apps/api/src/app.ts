@@ -18,6 +18,7 @@ import { monitorRoutes } from "./modules/monitors/monitor.routes.js";
 import { scanRoutes } from "./modules/scans/scan.routes.js";
 
 import { healthPlugin } from "./plugins/health.js";
+import { registerAuthentication } from "./plugins/authenticate.js";
 import { registerErrorHandlers } from "./plugins/error-handler.js";
 
 interface BuildAppOptions {
@@ -44,6 +45,7 @@ export function buildApp(options: BuildAppOptions = {}) {
   registerErrorHandlers(app);
 
   void app.register(cookie);
+  registerAuthentication(app, sessionStore);
 
   void app.register(swagger, {
     openapi: {

@@ -6,6 +6,8 @@ import { ProjectRepository } from "./project.repository.js";
 import { ProjectService } from "./project.service.js";
 
 export const projectRoutes: FastifyPluginAsync = async (app) => {
+  app.addHook("preHandler", app.authenticate);
+
   const projectRepository = new ProjectRepository();
   const projectService = new ProjectService(projectRepository);
   const projectController = new ProjectController(projectService);

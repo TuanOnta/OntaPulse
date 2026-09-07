@@ -15,10 +15,10 @@ interface ScanRoutesOptions {
 }
 
 export const scanRoutes: FastifyPluginAsync<ScanRoutesOptions> = async (app, options) => {
+  app.addHook("preHandler", app.authenticate);
+
   const scanRepository = new ScanRepository();
-
   const scanService = new ScanService(scanRepository, options.scanQueue);
-
   const scanController = new ScanController(scanService);
 
   app.post(
