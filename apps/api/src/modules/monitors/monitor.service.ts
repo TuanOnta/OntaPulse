@@ -1,16 +1,27 @@
 import { AppError } from "../../infrastructure/errors/app-error.js";
+import type { WorkspaceAccessService } from "../workspaces/workspace-access.service.js";
 import type { CreateMonitorInput } from "./monitor.schema.js";
 import { MonitorRepository } from "./monitor.repository.js";
 
 export class MonitorService {
-  constructor(private readonly monitorRepository: MonitorRepository) {}
+  constructor(
+    private readonly monitorRepository: MonitorRepository,
+    private readonly workspaceAccessService: WorkspaceAccessService,
+  ) {}
 
-  async create(projectId: string, input: CreateMonitorInput) {
+  async create(projectId: string, userId: string, input: CreateMonitorInput) {
     const project = await this.monitorRepository.findProjectById(projectId);
 
     if (!project) {
       throw new AppError("Project not found", 404, "PROJECT_NOT_FOUND");
     }
+
+    await this.workspaceAccessService.requireRole(
+      project.workspaceId,
+      userId,
+      ["OWNER", "ADMIN"],
+      new AppError("Project not found", 404, "PROJECT_NOT_FOUND"),
+    );
 
     const existingMonitor = await this.monitorRepository.findByTargetUrl(
       projectId,
@@ -28,12 +39,18 @@ export class MonitorService {
     return this.monitorRepository.create(projectId, input);
   }
 
-  async findAll(projectId: string) {
+  async findAll(projectId: string, userId: string) {
     const project = await this.monitorRepository.findProjectById(projectId);
 
     if (!project) {
       throw new AppError("Project not found", 404, "PROJECT_NOT_FOUND");
     }
+
+    await this.workspaceAccessService.requireMember(
+      project.workspaceId,
+      userId,
+      new AppError("Project not found", 404, "PROJECT_NOT_FOUND"),
+    );
 
     return this.monitorRepository.findAllByProjectId(projectId);
   }

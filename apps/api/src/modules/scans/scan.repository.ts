@@ -9,6 +9,11 @@ export class ScanRepository {
 
       select: {
         id: true,
+        project: {
+          select: {
+            workspaceId: true,
+          },
+        },
       },
     });
   }
@@ -57,6 +62,15 @@ export class ScanRepository {
         findings: {
           orderBy: {
             createdAt: "asc",
+          },
+        },
+        monitor: {
+          select: {
+            project: {
+              select: {
+                workspaceId: true,
+              },
+            },
           },
         },
       },

@@ -211,6 +211,8 @@ export const triggerScanRouteSchema: FastifySchema = {
   response: {
     202: scanResponseSchema,
     400: errorResponseSchema,
+    401: errorResponseSchema,
+    403: errorResponseSchema,
     404: errorResponseSchema,
     503: errorResponseSchema,
   },
@@ -229,6 +231,7 @@ export const findAllScansRouteSchema: FastifySchema = {
     },
 
     400: errorResponseSchema,
+    401: errorResponseSchema,
     404: errorResponseSchema,
   },
 };
@@ -242,6 +245,7 @@ export const findScanByIdRouteSchema: FastifySchema = {
   response: {
     200: scanDetailsResponseSchema,
     400: errorResponseSchema,
+    401: errorResponseSchema,
     404: errorResponseSchema,
   },
 };

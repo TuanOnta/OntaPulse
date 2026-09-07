@@ -8,6 +8,7 @@ export class ScanController {
   constructor(private readonly scanService: ScanService) {}
 
   trigger = async (request: FastifyRequest, reply: FastifyReply) => {
+    const userId = getAuthenticatedUserId(request);
     const parsedParams = monitorIdParamsSchema.safeParse(request.params);
 
     if (!parsedParams.success) {
@@ -19,7 +20,7 @@ export class ScanController {
       );
     }
 
-    const scan = await this.scanService.trigger(parsedParams.data.monitorId);
+    const scan = await this.scanService.trigger(parsedParams.data.monitorId, userId);
 
     request.log.info(
       {
@@ -33,6 +34,7 @@ export class ScanController {
   };
 
   findAll = async (request: FastifyRequest, reply: FastifyReply) => {
+    const userId = getAuthenticatedUserId(request);
     const parsedParams = monitorIdParamsSchema.safeParse(request.params);
 
     if (!parsedParams.success) {
@@ -44,12 +46,13 @@ export class ScanController {
       );
     }
 
-    const scans = await this.scanService.findAll(parsedParams.data.monitorId);
+    const scans = await this.scanService.findAll(parsedParams.data.monitorId, userId);
 
     return reply.send(scans);
   };
 
   findById = async (request: FastifyRequest, reply: FastifyReply) => {
+    const userId = getAuthenticatedUserId(request);
     const parsedParams = scanIdParamsSchema.safeParse(request.params);
 
     if (!parsedParams.success) {
@@ -61,8 +64,16 @@ export class ScanController {
       );
     }
 
-    const scan = await this.scanService.findById(parsedParams.data.scanId);
+    const scan = await this.scanService.findById(parsedParams.data.scanId, userId);
 
     return reply.send(scan);
   };
+}
+
+function getAuthenticatedUserId(request: FastifyRequest): string {
+  if (!request.userId) {
+    throw new AppError("Authentication required", 401, "UNAUTHENTICATED");
+  }
+
+  return request.userId;
 }

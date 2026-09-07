@@ -75,6 +75,9 @@ export const createProjectRouteSchema: FastifySchema = {
   response: {
     201: projectResponseSchema,
     400: validationErrorSchema,
+    401: validationErrorSchema,
+    403: validationErrorSchema,
+    404: validationErrorSchema,
   },
 };
 
@@ -87,5 +90,8 @@ export const findAllProjectsRouteSchema: FastifySchema = {
       type: "array",
       items: projectResponseSchema,
     },
+    400: validationErrorSchema,
+    401: validationErrorSchema,
+    404: validationErrorSchema,
   },
 };

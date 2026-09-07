@@ -17,7 +17,7 @@ OntaPulse is a website and API monitoring platform. Users organize targets into 
 | Connection recovery                        | Implemented |
 | Graceful shutdown with active-job draining | Planned     |
 | Worker unit and RabbitMQ integration tests | Implemented |
-| Authentication                             | Planned     |
+| Session authentication and authorization   | Implemented |
 | Web interface                              | Planned     |
 
 Triggering a scan persists a `QUEUED` Scan and publishes a confirmed RabbitMQ

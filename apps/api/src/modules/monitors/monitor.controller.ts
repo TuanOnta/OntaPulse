@@ -8,6 +8,7 @@ export class MonitorController {
   constructor(private readonly monitorService: MonitorService) {}
 
   create = async (request: FastifyRequest, reply: FastifyReply) => {
+    const userId = getAuthenticatedUserId(request);
     const params = projectIdParamsSchema.safeParse(request.params);
     const body = createMonitorBodySchema.safeParse(request.body);
 
@@ -18,12 +19,13 @@ export class MonitorController {
       });
     }
 
-    const monitor = await this.monitorService.create(params.data.projectId, body.data);
+    const monitor = await this.monitorService.create(params.data.projectId, userId, body.data);
 
     return reply.status(201).send(monitor);
   };
 
   findAll = async (request: FastifyRequest, reply: FastifyReply) => {
+    const userId = getAuthenticatedUserId(request);
     const params = projectIdParamsSchema.safeParse(request.params);
 
     if (!params.success) {
@@ -35,8 +37,16 @@ export class MonitorController {
       );
     }
 
-    const monitors = await this.monitorService.findAll(params.data.projectId);
+    const monitors = await this.monitorService.findAll(params.data.projectId, userId);
 
     return reply.send(monitors);
   };
+}
+
+function getAuthenticatedUserId(request: FastifyRequest): string {
+  if (!request.userId) {
+    throw new AppError("Authentication required", 401, "UNAUTHENTICATED");
+  }
+
+  return request.userId;
 }

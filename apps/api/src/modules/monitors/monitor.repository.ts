@@ -5,7 +5,7 @@ export class MonitorRepository {
   findProjectById(projectId: string) {
     return prisma.project.findUnique({
       where: { id: projectId },
-      select: { id: true },
+      select: { id: true, workspaceId: true },
     });
   }
 

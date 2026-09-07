@@ -32,6 +32,23 @@ const projectIdParams = {
   },
 } as const;
 
+const errorResponseSchema = {
+  type: "object",
+  required: ["statusCode", "code", "message", "requestId"],
+  properties: {
+    statusCode: { type: "integer" },
+    code: { type: "string" },
+    message: { type: "string" },
+    requestId: { type: "string" },
+    details: {
+      anyOf: [
+        { type: "object", additionalProperties: true },
+        { type: "array", items: { type: "object", additionalProperties: true } },
+      ],
+    },
+  },
+} as const;
+
 export const createMonitorRouteSchema: FastifySchema = {
   tags: ["Monitors"],
   summary: "Create a monitor",
@@ -57,6 +74,11 @@ export const createMonitorRouteSchema: FastifySchema = {
   },
   response: {
     201: monitorSchema,
+    400: errorResponseSchema,
+    401: errorResponseSchema,
+    403: errorResponseSchema,
+    404: errorResponseSchema,
+    409: errorResponseSchema,
   },
 };
 
@@ -69,5 +91,8 @@ export const findAllMonitorsRouteSchema: FastifySchema = {
       type: "array",
       items: monitorSchema,
     },
+    400: errorResponseSchema,
+    401: errorResponseSchema,
+    404: errorResponseSchema,
   },
 };

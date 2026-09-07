@@ -31,7 +31,7 @@ The Python worker is active and implements:
 - structured logging;
 - unit and RabbitMQ integration tests.
 
-Authentication and the web client are the next implementation milestones.
+Session-based authentication and workspace authorization are implemented. The web client is the next implementation milestone.
 
 ## Domain model
 
@@ -111,6 +111,8 @@ repository Performs Prisma queries
 ```
 
 Infrastructure implementations are accessed through interfaces where tests need substitutes. For example, `ScanService` depends on `ScanQueue`, while production uses `RabbitMqScanQueue` and tests use a fake queue.
+
+Authenticated API resources are isolated by workspace membership. `OWNER` and `ADMIN` roles may create projects and monitors and trigger scans, while every workspace member may read projects, monitors, and scans. Requests for resources outside the user's workspaces return `404` to avoid exposing resource existence.
 
 `server.ts` is the composition root. Development and production construct `RabbitMqScanQueue`; test mode uses `NoopScanQueue`, while scan integration tests inject a recording fake. The RabbitMQ connection is opened lazily and is closed together with Prisma during Fastify shutdown.
 
