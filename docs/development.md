@@ -423,12 +423,11 @@ Fatal errors stop the worker instead of causing endless retries.
 
 ## Worker shutdown
 
-The worker handles `Ctrl+C` by leaving the consume loop and closing resources owned
-by the composition container, including the HTTP client and SQLAlchemy engine. The
-RabbitMQ consumer also closes its connection when its consume loop exits.
-
-Explicit SIGTERM handling, stopping new deliveries before shutdown, and draining an
-active job remain future work.
+The worker handles `SIGINT` and `SIGTERM` cooperatively. A shutdown request cancels
+the RabbitMQ consumer after its current callback returns, so an active scan reaches
+its terminal database state and the delivery is acknowledged before consumption
+stops. No new deliveries are accepted afterward. Shutdown also interrupts connection
+retry backoff and closes the RabbitMQ connection, HTTP client, and SQLAlchemy engine.
 
 ## Logging
 
@@ -437,6 +436,7 @@ The worker uses structured logging. Application events include:
 ```text
 worker.started
 worker.consumer_ready
+worker.shutdown_requested
 worker.connection_retry
 worker.interrupted
 worker.failed

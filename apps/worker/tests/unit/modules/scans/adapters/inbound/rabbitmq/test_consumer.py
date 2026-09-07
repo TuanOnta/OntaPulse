@@ -3,6 +3,7 @@ from unittest.mock import Mock, call
 import pytest
 from pika.spec import BasicProperties
 
+from ontapulse_worker.modules.scans.adapters.inbound.rabbitmq import consumer
 from ontapulse_worker.modules.scans.adapters.inbound.rabbitmq.consumer import process_delivery
 from ontapulse_worker.modules.scans.adapters.inbound.rabbitmq.topology import declare_scan_topology
 from ontapulse_worker.modules.scans.domain.errors import PermanentScanJobError
@@ -152,6 +153,56 @@ def test_exhausted_retry_goes_to_dlq():
     channel.basic_publish.assert_not_called()
     channel.basic_ack.assert_not_called()
     channel.basic_reject.assert_called_once_with(delivery_tag=10, requeue=False)
+
+
+def test_shutdown_waits_for_active_delivery_before_stopping(monkeypatch):
+    events = []
+    connection = Mock(is_open=True)
+    channel = Mock(is_open=True)
+    connection.channel.return_value = channel
+    monkeypatch.setattr(consumer.pika, "BlockingConnection", Mock(return_value=connection))
+    scan_consumer = consumer.RabbitMqScanConsumer("amqp://local", Mock())
+
+    def handle_job(_job):
+        events.append("handled")
+        scan_consumer.request_shutdown()
+
+    def process_data_events(**_kwargs):
+        scan_consumer._handler = handle_job
+        scan_consumer._on_message(channel, Mock(delivery_tag=7), valid_properties(), VALID_BODY)
+
+    channel.basic_ack.side_effect = lambda **_kwargs: events.append("acknowledged")
+    channel.stop_consuming.side_effect = lambda: events.append("stopped")
+    connection.process_data_events.side_effect = process_data_events
+
+    scan_consumer.run()
+
+    assert events == ["handled", "acknowledged", "stopped"]
+    connection.process_data_events.assert_called_once_with(time_limit=1)
+    connection.close.assert_called_once_with()
+
+
+def test_shutdown_requested_before_run_does_not_connect(monkeypatch):
+    connection_factory = Mock()
+    monkeypatch.setattr(consumer.pika, "BlockingConnection", connection_factory)
+    scan_consumer = consumer.RabbitMqScanConsumer("amqp://local", Mock())
+
+    scan_consumer.request_shutdown()
+    scan_consumer.run()
+
+    connection_factory.assert_not_called()
+
+
+def test_delivery_after_shutdown_is_requeued_without_processing():
+    handler = Mock()
+    channel = Mock()
+    scan_consumer = consumer.RabbitMqScanConsumer("amqp://local", handler)
+    scan_consumer.request_shutdown()
+
+    scan_consumer._on_message(channel, Mock(delivery_tag=7), valid_properties(), VALID_BODY)
+
+    handler.assert_not_called()
+    channel.basic_reject.assert_called_once_with(delivery_tag=7, requeue=True)
 
 
 def test_retry_queues_use_confirmed_dead_lettering_and_per_queue_ttl():

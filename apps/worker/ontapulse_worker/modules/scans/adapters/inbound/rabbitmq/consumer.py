@@ -2,6 +2,7 @@
 
 import logging
 from collections.abc import Callable
+from threading import Event
 from typing import Protocol
 
 import pika
@@ -126,8 +127,15 @@ class RabbitMqScanConsumer:
     def __init__(self, url: str, handler: ScanJobHandler) -> None:
         self._url = url
         self._handler = handler
+        self._shutdown_requested = Event()
+
+    def request_shutdown(self) -> None:
+        self._shutdown_requested.set()
 
     def run(self, on_ready: Callable[[], None] | None = None) -> None:
+        if self._shutdown_requested.is_set():
+            return
+
         connection = pika.BlockingConnection(pika.URLParameters(self._url))
 
         try:
@@ -141,7 +149,11 @@ class RabbitMqScanConsumer:
             if on_ready:
                 on_ready()
 
-            channel.start_consuming()
+            while not self._shutdown_requested.is_set() and channel.consumer_tags:
+                connection.process_data_events(time_limit=1)
+
+            if channel.is_open:
+                channel.stop_consuming()
         finally:
             if connection.is_open:
                 connection.close()
@@ -153,4 +165,8 @@ class RabbitMqScanConsumer:
         properties: BasicProperties,
         body: bytes,
     ) -> None:
+        if self._shutdown_requested.is_set():
+            channel.basic_reject(delivery_tag=method.delivery_tag, requeue=True)
+            return
+
         process_delivery(channel, method.delivery_tag, properties, body, self._handler)

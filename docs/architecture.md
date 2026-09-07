@@ -27,7 +27,7 @@ The Python worker is active and implements:
 - bounded delayed retries;
 - dead-letter routing;
 - connection recovery;
-- shutdown resource cleanup;
+- graceful shutdown with active-job draining;
 - structured logging;
 - unit and RabbitMQ integration tests.
 

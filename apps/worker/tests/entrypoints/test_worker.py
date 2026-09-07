@@ -85,22 +85,24 @@ def test_connection_failure_retries_with_backoff(monkeypatch):
         AMQPConnectionError("unavailable"),
         Mock(),
     ]
-    sleep = Mock()
-    monkeypatch.setattr(worker, "sleep", sleep)
+    shutdown = worker.WorkerShutdown()
+    wait = Mock(return_value=False)
+    monkeypatch.setattr(shutdown, "wait", wait)
 
-    worker.run_worker(resources)
+    worker.run_worker(resources, shutdown)
 
     assert resources.build_consumer.call_count == 2
-    sleep.assert_called_once()
+    wait.assert_called_once()
 
 
 def test_non_connection_failure_propagates_without_retry(monkeypatch):
     resources = Mock()
     resources.build_consumer.side_effect = RuntimeError("invalid configuration")
-    sleep = Mock()
-    monkeypatch.setattr(worker, "sleep", sleep)
+    shutdown = worker.WorkerShutdown()
+    wait = Mock()
+    monkeypatch.setattr(shutdown, "wait", wait)
 
     with pytest.raises(RuntimeError, match="invalid configuration"):
-        worker.run_worker(resources)
+        worker.run_worker(resources, shutdown)
 
-    sleep.assert_not_called()
+    wait.assert_not_called()
