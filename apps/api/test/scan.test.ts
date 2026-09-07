@@ -1,10 +1,10 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 
-import { buildApp } from "../src/app.js";
 import { Prisma } from "../src/generated/prisma/client.js";
 import { prisma } from "../src/infrastructure/database/prisma.js";
 import type { ScanJob, ScanQueue } from "../src/infrastructure/queue/scan-queue.js";
-import { resetDatabase } from "./helpers/database.js";
+import { buildAuthenticatedApp } from "./helpers/authenticated-app.js";
+import { createTestIdentity, resetDatabase, TEST_WORKSPACE_ID } from "./helpers/database.js";
 
 class FakeScanQueue implements ScanQueue {
   jobs: ScanJob[] = [];
@@ -30,14 +30,14 @@ class FakeScanQueue implements ScanQueue {
 }
 
 const scanQueue = new FakeScanQueue();
-const app = buildApp({ scanQueue });
+const app = buildAuthenticatedApp({ scanQueue });
 
 const NON_EXISTENT_ID = "00000000-0000-4000-8000-000000000000";
 
 async function createProject(name = "Scan Test Project"): Promise<string> {
   const response = await app.inject({
     method: "POST",
-    url: "/api/projects",
+    url: `/api/workspaces/${TEST_WORKSPACE_ID}/projects`,
     payload: {
       name,
     },
@@ -76,6 +76,7 @@ describe("Scan API", () => {
   beforeEach(async () => {
     scanQueue.reset();
     await resetDatabase();
+    await createTestIdentity();
   });
 
   afterAll(async () => {

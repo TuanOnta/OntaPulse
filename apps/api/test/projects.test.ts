@@ -1,9 +1,9 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 
-import { buildApp } from "../src/app.js";
-import { resetDatabase } from "./helpers/database.js";
+import { buildAuthenticatedApp } from "./helpers/authenticated-app.js";
+import { createTestIdentity, resetDatabase, TEST_WORKSPACE_ID } from "./helpers/database.js";
 
-const app = buildApp();
+const app = buildAuthenticatedApp();
 
 describe("Project API", () => {
   beforeAll(async () => {
@@ -12,6 +12,7 @@ describe("Project API", () => {
 
   beforeEach(async () => {
     await resetDatabase();
+    await createTestIdentity();
   });
 
   afterAll(async () => {
@@ -19,11 +20,11 @@ describe("Project API", () => {
     await app.close();
   });
 
-  describe("POST /api/projects", () => {
+  describe("POST /api/workspaces/:workspaceId/projects", () => {
     it("creates a project", async () => {
       const response = await app.inject({
         method: "POST",
-        url: "/api/projects",
+        url: `/api/workspaces/${TEST_WORKSPACE_ID}/projects`,
         payload: {
           name: "OntaPulse Production",
           description: "Production monitoring environment",
@@ -51,7 +52,7 @@ describe("Project API", () => {
     it("trims the name and description", async () => {
       const response = await app.inject({
         method: "POST",
-        url: "/api/projects",
+        url: `/api/workspaces/${TEST_WORKSPACE_ID}/projects`,
         payload: {
           name: "  OntaPulse Production  ",
           description: "  Production environment  ",
@@ -69,7 +70,7 @@ describe("Project API", () => {
     it("creates a project without a description", async () => {
       const response = await app.inject({
         method: "POST",
-        url: "/api/projects",
+        url: `/api/workspaces/${TEST_WORKSPACE_ID}/projects`,
         payload: {
           name: "Minimal Project",
         },
@@ -89,7 +90,7 @@ describe("Project API", () => {
 
       const response = await app.inject({
         method: "POST",
-        url: "/api/projects",
+        url: `/api/workspaces/${TEST_WORKSPACE_ID}/projects`,
         payload: {
           name,
           description,
@@ -163,7 +164,7 @@ describe("Project API", () => {
     ])("rejects the payload when $caseName", async ({ payload }) => {
       const response = await app.inject({
         method: "POST",
-        url: "/api/projects",
+        url: `/api/workspaces/${TEST_WORKSPACE_ID}/projects`,
         payload,
       });
 
@@ -181,11 +182,11 @@ describe("Project API", () => {
     });
   });
 
-  describe("GET /api/projects", () => {
+  describe("GET /api/workspaces/:workspaceId/projects", () => {
     it("returns an empty array when no projects exist", async () => {
       const response = await app.inject({
         method: "GET",
-        url: "/api/projects",
+        url: `/api/workspaces/${TEST_WORKSPACE_ID}/projects`,
       });
 
       expect(response.statusCode).toBe(200);
@@ -195,7 +196,7 @@ describe("Project API", () => {
     it("returns all existing projects", async () => {
       const firstCreateResponse = await app.inject({
         method: "POST",
-        url: "/api/projects",
+        url: `/api/workspaces/${TEST_WORKSPACE_ID}/projects`,
         payload: {
           name: "Project A",
           description: "First project",
@@ -204,7 +205,7 @@ describe("Project API", () => {
 
       const secondCreateResponse = await app.inject({
         method: "POST",
-        url: "/api/projects",
+        url: `/api/workspaces/${TEST_WORKSPACE_ID}/projects`,
         payload: {
           name: "Project B",
           description: "Second project",
@@ -216,7 +217,7 @@ describe("Project API", () => {
 
       const response = await app.inject({
         method: "GET",
-        url: "/api/projects",
+        url: `/api/workspaces/${TEST_WORKSPACE_ID}/projects`,
       });
 
       expect(response.statusCode).toBe(200);
@@ -242,7 +243,7 @@ describe("Project API", () => {
     it("returns the complete project response structure", async () => {
       await app.inject({
         method: "POST",
-        url: "/api/projects",
+        url: `/api/workspaces/${TEST_WORKSPACE_ID}/projects`,
         payload: {
           name: "OntaPulse",
         },
@@ -250,7 +251,7 @@ describe("Project API", () => {
 
       const response = await app.inject({
         method: "GET",
-        url: "/api/projects",
+        url: `/api/workspaces/${TEST_WORKSPACE_ID}/projects`,
       });
 
       expect(response.statusCode).toBe(200);
@@ -261,6 +262,7 @@ describe("Project API", () => {
 
       expect(body[0]).toEqual({
         id: expect.any(String),
+        workspaceId: TEST_WORKSPACE_ID,
         name: "OntaPulse",
         description: null,
         createdAt: expect.any(String),

@@ -1,16 +1,16 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 
-import { buildApp } from "../src/app.js";
-import { resetDatabase } from "./helpers/database.js";
+import { buildAuthenticatedApp } from "./helpers/authenticated-app.js";
+import { createTestIdentity, resetDatabase, TEST_WORKSPACE_ID } from "./helpers/database.js";
 
-const app = buildApp();
+const app = buildAuthenticatedApp();
 
 const NON_EXISTENT_PROJECT_ID = "00000000-0000-4000-8000-000000000000";
 
 async function createProject(name = "Monitor Test Project"): Promise<string> {
   const response = await app.inject({
     method: "POST",
-    url: "/api/projects",
+    url: `/api/workspaces/${TEST_WORKSPACE_ID}/projects`,
     payload: {
       name,
     },
@@ -28,6 +28,7 @@ describe("Monitor API", () => {
 
   beforeEach(async () => {
     await resetDatabase();
+    await createTestIdentity();
   });
 
   afterAll(async () => {
