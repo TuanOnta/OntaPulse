@@ -1,7 +1,7 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 
 import { AppError } from "../infrastructure/errors/app-error.js";
-import { SESSION_COOKIE_NAME } from "../infrastructure/session/session.constant.js";
+import { SESSION_COOKIE_NAME } from "../infrastructure/session/session.constants.js";
 import type { SessionStore } from "../infrastructure/session/session-store.js";
 
 type Authenticate = (request: FastifyRequest, reply: FastifyReply) => Promise<void>;

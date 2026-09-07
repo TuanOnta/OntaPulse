@@ -1,5 +1,5 @@
 import { buildApp } from "../../src/app.js";
-import { SESSION_COOKIE_NAME } from "../../src/infrastructure/session/session.constant.js";
+import { SESSION_COOKIE_NAME } from "../../src/infrastructure/session/session.constants.js";
 import type { SessionStore } from "../../src/infrastructure/session/session-store.js";
 import { TEST_USER_ID } from "./database.js";
 

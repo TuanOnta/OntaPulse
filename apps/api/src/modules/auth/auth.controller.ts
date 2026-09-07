@@ -5,7 +5,7 @@ import { AppError } from "../../infrastructure/errors/app-error.js";
 import {
   SESSION_COOKIE_NAME,
   SESSION_TTL_SECONDS,
-} from "../../infrastructure/session/session.constant.js";
+} from "../../infrastructure/session/session.constants.js";
 import { AuthService } from "./auth.service.js";
 import { loginBodySchema, registerBodySchema } from "./auth.schema.js";
 

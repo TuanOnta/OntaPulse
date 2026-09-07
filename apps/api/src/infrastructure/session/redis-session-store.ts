@@ -3,7 +3,7 @@ import { createClient } from "redis";
 
 import type { SessionStore } from "./session-store.js";
 
-import { SESSION_TTL_SECONDS } from "./session.constant.js";
+import { SESSION_TTL_SECONDS } from "./session.constants.js";
 
 const SESSION_KEY_PREFIX = "auth:session:";
 
