@@ -1,1 +1,10 @@
 language: typescript
+
+tasks:
+  dev:
+    command: pnpm dev
+    preset: server
+  typecheck:
+    command: pnpm typecheck
+  build:
+    command: pnpm build
