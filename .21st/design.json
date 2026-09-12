@@ -1,0 +1,55 @@
+{
+  "version": 1,
+  "project": {
+    "name": "ontapulse",
+    "productType": "website and API monitoring dashboard",
+    "stack": ["React", "Vite", "Tailwind CSS", "shadcn/ui"]
+  },
+  "sources": {
+    "tokens": [],
+    "components": [],
+    "assets": [],
+    "instructions": ["AGENTS.md"]
+  },
+  "design": {
+    "colorMode": "dark",
+    "colors": {
+      "canvas": "#07111f",
+      "surface": "#0d1b2d",
+      "signal": "#35d39e",
+      "warning": "#f6c65b",
+      "danger": "#fb7185"
+    },
+    "typography": {},
+    "spacing": {},
+    "radius": {},
+    "shadows": {},
+    "motion": {},
+    "density": "comfortable"
+  },
+  "components": {
+    "installed": [],
+    "preferredPrimitives": ["shadcn/ui"],
+    "patterns": [
+      "Use shadcn/ui, Magic UI, and 21st.dev as the component and template sources before creating bespoke interface patterns.",
+      "Use Anime.js only for purposeful interface motion; honor prefers-reduced-motion and avoid decorative animation."
+    ]
+  },
+  "constraints": {
+    "must": [],
+    "avoid": []
+  },
+  "decisions": [
+    "Dark observability interface: operational health is encoded with restrained status color, not decorative gradients.",
+    "Monitor detail is the primary workspace view; motion is reserved for in-progress scan feedback and honors reduced-motion preferences.",
+    "Next visual direction: migrate the interface to the Camel Linen theme from 21st.dev. Record this choice now; do not change the current CSS tokens until the theme implementation is explicitly requested.",
+    "Build UI from shadcn/ui, Magic UI, and 21st.dev components or templates. Use Anime.js only for future animations."
+  ],
+  "evidence": [
+    {
+      "fact": "project.instructions",
+      "source": "AGENTS.md"
+    }
+  ],
+  "generatedAt": "2026-09-12T09:07:59.704Z"
+}
