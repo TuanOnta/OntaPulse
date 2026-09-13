@@ -27,9 +27,6 @@ const WorkspaceCreatePage = lazy(() =>
     default: Page,
   })),
 );
-const authPages = import("@/pages/auth-pages");
-const LoginPage = lazy(() => authPages.then(({ LoginPage: Page }) => ({ default: Page })));
-const RegisterPage = lazy(() => authPages.then(({ RegisterPage: Page }) => ({ default: Page })));
 
 function RouteLoading() {
   return (
@@ -45,16 +42,7 @@ function Protected({ children }: { children: React.ReactNode }) {
         Loading workspace…
       </div>
     );
-  return user ? children : <Navigate to="/login" replace />;
-}
-
-function PublicOnly({ children }: { children: React.ReactNode }) {
-  const { user, isLoading } = useAuth();
-  if (isLoading)
-    return (
-      <div className="grid min-h-screen place-items-center bg-canvas text-muted">Loading…</div>
-    );
-  return user ? <Navigate to="/dashboard" replace /> : children;
+  return user ? children : <Navigate to="/" replace />;
 }
 
 function Home() {
@@ -70,22 +58,8 @@ export function AppRouter() {
         <Suspense fallback={<RouteLoading />}>
           <Routes>
             <Route path="/" element={<Home />} />
-            <Route
-              path="/login"
-              element={
-                <PublicOnly>
-                  <LoginPage />
-                </PublicOnly>
-              }
-            />
-            <Route
-              path="/register"
-              element={
-                <PublicOnly>
-                  <RegisterPage />
-                </PublicOnly>
-              }
-            />
+            <Route path="/login" element={<Navigate to="/" replace />} />
+            <Route path="/register" element={<Navigate to="/" replace />} />
             <Route
               path="/dashboard"
               element={

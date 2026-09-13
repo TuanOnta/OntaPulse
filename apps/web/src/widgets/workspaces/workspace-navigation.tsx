@@ -55,7 +55,7 @@ export function WorkspaceNavigation() {
           {workspaces.map((workspace) => (
             <NavLink
               className={({ isActive }) =>
-                `flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors ${isActive ? "bg-signal/15 text-signal" : "text-muted hover:bg-white/5 hover:text-ink"}`
+                `flex items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-colors ${isActive ? "border-signal/15 bg-signal/10 text-signal" : "border-transparent text-muted hover:bg-white/5 hover:text-ink"}`
               }
               key={workspace.id}
               to={`/workspaces/${workspace.id}`}

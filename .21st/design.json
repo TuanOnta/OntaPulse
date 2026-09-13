@@ -31,8 +31,7 @@
     "installed": [],
     "preferredPrimitives": ["shadcn/ui"],
     "patterns": [
-      "Use shadcn/ui, Magic UI, and 21st.dev as the component and template sources before creating bespoke interface patterns.",
-      "Use Anime.js only for purposeful interface motion; honor prefers-reduced-motion and avoid decorative animation."
+      "Use shadcn/ui, Magic UI, and 21st.dev as the component and template sources before creating bespoke interface patterns."
     ]
   },
   "constraints": {
@@ -42,8 +41,13 @@
   "decisions": [
     "Dark observability interface: operational health is encoded with restrained status color, not decorative gradients.",
     "Monitor detail is the primary workspace view; motion is reserved for in-progress scan feedback and honors reduced-motion preferences.",
-    "Next visual direction: migrate the interface to the Camel Linen theme from 21st.dev. Record this choice now; do not change the current CSS tokens until the theme implementation is explicitly requested.",
-    "Build UI from shadcn/ui, Magic UI, and 21st.dev components or templates. Use Anime.js only for future animations."
+    "Mint Signal from the 21st.dev community is the active color direction: deep green-black surfaces, mint primary actions, cool aqua information signals, and warm amber warnings.",
+    "Build UI from shadcn/ui, Magic UI, and 21st.dev components or templates. Use Anime.js only for future animations.",
+    "Signal field direction: layered observability grids, restrained aqua secondary signals, and one orchestrated BlurFade entrance per view; preserve mint for healthy status.",
+    "Authentication lives inside the landing reveal as one animated login/register panel; legacy /login and /register URLs redirect home.",
+    "The landing sign-in card uses the supplied sign-in-card reference as a dark, interactive pattern: restrained 3D hover, mint/aqua travelling border beams, icon-led fields, password visibility, and real product-only actions.",
+    "The landing section revealed after Glyph Portal fades in place once when 22% enters the viewport; it never translates, and reduced-motion users see the content immediately.",
+    "Glyph Portal's background uses the supplied OGL/WebGL2 GradientWaves shader, mapped to Mint Signal: evergreen-charcoal horizon (#143c34), mint waves (#4dd5a2), and pale mint crests (#d8f5e5). The portal paper and field use non-black, low-chroma evergreen tones for depth and contrast; the canvas is non-intercepting and honors reduced motion."
   ],
   "evidence": [
     {

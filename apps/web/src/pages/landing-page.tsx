@@ -1,101 +1,82 @@
-import { ArrowRight, CheckCircle2, Radar } from "lucide-react";
-import { animate, createScope } from "animejs";
-import { useEffect, useRef } from "react";
-import { Link } from "react-router-dom";
+import { Activity, CheckCircle2, Gauge, ShieldCheck } from "lucide-react";
+import { motion, useReducedMotion } from "motion/react";
+import { useState } from "react";
 
-import { Button } from "@/shared/ui/button";
+import { LandingAuthPanel, type AuthMode } from "@/features/auth/landing-auth-panel";
+import { BlurFade } from "@/shared/ui/blur-fade";
+import { SignalField } from "@/shared/ui/signal-field";
 import { LandingGlyphPortal } from "@/widgets/landing/landing-glyph-portal";
 
 export function LandingPage() {
-  const root = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    const scope = createScope({ root }).add(() => {
-      animate("[data-orbit]", {
-        rotate: 360,
-        duration: 24_000,
-        ease: "linear",
-        loop: true,
-      });
-      animate("[data-signal]", {
-        opacity: [0.35, 1],
-        scale: [0.94, 1.08],
-        duration: 1_800,
-        ease: "inOut(2)",
-        direction: "alternate",
-        loop: true,
-      });
-    });
-    return () => scope.revert();
-  }, []);
+  const [authMode, setAuthMode] = useState<AuthMode>("login");
+  const reduceMotion = useReducedMotion();
 
   return (
-    <div ref={root} className="min-h-screen overflow-x-hidden bg-canvas text-ink">
+    <div className="min-h-screen overflow-x-hidden bg-canvas text-ink">
       <main>
         <LandingGlyphPortal>
-          <section className="relative mx-auto grid min-h-[calc(100svh-80px)] max-w-7xl items-center gap-12 px-5 py-16 sm:px-8 lg:grid-cols-[1.05fr_.95fr] lg:py-24">
-            <div className="relative z-10">
-              <p className="mb-5 text-xs font-semibold tracking-[0.2em] text-signal">
-                OPERATIONAL CLARITY
-              </p>
-              <h1 className="max-w-3xl text-5xl font-semibold tracking-[-0.06em] text-balance sm:text-7xl lg:text-8xl">
-                Know when your service needs you.
-              </h1>
-              <p className="mt-7 max-w-xl text-lg leading-8 text-muted">
-                OntaPulse continuously checks your most important endpoints, keeps each result in
-                context, and turns failures into clear next steps.
-              </p>
-              <div className="mt-9 flex flex-wrap gap-3">
-                <Button asChild size="lg">
-                  <Link to="/register">
-                    Create an account <ArrowRight />
-                  </Link>
-                </Button>
-                <Button asChild size="lg" variant="outline">
-                  <Link to="/login">Open dashboard</Link>
-                </Button>
+          <motion.section
+            className="relative isolate min-h-[100svh] overflow-hidden"
+            initial={reduceMotion ? false : { opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ amount: 0.22, once: true }}
+            transition={reduceMotion ? { duration: 0 } : { duration: 0.38, ease: "easeOut" }}
+          >
+            <SignalField />
+            <div className="signal-noise pointer-events-none absolute inset-0 opacity-[0.02]" />
+            <div className="relative mx-auto grid min-h-[100svh] max-w-7xl items-center gap-14 px-5 py-16 [overflow-anchor:none] sm:px-8 lg:grid-cols-[1.06fr_.94fr] lg:py-20">
+              <div className="relative z-10">
+                <BlurFade>
+                  <div className="mb-7 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/[0.07] px-3 py-1.5 text-xs font-medium text-primary">
+                    <span className="relative flex size-2">
+                      <span className="absolute inline-flex size-full animate-ping rounded-full bg-primary opacity-60 motion-reduce:animate-none" />
+                      <span className="relative inline-flex size-2 rounded-full bg-primary" />
+                    </span>
+                    Your operational signal, in focus
+                  </div>
+                </BlurFade>
+                <BlurFade delay={0.08}>
+                  <h1 className="max-w-3xl text-[clamp(3.3rem,6.6vw,6.5rem)] leading-[0.92] font-semibold tracking-[-0.065em] text-balance">
+                    Catch the signal before it becomes noise.
+                  </h1>
+                </BlurFade>
+                <BlurFade delay={0.16}>
+                  <p className="mt-7 max-w-xl text-base leading-7 text-foreground/75 sm:text-lg sm:leading-8">
+                    Endpoint health, response time, and actionable scan findings in one calm command
+                    center for teams that ship continuously.
+                  </p>
+                </BlurFade>
+                <BlurFade className="mt-10 grid max-w-xl grid-cols-3 gap-3" delay={0.22}>
+                  {[
+                    { icon: Gauge, value: "184 ms", label: "Response" },
+                    { icon: ShieldCheck, value: "99.98%", label: "Uptime" },
+                    { icon: Activity, value: "0", label: "Findings" },
+                  ].map(({ icon: Icon, value, label }) => (
+                    <div className="border-l border-border pl-3 sm:pl-4" key={label}>
+                      <Icon className="size-4 text-primary" />
+                      <p className="mt-2 text-sm font-semibold sm:text-base">{value}</p>
+                      <p className="mt-0.5 text-[11px] text-muted-foreground">{label}</p>
+                    </div>
+                  ))}
+                </BlurFade>
+
+                <BlurFade
+                  className="mt-9 flex flex-wrap gap-x-5 gap-y-2 text-xs text-muted-foreground"
+                  delay={0.28}
+                >
+                  {["HTTP checks", "Clear findings", "Team workspaces"].map((label) => (
+                    <span className="flex items-center gap-2" key={label}>
+                      <CheckCircle2 className="size-3.5 text-primary" /> {label}
+                    </span>
+                  ))}
+                </BlurFade>
               </div>
-              <div className="mt-10 flex flex-wrap gap-x-6 gap-y-3 text-sm text-muted">
-                <span className="flex items-center gap-2">
-                  <CheckCircle2 className="size-4 text-signal" /> HTTP checks
-                </span>
-                <span className="flex items-center gap-2">
-                  <CheckCircle2 className="size-4 text-signal" /> Scan findings
-                </span>
-                <span className="flex items-center gap-2">
-                  <CheckCircle2 className="size-4 text-signal" /> Team workspaces
-                </span>
-              </div>
+
+              <BlurFade delay={0.18}>
+                <LandingAuthPanel mode={authMode} onModeChange={setAuthMode} />
+              </BlurFade>
             </div>
-            <div
-              className="relative mx-auto grid aspect-square w-full max-w-xl place-items-center"
-              aria-hidden="true"
-            >
-              <div
-                data-orbit
-                className="absolute inset-[5%] rounded-full border border-signal/25"
-              />
-              <div className="absolute inset-[18%] rounded-full border border-slate-600/50" />
-              <div className="absolute inset-[33%] rounded-full border border-signal/30" />
-              <div
-                data-signal
-                className="grid size-36 place-items-center rounded-full border border-signal/40 bg-signal/10 shadow-[0_0_100px_rgba(53,211,158,.18)]"
-              >
-                <Radar className="size-14 text-signal" />
-              </div>
-              <div className="absolute right-[2%] top-[18%] rounded-lg border border-slate-700/70 bg-surface px-4 py-3 shadow-xl">
-                <p className="text-xs text-muted">api.ontapulse.app</p>
-                <p className="mt-1 flex items-center gap-2 text-sm font-medium">
-                  <span className="size-2 rounded-full bg-signal" /> Healthy · 184 ms
-                </p>
-              </div>
-              <div className="absolute bottom-[13%] left-[1%] rounded-lg border border-slate-700/70 bg-surface px-4 py-3 shadow-xl">
-                <p className="text-xs text-muted">Latest scan</p>
-                <p className="mt-1 text-sm font-medium">HTTP 200 · no findings</p>
-              </div>
-            </div>
-          </section>
+          </motion.section>
         </LandingGlyphPortal>
       </main>
     </div>

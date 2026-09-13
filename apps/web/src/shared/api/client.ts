@@ -6,6 +6,7 @@ import type {
   ScanDetail,
   User,
   Workspace,
+  WorkspaceMember,
 } from "@/shared/types/domain";
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? "";
@@ -64,6 +65,20 @@ export const api = {
   workspaces: () => request<Workspace[]>("/workspaces"),
   createWorkspace: (name: string) =>
     request<Workspace>("/workspaces", { method: "POST", body: JSON.stringify({ name }) }),
+  workspaceMembers: (workspaceId: string) =>
+    request<WorkspaceMember[]>(`/workspaces/${workspaceId}/members`),
+  addWorkspaceMember: (workspaceId: string, email: string) =>
+    request<WorkspaceMember>(`/workspaces/${workspaceId}/members`, {
+      method: "POST",
+      body: JSON.stringify({ email }),
+    }),
+  updateWorkspaceMemberRole: (workspaceId: string, userId: string, role: "ADMIN" | "MEMBER") =>
+    request<WorkspaceMember>(`/workspaces/${workspaceId}/members/${userId}`, {
+      method: "PATCH",
+      body: JSON.stringify({ role }),
+    }),
+  removeWorkspaceMember: (workspaceId: string, userId: string) =>
+    request<void>(`/workspaces/${workspaceId}/members/${userId}`, { method: "DELETE" }),
   projects: (workspaceId: string) => request<Project[]>(`/workspaces/${workspaceId}/projects`),
   createProject: (workspaceId: string, name: string, description?: string) =>
     request<Project>(`/workspaces/${workspaceId}/projects`, {

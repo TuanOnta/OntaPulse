@@ -4,6 +4,7 @@ import { toast } from "sonner";
 
 import { AppShell, Crumbs } from "@/app/layouts/app-shell";
 import { CreateProjectForm } from "@/features/projects/create-project-form";
+import { WorkspaceMembers } from "@/features/workspaces/workspace-members";
 import { api } from "@/shared/api/client";
 import { getErrorMessage } from "@/shared/lib/api-error";
 import { formatDate } from "@/shared/lib/format";
@@ -75,6 +76,11 @@ export function WorkspacePage() {
         </section>
         <CreateProjectForm workspaceId={workspaceId} onCreated={load} />
       </div>
+      {!loading && workspace && (
+        <div className="mt-8">
+          <WorkspaceMembers workspaceId={workspaceId} role={workspace.role} />
+        </div>
+      )}
     </AppShell>
   );
 }

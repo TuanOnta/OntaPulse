@@ -16,6 +16,13 @@ export interface Workspace {
   role?: WorkspaceRole;
   joinedAt?: string;
 }
+export interface WorkspaceMember {
+  id: string;
+  name: string;
+  email: string;
+  role: WorkspaceRole;
+  joinedAt: string;
+}
 export interface Project {
   id: string;
   workspaceId: string;

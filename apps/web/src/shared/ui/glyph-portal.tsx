@@ -395,6 +395,12 @@ export default function GlyphPortal({
       frame();
     };
     const scroll = () => schedule();
+    const resume = () => {
+      if (document.visibilityState !== "visible") return;
+      dirty = true;
+      frame();
+      schedule();
+    };
     const choose = (event: Event) => {
       if (!choosing || position() >= 0.04) return;
       const button = (event.target as Element).closest<HTMLButtonElement>("[data-gp-letter]");
@@ -457,6 +463,7 @@ export default function GlyphPortal({
     );
     visibility.observe(section);
     (root ?? window).addEventListener("scroll", scroll, { passive: true });
+    document.addEventListener("visibilitychange", resume);
     window.addEventListener("resize", resize);
     window.visualViewport?.addEventListener("resize", resize);
     motion.addEventListener("change", resize);
@@ -470,6 +477,7 @@ export default function GlyphPortal({
       observer.disconnect();
       visibility.disconnect();
       (root ?? window).removeEventListener("scroll", scroll);
+      document.removeEventListener("visibilitychange", resume);
       window.removeEventListener("resize", resize);
       window.visualViewport?.removeEventListener("resize", resize);
       motion.removeEventListener("change", resize);
@@ -530,9 +538,9 @@ export default function GlyphPortal({
         ${q}[data-gp-motion=off] [data-gp-hint]{display:none;}
         ${q}[data-gp-motion=on] [data-gp-content]{margin-top:calc((var(--gp-length) - 1) * var(--gp-height));background:transparent;opacity:var(--gp-reveal,0);pointer-events:none;}
         ${q}[data-gp-motion=on][data-gp-entered=true] [data-gp-content]{pointer-events:auto;}
-        ${q}[data-gp-motion=on]:has([data-gp-content]:focus-within) [data-gp-field]{clip-path:none!important;}
-        ${q}[data-gp-motion=on] [data-gp-content]:focus-within{opacity:1;pointer-events:auto;}
-        ${q}:has([data-gp-content]:focus-within) [data-gp-caption],${q}:has([data-gp-content]:focus-within) [data-gp-marks]{opacity:0;}
+        ${q}[data-gp-motion=on][data-gp-entered=true]:has([data-gp-content]:focus-within) [data-gp-field]{clip-path:none!important;}
+        ${q}[data-gp-motion=on][data-gp-entered=true] [data-gp-content]:focus-within{opacity:1;pointer-events:auto;}
+        ${q}[data-gp-entered=true]:has([data-gp-content]:focus-within) [data-gp-caption],${q}[data-gp-entered=true]:has([data-gp-content]:focus-within) [data-gp-marks]{opacity:0;}
         ${q} [data-gp-default-title]{color:inherit;font:400 clamp(32px,5vw,72px)/1.05 Georgia,serif;letter-spacing:-.035em;max-width:13ch;margin:0 0 24px;text-wrap:balance;}
         ${q} [data-gp-default-copy]{color:inherit;font:16px/1.6 Arial,sans-serif;max-width:36ch;margin:0;}
         @media(prefers-reduced-motion:reduce){${q} [data-gp-pin]{position:relative!important;} ${q} [data-gp-content]{margin-top:0!important;opacity:1!important;background:var(--gp-field)!important;min-height:0;padding-block:64px;} ${q} [data-gp-caption]{opacity:1!important;}}

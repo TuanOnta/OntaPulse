@@ -13,6 +13,35 @@ const workspaceResponseSchema = {
   },
 } as const;
 
+const workspaceMemberResponseSchema = {
+  type: "object",
+  required: ["id", "name", "email", "role", "joinedAt"],
+  properties: {
+    id: { type: "string", format: "uuid" },
+    name: { type: "string" },
+    email: { type: "string", format: "email" },
+    role: { type: "string", enum: ["OWNER", "ADMIN", "MEMBER"] },
+    joinedAt: { type: "string", format: "date-time" },
+  },
+} as const;
+
+const workspaceIdParamsSchema = {
+  type: "object",
+  additionalProperties: false,
+  required: ["workspaceId"],
+  properties: { workspaceId: { type: "string", format: "uuid" } },
+} as const;
+
+const workspaceMemberParamsSchema = {
+  type: "object",
+  additionalProperties: false,
+  required: ["workspaceId", "userId"],
+  properties: {
+    workspaceId: { type: "string", format: "uuid" },
+    userId: { type: "string", format: "uuid" },
+  },
+} as const;
+
 const errorResponseSchema = {
   type: "object",
   required: ["statusCode", "code", "message", "requestId"],
@@ -58,5 +87,67 @@ export const findAllWorkspacesRouteSchema: FastifySchema = {
       items: workspaceResponseSchema,
     },
     401: errorResponseSchema,
+  },
+};
+
+export const findWorkspaceMembersRouteSchema: FastifySchema = {
+  tags: ["Workspaces"],
+  summary: "List workspace members",
+  params: workspaceIdParamsSchema,
+  response: {
+    200: { type: "array", items: workspaceMemberResponseSchema },
+    401: errorResponseSchema,
+    404: errorResponseSchema,
+  },
+};
+
+export const addWorkspaceMemberRouteSchema: FastifySchema = {
+  tags: ["Workspaces"],
+  summary: "Add a workspace member",
+  params: workspaceIdParamsSchema,
+  body: {
+    type: "object",
+    additionalProperties: false,
+    required: ["email"],
+    properties: { email: { type: "string", format: "email", maxLength: 320 } },
+  },
+  response: {
+    201: workspaceMemberResponseSchema,
+    400: errorResponseSchema,
+    401: errorResponseSchema,
+    403: errorResponseSchema,
+    404: errorResponseSchema,
+    409: errorResponseSchema,
+  },
+};
+
+export const updateWorkspaceMemberRoleRouteSchema: FastifySchema = {
+  tags: ["Workspaces"],
+  summary: "Update a workspace member role",
+  params: workspaceMemberParamsSchema,
+  body: {
+    type: "object",
+    additionalProperties: false,
+    required: ["role"],
+    properties: { role: { type: "string", enum: ["ADMIN", "MEMBER"] } },
+  },
+  response: {
+    200: workspaceMemberResponseSchema,
+    400: errorResponseSchema,
+    401: errorResponseSchema,
+    403: errorResponseSchema,
+    404: errorResponseSchema,
+  },
+};
+
+export const removeWorkspaceMemberRouteSchema: FastifySchema = {
+  tags: ["Workspaces"],
+  summary: "Remove a workspace member",
+  params: workspaceMemberParamsSchema,
+  response: {
+    204: { type: "null" },
+    401: errorResponseSchema,
+    403: errorResponseSchema,
+    404: errorResponseSchema,
   },
 };

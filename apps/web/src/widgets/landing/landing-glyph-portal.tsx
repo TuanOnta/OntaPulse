@@ -1,34 +1,13 @@
 import { animate, createScope } from "animejs";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 
+import { GradientWaves } from "@/shared/ui/gradient-waves";
 import GlyphPortal from "@/shared/ui/glyph-portal";
 
-const fontFamily = '"Glyph Portal Jakarta", Arial, sans-serif';
-let fontLoad: Promise<void> | undefined;
+const fontFamily = '"Arial Black", Arial, sans-serif';
 
 export function LandingGlyphPortal({ children }: { children: ReactNode }) {
-  const [face, setFace] = useState("Arial, sans-serif");
   const portal = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    let active = true;
-    fontLoad ??= new FontFace(
-      "Glyph Portal Jakarta",
-      'url("https://cdn.21st.dev/assets/mirror/15/153fc85b70298beeb1d61a5f723331649e7f23bb77302a66e61cb3e2fbdb5e79.woff2")',
-      { weight: "400 700" },
-    )
-      .load()
-      .then((font) => {
-        document.fonts.add(font);
-      });
-    const loadedFont = fontLoad;
-    void loadedFont.then(() => {
-      if (active) setFace(fontFamily);
-    });
-    return () => {
-      active = false;
-    };
-  }, []);
 
   useEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
@@ -58,7 +37,7 @@ export function LandingGlyphPortal({ children }: { children: ReactNode }) {
     <div
       ref={portal}
       className="h-[100svh] w-full overflow-y-auto"
-      style={{ containerType: "inline-size", fontFamily: face }}
+      style={{ containerType: "inline-size", fontFamily }}
     >
       <style>{`
         .landing-glyph-portal [data-gp-caption],.landing-glyph-portal [data-sublime-header]{display:none;}
@@ -67,7 +46,13 @@ export function LandingGlyphPortal({ children }: { children: ReactNode }) {
       <GlyphPortal
         className="landing-glyph-portal"
         word="OntaPulse"
-        fontFamily={face}
+        style={{
+          "--gp-paper": "oklch(0.22 0.035 164)",
+          "--gp-ink": "oklch(0.94 0.018 160)",
+          "--gp-field": "oklch(0.3 0.065 164)",
+          "--gp-foreground": "oklch(0.94 0.018 160)",
+        }}
+        fontFamily={fontFamily}
         fontWeight={700}
         scrollLength={2.3}
         interactive
@@ -75,52 +60,54 @@ export function LandingGlyphPortal({ children }: { children: ReactNode }) {
         enterLabel="Sign in"
         contentId="landing-content"
         background={
-          <div className="absolute inset-0 overflow-hidden bg-[#0b3b2a]">
-            <div
-              className="absolute inset-0 opacity-30"
-              style={{
-                backgroundImage:
-                  "linear-gradient(rgba(216,239,225,.18) 1px,transparent 1px),linear-gradient(90deg,rgba(216,239,225,.18) 1px,transparent 1px)",
-                backgroundSize: "38px 38px",
-              }}
+          <div className="absolute inset-0 overflow-hidden bg-surface-raised">
+            <GradientWaves
+              className="absolute inset-0 size-full"
+              horizonColor="#143c34"
+              waveColor="#4dd5a2"
+              crestColor="#d8f5e5"
+              speed={0.4}
+              amplitude={2.5}
+              waveScale={0.6}
+              waveRatio={0.9}
+              swell={35}
+              turbulence={20}
+              tilt={1.11}
+              zoom={1}
+              height={5.5}
+              fogDepth={15}
+              detail="medium"
+              brightness={1}
+              opacity={1}
+              mouseInteraction
+              parallaxStrength={0.5}
+              grain
+              grainIntensity={0.05}
             />
-            <svg
-              aria-hidden="true"
-              className="absolute inset-0 size-full text-[#d8efe1]/35"
-              preserveAspectRatio="none"
-              viewBox="0 0 100 100"
-            >
-              <circle cx="76" cy="30" r="24" fill="none" stroke="currentColor" strokeWidth="0.35" />
-              <circle cx="76" cy="30" r="15" fill="none" stroke="currentColor" strokeWidth="0.35" />
-              <path
-                d="M0 74C19 64 31 81 48 67s30-4 52-22"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="0.6"
-              />
-              <path d="M0 75h100M76 0v100" stroke="currentColor" strokeWidth="0.25" />
-            </svg>
-            <span data-landing-scan-line className="absolute inset-x-0 top-0 h-px bg-[#d8efe1]" />
           </div>
         }
         front={
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute inset-0 z-10 text-[10px] font-semibold uppercase tracking-[0.22em] text-[#0c1212]/80 motion-reduce:hidden"
+            className="pointer-events-none absolute inset-0 z-10 text-[10px] font-semibold uppercase tracking-[0.22em] text-slate-300/80 motion-reduce:hidden"
           >
+            <div className="signal-grid absolute inset-0 opacity-[0.07] [mask-image:radial-gradient(ellipse_80%_70%_at_50%_50%,black,transparent)]" />
+            <div className="absolute -top-32 left-[8%] size-80 rounded-full bg-signal/[0.07] blur-3xl" />
+            <div className="absolute right-[7%] bottom-[12%] size-64 rounded-full bg-cyan-300/[0.05] blur-3xl" />
             <span className="absolute left-6 top-6 hidden items-center gap-2 sm:flex">
-              <span className="size-1.5 rounded-full bg-[#0c1212]" /> System online
+              <span className="size-1.5 rounded-full bg-signal shadow-[0_0_10px_rgba(53,211,158,.7)]" />{" "}
+              System online
             </span>
             <span className="absolute right-6 top-6 hidden sm:block">Endpoint observability</span>
-            <p className="absolute inset-x-0 top-[68%] text-center text-xs font-medium normal-case tracking-[0.12em] text-[#0c1212]/70">
+            <p className="absolute inset-x-0 top-[68%] text-center text-xs font-medium normal-case tracking-[0.12em] text-slate-300/70">
               Observe. Understand. Respond.
             </p>
             <div className="absolute inset-x-0 bottom-8 flex flex-col items-center gap-2">
               <span>Scroll to explore</span>
-              <span className="flex h-9 w-5 justify-center rounded-full border border-[#0c1212]/55 p-1">
+              <span className="flex h-9 w-5 justify-center rounded-full border border-slate-300/50 p-1">
                 <span
                   data-landing-scroll-dot
-                  className="size-1.5 rounded-full bg-[#0c1212] shadow-[0_0_10px_rgba(12,18,18,.45)]"
+                  className="size-1.5 rounded-full bg-signal shadow-[0_0_10px_rgba(53,211,158,.6)]"
                 />
               </span>
             </div>

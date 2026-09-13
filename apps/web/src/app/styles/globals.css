@@ -19,42 +19,55 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
-  --color-canvas: #07111f;
-  --color-surface: #0d1b2d;
-  --color-surface-raised: #12243a;
-  --color-signal: #35d39e;
-  --color-warning: #f6c65b;
-  --color-danger: #fb7185;
-  --color-ink: #e7edf5;
-  --color-muted: #91a4b9;
+  --color-canvas: var(--canvas);
+  --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
+  --color-signal: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--destructive);
+  --color-info: var(--info);
+  --color-violet: var(--highlight);
+  --color-ink: var(--foreground);
 }
 
 @layer base {
   :root {
-    --background: #07111f;
-    --foreground: #e7edf5;
-    --card: #0d1b2d;
-    --card-foreground: #e7edf5;
-    --popover: #12243a;
-    --popover-foreground: #e7edf5;
-    --primary: #35d39e;
-    --primary-foreground: #042014;
-    --secondary: #1b3149;
-    --secondary-foreground: #e7edf5;
-    --muted: #15283c;
-    --muted-foreground: #91a4b9;
-    --accent: #1b3149;
-    --accent-foreground: #e7edf5;
-    --destructive: #fb7185;
-    --border: #27405a;
-    --input: #1b3149;
-    --ring: #35d39e;
+    --background: oklch(0.145 0.024 164);
+    --foreground: oklch(0.94 0.018 160);
+    --card: oklch(0.19 0.03 164);
+    --card-foreground: oklch(0.94 0.018 160);
+    --popover: oklch(0.225 0.036 164);
+    --popover-foreground: oklch(0.94 0.018 160);
+    --primary: oklch(0.78 0.15 160);
+    --primary-foreground: oklch(0.14 0.035 164);
+    --secondary: oklch(0.25 0.046 166);
+    --secondary-foreground: oklch(0.92 0.02 160);
+    --muted: oklch(0.225 0.032 164);
+    --muted-foreground: oklch(0.7 0.035 166);
+    --accent: oklch(0.285 0.06 164);
+    --accent-foreground: oklch(0.95 0.02 160);
+    --destructive: oklch(0.7 0.18 18);
+    --border: oklch(0.33 0.05 164);
+    --input: oklch(0.27 0.045 164);
+    --ring: oklch(0.78 0.15 160);
+    --canvas: oklch(0.13 0.021 164);
+    --surface: oklch(0.18 0.028 164);
+    --surface-raised: oklch(0.225 0.04 164);
+    --success: oklch(0.78 0.15 160);
+    --warning: oklch(0.82 0.15 82);
+    --info: oklch(0.78 0.1 196);
+    --highlight: oklch(0.76 0.11 205);
   }
   * {
-    @apply border-slate-700/70;
+    @apply border-border;
   }
   body {
-    @apply min-h-screen bg-canvas font-sans text-ink antialiased;
+    @apply min-h-screen bg-canvas font-sans text-ink antialiased selection:bg-signal/25 selection:text-white;
+    background-image: radial-gradient(
+      circle at 70% -10%,
+      oklch(0.78 0.15 160 / 0.09),
+      transparent 30%
+    );
   }
   button,
   input,
@@ -64,5 +77,82 @@
   }
   :focus-visible {
     @apply outline-2 outline-offset-2 outline-signal;
+  }
+}
+
+@layer utilities {
+  .text-muted {
+    color: var(--muted-foreground);
+  }
+
+  .signal-grid {
+    background-image:
+      linear-gradient(oklch(0.78 0.1 196 / 0.22) 1px, transparent 1px),
+      linear-gradient(90deg, oklch(0.78 0.1 196 / 0.22) 1px, transparent 1px);
+    background-size: 56px 56px;
+  }
+
+  .signal-grid-fine {
+    background-size: 28px 28px;
+  }
+
+  .signal-field-glow {
+    background:
+      radial-gradient(circle at 18% 12%, oklch(0.78 0.15 160 / 0.14), transparent 26%),
+      radial-gradient(circle at 80% 22%, oklch(0.78 0.1 196 / 0.1), transparent 23%),
+      radial-gradient(circle at 58% 86%, oklch(0.68 0.1 178 / 0.08), transparent 28%);
+  }
+
+  .signal-scan-line {
+    animation: signal-scan 8s linear infinite;
+  }
+
+  .signal-border-beam {
+    animation: border-beam 4.8s ease-in-out infinite;
+  }
+
+  .signal-noise {
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.3'/%3E%3C/svg%3E");
+  }
+}
+
+@keyframes signal-scan {
+  0% {
+    transform: translateY(-10vh);
+    opacity: 0;
+  }
+  8% {
+    opacity: 0.8;
+  }
+  55%,
+  100% {
+    transform: translateY(105vh);
+    opacity: 0;
+  }
+}
+
+@keyframes border-beam {
+  0%,
+  100% {
+    transform: translateX(-72%);
+    opacity: 0;
+  }
+  15%,
+  70% {
+    opacity: 1;
+  }
+  85% {
+    transform: translateX(72%);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
   }
 }

@@ -2,6 +2,65 @@ import { prisma } from "../../infrastructure/database/prisma.js";
 import type { CreateWorkspaceInput } from "./workspace.schema.js";
 
 export class WorkspaceRepository {
+  findUserByEmail(email: string) {
+    return prisma.user.findUnique({
+      where: { email },
+      select: { id: true, name: true, email: true },
+    });
+  }
+
+  findMember(workspaceId: string, userId: string) {
+    return prisma.workspaceMember.findUnique({
+      where: { workspaceId_userId: { workspaceId, userId } },
+      select: {
+        role: true,
+        joinedAt: true,
+        user: { select: { id: true, name: true, email: true } },
+      },
+    });
+  }
+
+  findMembers(workspaceId: string) {
+    return prisma.workspaceMember.findMany({
+      where: { workspaceId },
+      select: {
+        role: true,
+        joinedAt: true,
+        user: { select: { id: true, name: true, email: true } },
+      },
+      orderBy: [{ role: "asc" }, { joinedAt: "asc" }],
+    });
+  }
+
+  addMember(workspaceId: string, userId: string) {
+    return prisma.workspaceMember.create({
+      data: { workspaceId, userId, role: "MEMBER" },
+      select: {
+        role: true,
+        joinedAt: true,
+        user: { select: { id: true, name: true, email: true } },
+      },
+    });
+  }
+
+  updateMemberRole(workspaceId: string, userId: string, role: "ADMIN" | "MEMBER") {
+    return prisma.workspaceMember.update({
+      where: { workspaceId_userId: { workspaceId, userId } },
+      data: { role },
+      select: {
+        role: true,
+        joinedAt: true,
+        user: { select: { id: true, name: true, email: true } },
+      },
+    });
+  }
+
+  removeMember(workspaceId: string, userId: string) {
+    return prisma.workspaceMember.delete({
+      where: { workspaceId_userId: { workspaceId, userId } },
+    });
+  }
+
   findMembership(workspaceId: string, userId: string) {
     return prisma.workspaceMember.findUnique({
       where: { workspaceId_userId: { workspaceId, userId } },

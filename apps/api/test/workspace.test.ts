@@ -312,6 +312,114 @@ describe("Workspace API", () => {
     });
   });
 
+  describe("Workspace member management", () => {
+    it("allows owners and admins to add registered users as members", async () => {
+      const owner = await createUser("Owner", "owner@example.com");
+      const admin = await createUser("Admin", "admin@example.com");
+      const invitee = await createUser("Invitee", "invitee@example.com");
+      const workspace = await createWorkspace(owner.id, "Shared Workspace");
+      await addWorkspaceMember(workspace.id, admin.id, "ADMIN");
+
+      const response = await app.inject({
+        method: "POST",
+        url: `/api/workspaces/${workspace.id}/members`,
+        headers: { cookie: await createAuthenticatedCookie(sessionStore, admin.id) },
+        payload: { email: invitee.email },
+      });
+
+      expect(response.statusCode).toBe(201);
+      expect(response.json()).toMatchObject({
+        id: invitee.id,
+        email: invitee.email,
+        role: "MEMBER",
+      });
+    });
+
+    it("allows an owner to promote a member and demote an admin", async () => {
+      const owner = await createUser("Owner", "owner@example.com");
+      const member = await createUser("Member", "member@example.com");
+      const admin = await createUser("Admin", "admin@example.com");
+      const workspace = await createWorkspace(owner.id, "Roles Workspace");
+      await addWorkspaceMember(workspace.id, member.id, "MEMBER");
+      await addWorkspaceMember(workspace.id, admin.id, "ADMIN");
+      const cookie = await createAuthenticatedCookie(sessionStore, owner.id);
+
+      const promoted = await app.inject({
+        method: "PATCH",
+        url: `/api/workspaces/${workspace.id}/members/${member.id}`,
+        headers: { cookie },
+        payload: { role: "ADMIN" },
+      });
+      const demoted = await app.inject({
+        method: "PATCH",
+        url: `/api/workspaces/${workspace.id}/members/${admin.id}`,
+        headers: { cookie },
+        payload: { role: "MEMBER" },
+      });
+
+      expect(promoted.statusCode).toBe(200);
+      expect(promoted.json()).toMatchObject({ id: member.id, role: "ADMIN" });
+      expect(demoted.statusCode).toBe(200);
+      expect(demoted.json()).toMatchObject({ id: admin.id, role: "MEMBER" });
+    });
+
+    it("allows admins to remove members but not admins or owners", async () => {
+      const owner = await createUser("Owner", "owner@example.com");
+      const admin = await createUser("Admin", "admin@example.com");
+      const otherAdmin = await createUser("Other Admin", "other-admin@example.com");
+      const member = await createUser("Member", "member@example.com");
+      const workspace = await createWorkspace(owner.id, "Admin Workspace");
+      await addWorkspaceMember(workspace.id, admin.id, "ADMIN");
+      await addWorkspaceMember(workspace.id, otherAdmin.id, "ADMIN");
+      await addWorkspaceMember(workspace.id, member.id, "MEMBER");
+      const cookie = await createAuthenticatedCookie(sessionStore, admin.id);
+
+      const removed = await app.inject({
+        method: "DELETE",
+        url: `/api/workspaces/${workspace.id}/members/${member.id}`,
+        headers: { cookie },
+      });
+      const protectedAdmin = await app.inject({
+        method: "DELETE",
+        url: `/api/workspaces/${workspace.id}/members/${otherAdmin.id}`,
+        headers: { cookie },
+      });
+      const protectedOwner = await app.inject({
+        method: "DELETE",
+        url: `/api/workspaces/${workspace.id}/members/${owner.id}`,
+        headers: { cookie },
+      });
+
+      expect(removed.statusCode).toBe(204);
+      expect(protectedAdmin.statusCode).toBe(403);
+      expect(protectedOwner.statusCode).toBe(403);
+    });
+
+    it("allows an owner to remove an admin and rejects member management by members", async () => {
+      const owner = await createUser("Owner", "owner@example.com");
+      const admin = await createUser("Admin", "admin@example.com");
+      const member = await createUser("Member", "member@example.com");
+      const workspace = await createWorkspace(owner.id, "Owner Workspace");
+      await addWorkspaceMember(workspace.id, admin.id, "ADMIN");
+      await addWorkspaceMember(workspace.id, member.id, "MEMBER");
+
+      const ownerResponse = await app.inject({
+        method: "DELETE",
+        url: `/api/workspaces/${workspace.id}/members/${admin.id}`,
+        headers: { cookie: await createAuthenticatedCookie(sessionStore, owner.id) },
+      });
+      const memberResponse = await app.inject({
+        method: "POST",
+        url: `/api/workspaces/${workspace.id}/members`,
+        headers: { cookie: await createAuthenticatedCookie(sessionStore, member.id) },
+        payload: { email: owner.email },
+      });
+
+      expect(ownerResponse.statusCode).toBe(204);
+      expect(memberResponse.statusCode).toBe(403);
+    });
+  });
+
   describe("Project workspace authorization", () => {
     it("allows an OWNER to create a project", async () => {
       const owner = await createUser("Owner", "owner@example.com");
