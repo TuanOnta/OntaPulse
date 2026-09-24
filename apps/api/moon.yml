@@ -17,7 +17,14 @@ tasks:
       - pnpm
 
   test:
-    command: "cross-env NODE_ENV=test vitest run"
+    command: "pnpm test"
+    toolchains:
+      - javascript
+      - node
+      - pnpm
+
+  coverage:
+    command: "pnpm coverage"
     toolchains:
       - javascript
       - node

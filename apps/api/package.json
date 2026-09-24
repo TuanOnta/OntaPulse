@@ -10,9 +10,10 @@
     "typecheck": "tsc --noEmit",
     "db:migrate": "prisma migrate",
     "db:seed": "prisma db seed --config prisma7.config.ts",
-    "test": "cross-env NODE_ENV=test vitest run",
+    "test": "cross-env NODE_ENV=test prisma migrate deploy && cross-env NODE_ENV=test vitest run",
     "test:watch": "cross-env NODE_ENV=test vitest",
-    "test:db:migrate": "cross-env NODE_ENV=test prisma migrate deploy"
+    "test:db:migrate": "cross-env NODE_ENV=test prisma migrate deploy",
+    "coverage": "cross-env NODE_ENV=test prisma migrate deploy && cross-env NODE_ENV=test vitest run --coverage"
   },
   "dependencies": {
     "@fastify/cookie": "^11.1.2",
@@ -32,6 +33,7 @@
     "@types/amqplib": "0.10.8",
     "@types/node": "^24.0.0",
     "@types/pg": "8.23.1",
+    "@vitest/coverage-v8": "4.1.11",
     "cross-env": "10.1.0",
     "prisma": "7.10.0",
     "tsx": "^4.0.0",

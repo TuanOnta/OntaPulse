@@ -84,38 +84,42 @@ yang paling awal.
 
 Endpoint: `POST /workspaces`.
 
-### Informasi anggota workspace — belum tersedia sebagai daftar
+### Informasi anggota workspace — tersedia
 
-Model data memang memiliki membership dan role per user, tetapi API saat ini
-belum menyediakan endpoint untuk membaca daftar anggota suatu workspace.
-Karena itu, jangan tampilkan nama/email anggota, jumlah anggota, daftar role
-anggota, atau pemilik workspace sebagai data faktual sampai endpoint tersedia.
+Setiap anggota workspace dapat membaca daftar anggota melalui
+`GET /workspaces/:workspaceId/members`. Setiap item memuat `id`, `name`,
+`email`, `role`, dan `joinedAt`. Nama, email, role, dan pemilik workspace dapat
+ditampilkan sebagai data faktual dari respons ini.
 
-### Pengelolaan workspace — belum tersedia
+### Pengelolaan workspace — terbatas
 
 - Mengubah nama workspace.
 - Menghapus workspace.
-- Mengundang atau menambahkan anggota.
-- Menghapus anggota.
-- Mengubah role anggota.
 - Memindahkan ownership.
+
+Menambahkan anggota terdaftar dan menghapus `MEMBER` dapat dilakukan oleh
+`OWNER` atau `ADMIN`. Hanya `OWNER` yang dapat mengubah role `MEMBER`/`ADMIN`
+atau menghapus `ADMIN`; owner tidak dapat diubah atau dihapus.
 
 ## 3. Role dan otorisasi
 
 Role ditentukan per membership, bukan per akun secara global. User yang sama
 dapat menjadi `OWNER` pada Workspace A dan `MEMBER` pada Workspace B.
 
-| Kemampuan                            |   OWNER   |   ADMIN   | MEMBER | Status implementasi                       |
-| ------------------------------------ | :-------: | :-------: | :----: | ----------------------------------------- |
-| Membaca project dalam workspace      |    Ya     |    Ya     |   Ya   | Tersedia                                  |
-| Membaca monitor dalam project        |    Ya     |    Ya     |   Ya   | Tersedia                                  |
-| Membaca scan dan finding             |    Ya     |    Ya     |   Ya   | Tersedia                                  |
-| Membuat project                      |    Ya     |    Ya     | Tidak  | Tersedia                                  |
-| Membuat monitor                      |    Ya     |    Ya     | Tidak  | Tersedia                                  |
-| Menjalankan scan                     |    Ya     |    Ya     | Tidak  | Tersedia                                  |
-| Membuat workspace baru milik sendiri |    Ya     |    Ya     |   Ya   | Tersedia untuk setiap user terautentikasi |
-| Mengelola anggota/role               | Belum ada | Belum ada | Tidak  | Belum tersedia di API                     |
-| Mengubah/menghapus workspace         | Belum ada | Belum ada | Tidak  | Belum tersedia di API                     |
+| Kemampuan                            |   OWNER   |    ADMIN    | MEMBER | Status implementasi                       |
+| ------------------------------------ | :-------: | :---------: | :----: | ----------------------------------------- |
+| Membaca project dalam workspace      |    Ya     |     Ya      |   Ya   | Tersedia                                  |
+| Membaca monitor dalam project        |    Ya     |     Ya      |   Ya   | Tersedia                                  |
+| Membaca scan dan finding             |    Ya     |     Ya      |   Ya   | Tersedia                                  |
+| Membuat project                      |    Ya     |     Ya      | Tidak  | Tersedia                                  |
+| Membuat monitor                      |    Ya     |     Ya      | Tidak  | Tersedia                                  |
+| Menjalankan scan                     |    Ya     |     Ya      | Tidak  | Tersedia                                  |
+| Membuat workspace baru milik sendiri |    Ya     |     Ya      |   Ya   | Tersedia untuk setiap user terautentikasi |
+| Membaca anggota workspace            |    Ya     |     Ya      |   Ya   | Tersedia                                  |
+| Menambah anggota                     |    Ya     |     Ya      | Tidak  | Tersedia                                  |
+| Mengubah role anggota                |    Ya     |    Tidak    | Tidak  | Tersedia; owner tidak dapat diubah        |
+| Menghapus anggota                    |    Ya     | MEMBER saja | Tidak  | Tersedia; owner tidak dapat dihapus       |
+| Mengubah/menghapus workspace         | Belum ada |  Belum ada  | Tidak  | Belum tersedia di API                     |
 
 Satu workspace hanya dapat memiliki satu `OWNER`. Akses ke resource di luar
 workspace user diperlakukan sebagai `404`, agar keberadaan resource tidak
@@ -163,16 +167,16 @@ dalam satu project.
 
 ### Konten monitor — tersedia
 
-| Informasi        | Field API         | Keterangan                                                                                       |
-| ---------------- | ----------------- | ------------------------------------------------------------------------------------------------ |
-| Identitas teknis | `id`              | UUID monitor.                                                                                    |
-| Project induk    | `projectId`       | Konteks induk monitor.                                                                           |
-| Nama             | `name`            | Label utama monitor.                                                                             |
-| URL target       | `targetUrl`       | URL HTTP atau HTTPS yang akan diperiksa.                                                         |
-| Interval         | `intervalSeconds` | Tampilkan dalam unit yang mudah dibaca, misalnya 300 menjadi 5 menit.                            |
-| Status aktif     | `isActive`        | Boolean tersimpan pada model; saat ini selalu dibuat aktif dan belum ada aksi untuk mengubahnya. |
-| Waktu dibuat     | `createdAt`       | Metadata sekunder.                                                                               |
-| Waktu diperbarui | `updatedAt`       | Metadata sekunder.                                                                               |
+| Informasi        | Field API         | Keterangan                                                            |
+| ---------------- | ----------------- | --------------------------------------------------------------------- |
+| Identitas teknis | `id`              | UUID monitor.                                                         |
+| Project induk    | `projectId`       | Konteks induk monitor.                                                |
+| Nama             | `name`            | Label utama monitor.                                                  |
+| URL target       | `targetUrl`       | URL HTTP atau HTTPS yang akan diperiksa.                              |
+| Interval         | `intervalSeconds` | Tampilkan dalam unit yang mudah dibaca, misalnya 300 menjadi 5 menit. |
+| Status aktif     | `isActive`        | Boolean tersimpan pada model; monitor aktif dijadwalkan otomatis.     |
+| Waktu dibuat     | `createdAt`       | Metadata sekunder.                                                    |
+| Waktu diperbarui | `updatedAt`       | Metadata sekunder.                                                    |
 
 Endpoint daftar: `GET /projects/:projectId/monitors`.
 
@@ -217,7 +221,8 @@ Endpoint daftar: `GET /monitors/:monitorId/scans`. Daftar diurutkan dari
 
 ### Menjalankan scan — tersedia untuk OWNER dan ADMIN
 
-Endpoint: `POST /monitors/:monitorId/scans`.
+Endpoint manual: `POST /monitors/:monitorId/scans`. Monitor aktif juga membuat scan
+otomatis berdasarkan `intervalSeconds`.
 
 Permintaan tidak memiliki body. Respons sukses adalah `202 Accepted` dan scan
 berstatus awal `QUEUED`. Karena pemrosesan asynchronous, data scan perlu
@@ -306,14 +311,14 @@ Kondisi utama yang perlu dicerminkan:
 
 ## 9. Cakupan API saat ini
 
-| Domain    | Baca                                   | Buat                  | Ubah                               | Hapus                       | Kelola anggota/role |
-| --------- | -------------------------------------- | --------------------- | ---------------------------------- | --------------------------- | ------------------- |
-| User/sesi | Ya                                     | Register              | Tidak                              | Logout hanya menghapus sesi | Tidak relevan       |
-| Workspace | Daftar workspace sendiri               | Ya                    | Belum tersedia                     | Belum tersedia              | Belum tersedia      |
-| Project   | Daftar per workspace                   | Ya, OWNER/ADMIN       | Belum tersedia                     | Belum tersedia              | Tidak relevan       |
-| Monitor   | Daftar per project                     | Ya, OWNER/ADMIN       | Belum tersedia                     | Belum tersedia              | Tidak relevan       |
-| Scan      | Daftar per monitor dan detail per scan | Jalankan, OWNER/ADMIN | Diproses worker, bukan diedit user | Belum tersedia              | Tidak relevan       |
-| Finding   | Dalam detail scan                      | Dibuat worker         | Belum tersedia                     | Belum tersedia              | Belum tersedia      |
+| Domain    | Baca                                   | Buat                  | Ubah                               | Hapus                       | Kelola anggota/role                          |
+| --------- | -------------------------------------- | --------------------- | ---------------------------------- | --------------------------- | -------------------------------------------- |
+| User/sesi | Ya                                     | Register              | Tidak                              | Logout hanya menghapus sesi | Tidak relevan                                |
+| Workspace | Daftar workspace dan anggota           | Ya                    | Belum tersedia                     | Belum tersedia              | Tambah, ubah role, hapus dengan batasan role |
+| Project   | Daftar per workspace                   | Ya, OWNER/ADMIN       | Belum tersedia                     | Belum tersedia              | Tidak relevan                                |
+| Monitor   | Daftar per project                     | Ya, OWNER/ADMIN       | Belum tersedia                     | Belum tersedia              | Tidak relevan                                |
+| Scan      | Daftar per monitor dan detail per scan | Jalankan, OWNER/ADMIN | Diproses worker, bukan diedit user | Belum tersedia              | Tidak relevan                                |
+| Finding   | Dalam detail scan                      | Dibuat worker         | Belum tersedia                     | Belum tersedia              | Belum tersedia                               |
 
 ## 10. Urutan data dan dependensi
 

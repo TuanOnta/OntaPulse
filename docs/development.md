@@ -119,6 +119,7 @@ The worker connects to PostgreSQL and RabbitMQ when it starts. Recoverable conne
 | Run API               | `moon run api:dev`                             |
 | Type-check API        | `moon run api:typecheck`                       |
 | Run API tests         | `pnpm --filter @ontapulse/api test`            |
+| Generate API coverage | `moon run api:coverage`                        |
 | Watch API tests       | `pnpm --filter @ontapulse/api test:watch`      |
 | Apply test migrations | `pnpm --filter @ontapulse/api test:db:migrate` |
 | Seed local database   | `pnpm --filter @ontapulse/api db:seed`         |
@@ -131,6 +132,7 @@ The worker connects to PostgreSQL and RabbitMQ when it starts. Recoverable conne
 | Run worker                  | `moon run worker:dev`                |
 | Check database connectivity | `moon run worker:check-db`           |
 | Run unit tests              | `moon run worker:test`               |
+| Generate worker coverage    | `moon run worker:coverage`           |
 | Run integration tests       | `moon run worker:integration-test`   |
 | Lint worker                 | `moon run worker:lint`               |
 | Format worker               | `moon run worker:format`             |
@@ -558,12 +560,16 @@ Infrastructure tests must:
 
 ## Expected development workflow
 
-Run API checks:
+Run API checks. The API test command applies pending migrations to the dedicated
+test database before starting Vitest:
 
 ```bash
-pnpm --filter @ontapulse/api test:db:migrate
 moon run api:typecheck
 pnpm --filter @ontapulse/api test
+moon run api:coverage
+moon run web:typecheck
+moon run web:test
+moon run web:coverage
 pnpm format:check
 ```
 
@@ -573,6 +579,7 @@ Run worker checks:
 moon run worker:format-check
 moon run worker:lint
 moon run worker:test
+moon run worker:coverage
 ```
 
 Run worker infrastructure tests explicitly:

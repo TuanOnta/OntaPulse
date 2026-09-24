@@ -313,6 +313,42 @@ describe("Workspace API", () => {
   });
 
   describe("Workspace member management", () => {
+    it("lists workspace members for an authenticated member", async () => {
+      const owner = await createUser("Owner", "owner@example.com");
+      const member = await createUser("Member", "member@example.com");
+      const workspace = await createWorkspace(owner.id, "Shared Workspace");
+      await addWorkspaceMember(workspace.id, member.id, "MEMBER");
+
+      const response = await app.inject({
+        method: "GET",
+        url: `/api/workspaces/${workspace.id}/members`,
+        headers: { cookie: await createAuthenticatedCookie(sessionStore, member.id) },
+      });
+
+      expect(response.statusCode).toBe(200);
+      expect(response.json()).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ id: owner.id, email: owner.email, role: "OWNER" }),
+          expect.objectContaining({ id: member.id, email: member.email, role: "MEMBER" }),
+        ]),
+      );
+    });
+
+    it("hides the member list from workspace outsiders", async () => {
+      const owner = await createUser("Owner", "owner@example.com");
+      const outsider = await createUser("Outsider", "outsider@example.com");
+      const workspace = await createWorkspace(owner.id, "Private Workspace");
+
+      const response = await app.inject({
+        method: "GET",
+        url: `/api/workspaces/${workspace.id}/members`,
+        headers: { cookie: await createAuthenticatedCookie(sessionStore, outsider.id) },
+      });
+
+      expect(response.statusCode).toBe(404);
+      expect(response.json()).toMatchObject({ code: "WORKSPACE_NOT_FOUND" });
+    });
+
     it("allows owners and admins to add registered users as members", async () => {
       const owner = await createUser("Owner", "owner@example.com");
       const admin = await createUser("Admin", "admin@example.com");
