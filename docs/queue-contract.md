@@ -66,7 +66,7 @@ Do not copy Monitor configuration into the message. The worker loads current dat
 
 ## Producer responsibility
 
-1. Confirm that the Monitor exists.
+1. For a manual request, confirm that the Monitor exists and that the user is authorized. For a scheduled request, atomically claim a due active Monitor.
 2. Create a Scan with status `QUEUED`.
 3. Publish the message using a confirm channel.
 4. Wait for broker confirmation.
@@ -74,7 +74,7 @@ Do not copy Monitor configuration into the message. The worker loads current dat
 
 The persisted failure uses the safe message `Scan queue is unavailable` and sets `finishedAt`. The technical error remains attached as the application error cause for structured server logging and must not be returned to the client.
 
-The API may be running without an open RabbitMQ connection because the producer connects lazily. Fastify shutdown closes both the confirm channel and its connection when they have been created.
+The API may be running without an open RabbitMQ connection because the producer connects lazily. The API scheduler checks due active monitors every 10 seconds and uses the same producer lifecycle as manual requests. Fastify shutdown closes both the confirm channel and its connection when they have been created.
 
 The database write and broker publish are not atomic. Publisher confirms establish that RabbitMQ accepted a publication, but they do not make the preceding database insert part of the same transaction. A connection failure can also be ambiguous: the broker may have accepted the message even though the producer did not receive confirmation. A transactional outbox is the planned reliability improvement if broker failure recovery becomes insufficient.
 

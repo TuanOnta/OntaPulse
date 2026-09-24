@@ -3,6 +3,9 @@ import { env } from "./config/env.js";
 import { NoopScanQueue } from "./infrastructure/queue/noop-scan-queue.js";
 import { RabbitMqScanQueue } from "./infrastructure/queue/rabbitmq-scan-queue.js";
 import { RedisSessionStore } from "./infrastructure/session/redis-session-store.js";
+import { ScanSchedulerRepository } from "./modules/scans/scan-scheduler.repository.js";
+import { ScanSchedulerService } from "./modules/scans/scan-scheduler.service.js";
+import { ScanScheduler } from "./modules/scans/scan-scheduler.js";
 
 const scanQueue =
   env.NODE_ENV === "test" ? new NoopScanQueue() : new RabbitMqScanQueue(env.RABBITMQ_URL);
@@ -14,6 +17,11 @@ const app = buildApp({
   sessionStore,
 });
 
+const scanScheduler = new ScanScheduler(
+  new ScanSchedulerService(new ScanSchedulerRepository(), scanQueue, app.log),
+  app.log,
+);
+
 sessionStore.onError((error) => {
   app.log.error({ err: error }, "Redis session store error");
 });
@@ -24,10 +32,15 @@ async function start() {
       port: env.API_PORT,
       host: "0.0.0.0",
     });
+    scanScheduler.start();
   } catch (error) {
     app.log.error(error);
     process.exit(1);
   }
 }
+
+app.addHook("onClose", () => {
+  scanScheduler.stop();
+});
 
 void start();

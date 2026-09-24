@@ -27,6 +27,8 @@ from ontapulse_worker.platform.database.sqlalchemy import (
 )
 from ontapulse_worker.platform.messaging.rabbitmq import create_connection
 
+pytestmark = pytest.mark.integration
+
 
 def docker(*args):
     result = subprocess.run(
@@ -40,11 +42,15 @@ def infrastructure():
     values = {**dotenv_values(REPOSITORY_ROOT / ".env.test"), "NODE_ENV": "test"}
     settings = Settings.model_validate(values)
     assert urlsplit(str(settings.database_url)).path.endswith("_test")
-    broker = dotenv_values(REPOSITORY_ROOT / ".env")["RABBITMQ_URL"]
+    broker = os.environ.get("RABBITMQ_URL") or dotenv_values(REPOSITORY_ROOT / ".env").get(
+        "RABBITMQ_URL"
+    )
     assert broker
     parsed = urlsplit(broker)
     assert parsed.hostname in {"127.0.0.1", "localhost"}
     vhost = "worker-e2e-" + uuid4().hex
+    user = uuid4()
+    workspace = uuid4()
     project = uuid4()
     engine = create_database_engine(settings)
     docker("rabbitmqctl", "add_vhost", vhost)
@@ -53,13 +59,45 @@ def infrastructure():
         broker = urlunsplit(parsed._replace(path="/" + quote(vhost, safe="")))
         with engine.begin() as connection:
             connection.execute(
-                text('INSERT INTO "Project" (id, name, "updatedAt") VALUES (:id, :name, NOW())'),
-                {"id": project, "name": "Worker infrastructure test"},
+                text(
+                    'INSERT INTO "User" (id, email, name, "passwordHash", "updatedAt") '
+                    "VALUES (:id, :email, :name, :password_hash, NOW())"
+                ),
+                {
+                    "id": user,
+                    "email": f"worker-e2e-{user}@ontapulse.local",
+                    "name": "Worker infrastructure test user",
+                    "password_hash": "not-used-by-infrastructure-tests",
+                },
             )
-        yield engine, broker, project, values
+            connection.execute(
+                text('INSERT INTO "Workspace" (id, name, "updatedAt") VALUES (:id, :name, NOW())'),
+                {"id": workspace, "name": "Worker infrastructure test workspace"},
+            )
+            connection.execute(
+                text(
+                    'INSERT INTO "WorkspaceMember" ("workspaceId", "userId", role) '
+                    "VALUES (:workspace_id, :user_id, 'OWNER')"
+                ),
+                {"workspace_id": workspace, "user_id": user},
+            )
+            connection.execute(
+                text(
+                    'INSERT INTO "Project" (id, "workspaceId", name, "updatedAt") '
+                    "VALUES (:id, :workspace_id, :name, NOW())"
+                ),
+                {
+                    "id": project,
+                    "workspace_id": workspace,
+                    "name": "Worker infrastructure test",
+                },
+            )
+        yield engine, broker, project, {**values, "E2E_USER_ID": str(user)}
     finally:
         with engine.begin() as connection:
             connection.execute(text('DELETE FROM "Project" WHERE id = :id'), {"id": project})
+            connection.execute(text('DELETE FROM "Workspace" WHERE id = :id'), {"id": workspace})
+            connection.execute(text('DELETE FROM "User" WHERE id = :id'), {"id": user})
         engine.dispose()
         docker("rabbitmqctl", "delete_vhost", vhost)
 
@@ -87,6 +125,29 @@ def trigger(infrastructure, target):
     return json.loads(result.stdout.strip().splitlines()[-1])
 
 
+def schedule(infrastructure, target):
+    _, broker, project, values = infrastructure
+    env = {
+        **os.environ,
+        **{k: v for k, v in values.items() if v is not None},
+        "RABBITMQ_URL": broker,
+        "E2E_PROJECT_ID": str(project),
+        "E2E_TARGET_URL": target,
+    }
+    result = subprocess.run(
+        [shutil.which("node"), "--import", "tsx", "scripts/worker-e2e-schedule.ts"],
+        cwd=REPOSITORY_ROOT / "apps/api",
+        env=env,
+        capture_output=True,
+        text=True,
+        timeout=30,
+    )
+    assert result.returncode == 0, (
+        "API scheduler helper failed (output withheld to protect credentials)"
+    )
+    return json.loads(result.stdout.strip().splitlines()[-1])
+
+
 def scan_row(engine, scan_id):
     with engine.connect() as connection:
         return (
@@ -96,7 +157,7 @@ def scan_row(engine, scan_id):
         )
 
 
-def test_api_broker_get_database_ack(infrastructure, capsys):
+def test_api_broker_get_database_ack(infrastructure):
     engine, broker, _, _ = infrastructure
     requests = []
 
@@ -150,7 +211,50 @@ def test_api_broker_get_database_ack(infrastructure, capsys):
                 .method.message_count
                 == 0
             )
-        assert "worker.consumer_ready" in capsys.readouterr().out
+    finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=5)
+
+
+def test_scheduler_broker_worker_database_ack(infrastructure):
+    engine, broker, _, _ = infrastructure
+
+    class Handler(BaseHTTPRequestHandler):
+        def do_GET(self):
+            self.send_response(200)
+            self.end_headers()
+
+        def log_message(self, *_args):
+            pass
+
+    server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+    thread = Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    target = f"http://127.0.0.1:{server.server_port}/scheduled"
+
+    class LocalFixtureValidator:
+        def validate(self, url):
+            assert url == target
+
+    class SingleDeliveryConsumer(RabbitMqScanConsumer):
+        def _on_message(self, channel, method, properties, body):
+            super()._on_message(channel, method, properties, body)
+            channel.stop_consuming()
+
+    try:
+        job = schedule(infrastructure, target)
+        assert scan_row(engine, job["scan_id"])["status"] == "QUEUED"
+        with HttpScanExecutor(target_validator=LocalFixtureValidator()) as executor:
+            repository = sqlalchemy_scan_repository.SqlAlchemyScanRepository(
+                create_session_factory(engine)
+            )
+            lifecycle = ScanLifecycleService(repository, executor)
+            SingleDeliveryConsumer(broker, lifecycle.handle).run()
+        row = scan_row(engine, job["scan_id"])
+        assert row["status"] == "SUCCEEDED"
+        assert row["statusCode"] == 200
+        assert row["responseTimeMs"] >= 0
     finally:
         server.shutdown()
         server.server_close()

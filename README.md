@@ -42,7 +42,7 @@ OntaPulse separates request handling from scan execution. The API persists a sca
 - Workspace member management: list members, add registered users, change roles, and remove members according to permissions.
 - Projects for organizing monitors within a workspace.
 - HTTP/HTTPS monitors with stored intervals and URL validation.
-- Manual scan triggering through the API and web client.
+- Manual and interval-based scan triggering through the API scheduler and web client.
 - Asynchronous scan processing through RabbitMQ.
 - HTTP GET checks with explicit timeouts, response-time measurement, and SSRF protection.
 - Findings for HTTP 4xx responses, HTTP 5xx responses, and slow responses.
@@ -66,7 +66,7 @@ OntaPulse separates request handling from scan execution. The API persists a sca
 | RabbitMQ producer           |   Available   | Durable topology, mandatory routing, and publisher confirms                           |
 | Python scan worker          |   Available   | HTTP execution, database lifecycle, retries, DLQ, and controlled shutdown             |
 | Findings                    |   Available   | Client errors, server errors, and slow responses                                      |
-| Automatic scheduling        | Not available | `intervalSeconds` is stored, but scans are currently triggered manually               |
+| Automatic scheduling        |   Available   | Active monitors are queued at their configured interval                               |
 | Notifications and alerting  | Not available | No notification channel or escalation policy yet                                      |
 | Resource update/delete      |    Partial    | Not available for workspaces, projects, or monitors                                   |
 
@@ -709,6 +709,7 @@ During development, Vite proxies `/api` requests to `VITE_API_PROXY_TARGET` or `
 moon run api:typecheck
 pnpm --filter @ontapulse/api test
 moon run web:typecheck
+moon run web:test
 moon run web:build
 moon run worker:format-check
 moon run worker:lint
@@ -857,7 +858,6 @@ Use the RabbitMQ Management UI to inspect queues, connections, channels, and del
 
 ## Current limitations
 
-- Scans are triggered manually; no scheduler uses `intervalSeconds` yet.
 - There are no email, webhook, chat notification, escalation policy, or on-call integrations.
 - The API does not provide update/delete operations for workspaces, projects, or monitors.
 - Monitors cannot be paused or resumed even though the database already contains an `isActive` field.

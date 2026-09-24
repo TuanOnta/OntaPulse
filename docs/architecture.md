@@ -14,7 +14,8 @@
 ## Implementation status
 
 The TypeScript API implements Project, Monitor, and Scan persistence together
-with confirmed RabbitMQ publication.
+with confirmed RabbitMQ publication. Its in-process scheduler periodically
+claims due active monitors and queues scans using the stored interval.
 
 The Python worker is active and implements:
 
@@ -71,7 +72,20 @@ sequenceDiagram
     Worker->>MQ: ACK
 ```
 
-The API returns `202` only after the confirm channel acknowledges the publication. If publication fails, the API changes the Scan to `FAILED`, sets `finishedAt` and a safe error message, and returns `503 SCAN_QUEUE_UNAVAILABLE`.
+The API returns `202` only after the confirm channel acknowledges a manual publication. The scheduler uses the same queue lifecycle without an HTTP response. If publication fails, the API changes the Scan to `FAILED`, sets `finishedAt` and a safe error message.
+
+The scheduler runs every 10 seconds. A due monitor is atomically claimed by moving
+its `nextScheduledAt` forward before the Scan is created, so concurrent API
+instances do not queue the same scheduled occurrence twice. Each next execution
+is calculated from the claim time plus `intervalSeconds`; missed intervals do not
+produce a catch-up burst.
+
+If scheduler publication fails, the persisted Scan is marked `FAILED` with the
+safe queue-unavailable message. The monitor keeps its advanced `nextScheduledAt`,
+so that retrying a scheduler cycle cannot duplicate the same scheduled occurrence;
+the next interval produces a new Scan. Each non-empty scheduler cycle emits the
+structured `Scan scheduler run completed` event with `dueMonitorCount`,
+`scheduledCount`, `failedEnqueueCount`, and `durationMs` for log-derived metrics.
 
 RabbitMQ delivery is at-least-once. The worker must therefore treat `scanId` as an idempotency key and avoid processing a completed scan twice.
 

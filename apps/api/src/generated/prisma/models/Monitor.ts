@@ -41,6 +41,7 @@ export type MonitorMinAggregateOutputType = {
   targetUrl: string | null
   intervalSeconds: number | null
   isActive: boolean | null
+  nextScheduledAt: Date | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -52,6 +53,7 @@ export type MonitorMaxAggregateOutputType = {
   targetUrl: string | null
   intervalSeconds: number | null
   isActive: boolean | null
+  nextScheduledAt: Date | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -63,6 +65,7 @@ export type MonitorCountAggregateOutputType = {
   targetUrl: number
   intervalSeconds: number
   isActive: number
+  nextScheduledAt: number
   createdAt: number
   updatedAt: number
   _all: number
@@ -84,6 +87,7 @@ export type MonitorMinAggregateInputType = {
   targetUrl?: true
   intervalSeconds?: true
   isActive?: true
+  nextScheduledAt?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -95,6 +99,7 @@ export type MonitorMaxAggregateInputType = {
   targetUrl?: true
   intervalSeconds?: true
   isActive?: true
+  nextScheduledAt?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -106,6 +111,7 @@ export type MonitorCountAggregateInputType = {
   targetUrl?: true
   intervalSeconds?: true
   isActive?: true
+  nextScheduledAt?: true
   createdAt?: true
   updatedAt?: true
   _all?: true
@@ -204,6 +210,7 @@ export type MonitorGroupByOutputType = {
   targetUrl: string
   intervalSeconds: number
   isActive: boolean
+  nextScheduledAt: Date
   createdAt: Date
   updatedAt: Date
   _count: MonitorCountAggregateOutputType | null
@@ -238,6 +245,7 @@ export type MonitorWhereInput = {
   targetUrl?: Prisma.StringFilter<"Monitor"> | string
   intervalSeconds?: Prisma.IntFilter<"Monitor"> | number
   isActive?: Prisma.BoolFilter<"Monitor"> | boolean
+  nextScheduledAt?: Prisma.DateTimeFilter<"Monitor"> | Date | string
   createdAt?: Prisma.DateTimeFilter<"Monitor"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Monitor"> | Date | string
   project?: Prisma.XOR<Prisma.ProjectScalarRelationFilter, Prisma.ProjectWhereInput>
@@ -251,6 +259,7 @@ export type MonitorOrderByWithRelationInput = {
   targetUrl?: Prisma.SortOrder
   intervalSeconds?: Prisma.SortOrder
   isActive?: Prisma.SortOrder
+  nextScheduledAt?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   project?: Prisma.ProjectOrderByWithRelationInput
@@ -268,6 +277,7 @@ export type MonitorWhereUniqueInput = Prisma.AtLeast<{
   targetUrl?: Prisma.StringFilter<"Monitor"> | string
   intervalSeconds?: Prisma.IntFilter<"Monitor"> | number
   isActive?: Prisma.BoolFilter<"Monitor"> | boolean
+  nextScheduledAt?: Prisma.DateTimeFilter<"Monitor"> | Date | string
   createdAt?: Prisma.DateTimeFilter<"Monitor"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Monitor"> | Date | string
   project?: Prisma.XOR<Prisma.ProjectScalarRelationFilter, Prisma.ProjectWhereInput>
@@ -281,6 +291,7 @@ export type MonitorOrderByWithAggregationInput = {
   targetUrl?: Prisma.SortOrder
   intervalSeconds?: Prisma.SortOrder
   isActive?: Prisma.SortOrder
+  nextScheduledAt?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   _count?: Prisma.MonitorCountOrderByAggregateInput
@@ -300,6 +311,7 @@ export type MonitorScalarWhereWithAggregatesInput = {
   targetUrl?: Prisma.StringWithAggregatesFilter<"Monitor"> | string
   intervalSeconds?: Prisma.IntWithAggregatesFilter<"Monitor"> | number
   isActive?: Prisma.BoolWithAggregatesFilter<"Monitor"> | boolean
+  nextScheduledAt?: Prisma.DateTimeWithAggregatesFilter<"Monitor"> | Date | string
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Monitor"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"Monitor"> | Date | string
 }
@@ -310,6 +322,7 @@ export type MonitorCreateInput = {
   targetUrl: string
   intervalSeconds?: number
   isActive?: boolean
+  nextScheduledAt?: Date | string
   createdAt?: Date | string
   updatedAt?: Date | string
   project: Prisma.ProjectCreateNestedOneWithoutMonitorsInput
@@ -323,6 +336,7 @@ export type MonitorUncheckedCreateInput = {
   targetUrl: string
   intervalSeconds?: number
   isActive?: boolean
+  nextScheduledAt?: Date | string
   createdAt?: Date | string
   updatedAt?: Date | string
   scans?: Prisma.ScanUncheckedCreateNestedManyWithoutMonitorInput
@@ -334,6 +348,7 @@ export type MonitorUpdateInput = {
   targetUrl?: Prisma.StringFieldUpdateOperationsInput | string
   intervalSeconds?: Prisma.IntFieldUpdateOperationsInput | number
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  nextScheduledAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   project?: Prisma.ProjectUpdateOneRequiredWithoutMonitorsNestedInput
@@ -347,6 +362,7 @@ export type MonitorUncheckedUpdateInput = {
   targetUrl?: Prisma.StringFieldUpdateOperationsInput | string
   intervalSeconds?: Prisma.IntFieldUpdateOperationsInput | number
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  nextScheduledAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   scans?: Prisma.ScanUncheckedUpdateManyWithoutMonitorNestedInput
@@ -359,6 +375,7 @@ export type MonitorCreateManyInput = {
   targetUrl: string
   intervalSeconds?: number
   isActive?: boolean
+  nextScheduledAt?: Date | string
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -369,6 +386,7 @@ export type MonitorUpdateManyMutationInput = {
   targetUrl?: Prisma.StringFieldUpdateOperationsInput | string
   intervalSeconds?: Prisma.IntFieldUpdateOperationsInput | number
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  nextScheduledAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -380,6 +398,7 @@ export type MonitorUncheckedUpdateManyInput = {
   targetUrl?: Prisma.StringFieldUpdateOperationsInput | string
   intervalSeconds?: Prisma.IntFieldUpdateOperationsInput | number
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  nextScheduledAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -406,6 +425,7 @@ export type MonitorCountOrderByAggregateInput = {
   targetUrl?: Prisma.SortOrder
   intervalSeconds?: Prisma.SortOrder
   isActive?: Prisma.SortOrder
+  nextScheduledAt?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -421,6 +441,7 @@ export type MonitorMaxOrderByAggregateInput = {
   targetUrl?: Prisma.SortOrder
   intervalSeconds?: Prisma.SortOrder
   isActive?: Prisma.SortOrder
+  nextScheduledAt?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -432,6 +453,7 @@ export type MonitorMinOrderByAggregateInput = {
   targetUrl?: Prisma.SortOrder
   intervalSeconds?: Prisma.SortOrder
   isActive?: Prisma.SortOrder
+  nextScheduledAt?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -519,6 +541,7 @@ export type MonitorCreateWithoutProjectInput = {
   targetUrl: string
   intervalSeconds?: number
   isActive?: boolean
+  nextScheduledAt?: Date | string
   createdAt?: Date | string
   updatedAt?: Date | string
   scans?: Prisma.ScanCreateNestedManyWithoutMonitorInput
@@ -530,6 +553,7 @@ export type MonitorUncheckedCreateWithoutProjectInput = {
   targetUrl: string
   intervalSeconds?: number
   isActive?: boolean
+  nextScheduledAt?: Date | string
   createdAt?: Date | string
   updatedAt?: Date | string
   scans?: Prisma.ScanUncheckedCreateNestedManyWithoutMonitorInput
@@ -571,6 +595,7 @@ export type MonitorScalarWhereInput = {
   targetUrl?: Prisma.StringFilter<"Monitor"> | string
   intervalSeconds?: Prisma.IntFilter<"Monitor"> | number
   isActive?: Prisma.BoolFilter<"Monitor"> | boolean
+  nextScheduledAt?: Prisma.DateTimeFilter<"Monitor"> | Date | string
   createdAt?: Prisma.DateTimeFilter<"Monitor"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Monitor"> | Date | string
 }
@@ -581,6 +606,7 @@ export type MonitorCreateWithoutScansInput = {
   targetUrl: string
   intervalSeconds?: number
   isActive?: boolean
+  nextScheduledAt?: Date | string
   createdAt?: Date | string
   updatedAt?: Date | string
   project: Prisma.ProjectCreateNestedOneWithoutMonitorsInput
@@ -593,6 +619,7 @@ export type MonitorUncheckedCreateWithoutScansInput = {
   targetUrl: string
   intervalSeconds?: number
   isActive?: boolean
+  nextScheduledAt?: Date | string
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -619,6 +646,7 @@ export type MonitorUpdateWithoutScansInput = {
   targetUrl?: Prisma.StringFieldUpdateOperationsInput | string
   intervalSeconds?: Prisma.IntFieldUpdateOperationsInput | number
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  nextScheduledAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   project?: Prisma.ProjectUpdateOneRequiredWithoutMonitorsNestedInput
@@ -631,6 +659,7 @@ export type MonitorUncheckedUpdateWithoutScansInput = {
   targetUrl?: Prisma.StringFieldUpdateOperationsInput | string
   intervalSeconds?: Prisma.IntFieldUpdateOperationsInput | number
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  nextScheduledAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -641,6 +670,7 @@ export type MonitorCreateManyProjectInput = {
   targetUrl: string
   intervalSeconds?: number
   isActive?: boolean
+  nextScheduledAt?: Date | string
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -651,6 +681,7 @@ export type MonitorUpdateWithoutProjectInput = {
   targetUrl?: Prisma.StringFieldUpdateOperationsInput | string
   intervalSeconds?: Prisma.IntFieldUpdateOperationsInput | number
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  nextScheduledAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   scans?: Prisma.ScanUpdateManyWithoutMonitorNestedInput
@@ -662,6 +693,7 @@ export type MonitorUncheckedUpdateWithoutProjectInput = {
   targetUrl?: Prisma.StringFieldUpdateOperationsInput | string
   intervalSeconds?: Prisma.IntFieldUpdateOperationsInput | number
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  nextScheduledAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   scans?: Prisma.ScanUncheckedUpdateManyWithoutMonitorNestedInput
@@ -673,6 +705,7 @@ export type MonitorUncheckedUpdateManyWithoutProjectInput = {
   targetUrl?: Prisma.StringFieldUpdateOperationsInput | string
   intervalSeconds?: Prisma.IntFieldUpdateOperationsInput | number
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  nextScheduledAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -715,6 +748,7 @@ export type MonitorSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   targetUrl?: boolean
   intervalSeconds?: boolean
   isActive?: boolean
+  nextScheduledAt?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   project?: boolean | Prisma.ProjectDefaultArgs<ExtArgs>
@@ -729,6 +763,7 @@ export type MonitorSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Exten
   targetUrl?: boolean
   intervalSeconds?: boolean
   isActive?: boolean
+  nextScheduledAt?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   project?: boolean | Prisma.ProjectDefaultArgs<ExtArgs>
@@ -741,6 +776,7 @@ export type MonitorSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Exten
   targetUrl?: boolean
   intervalSeconds?: boolean
   isActive?: boolean
+  nextScheduledAt?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   project?: boolean | Prisma.ProjectDefaultArgs<ExtArgs>
@@ -753,11 +789,12 @@ export type MonitorSelectScalar = {
   targetUrl?: boolean
   intervalSeconds?: boolean
   isActive?: boolean
+  nextScheduledAt?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type MonitorOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "projectId" | "name" | "targetUrl" | "intervalSeconds" | "isActive" | "createdAt" | "updatedAt", ExtArgs["result"]["monitor"]>
+export type MonitorOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "projectId" | "name" | "targetUrl" | "intervalSeconds" | "isActive" | "nextScheduledAt" | "createdAt" | "updatedAt", ExtArgs["result"]["monitor"]>
 export type MonitorInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   project?: boolean | Prisma.ProjectDefaultArgs<ExtArgs>
   scans?: boolean | Prisma.Monitor$scansArgs<ExtArgs>
@@ -783,6 +820,7 @@ export type $MonitorPayload<ExtArgs extends runtime.Types.Extensions.InternalArg
     targetUrl: string
     intervalSeconds: number
     isActive: boolean
+    nextScheduledAt: Date
     createdAt: Date
     updatedAt: Date
   }, ExtArgs["result"]["monitor"]>
@@ -1216,6 +1254,7 @@ export interface MonitorFieldRefs {
   readonly targetUrl: Prisma.FieldRef<"Monitor", 'String'>
   readonly intervalSeconds: Prisma.FieldRef<"Monitor", 'Int'>
   readonly isActive: Prisma.FieldRef<"Monitor", 'Boolean'>
+  readonly nextScheduledAt: Prisma.FieldRef<"Monitor", 'DateTime'>
   readonly createdAt: Prisma.FieldRef<"Monitor", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"Monitor", 'DateTime'>
 }

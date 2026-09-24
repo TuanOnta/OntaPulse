@@ -85,6 +85,7 @@ model Monitor {
   targetUrl       String
   intervalSeconds Int      @default(300)
   isActive        Boolean  @default(true)
+  nextScheduledAt DateTime @default(now())
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
@@ -93,6 +94,7 @@ model Monitor {
 
   @@unique([projectId, targetUrl])
   @@index([projectId])
+  @@index([isActive, nextScheduledAt])
 }
 
 model Scan {

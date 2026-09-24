@@ -127,6 +127,7 @@ export const MonitorScalarFieldEnum = {
   targetUrl: 'targetUrl',
   intervalSeconds: 'intervalSeconds',
   isActive: 'isActive',
+  nextScheduledAt: 'nextScheduledAt',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
