@@ -2,17 +2,20 @@ import json
 import os
 import shutil
 import subprocess
+from base64 import b64encode
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from itertools import pairwise
-from threading import Thread
-from time import monotonic
-from urllib.parse import quote, urlsplit, urlunsplit
+from threading import Event, Lock, Thread
+from time import monotonic, sleep
+from urllib.parse import quote, unquote, urlsplit, urlunsplit
+from urllib.request import Request, urlopen
 from uuid import uuid4
 
 import pytest
 from dotenv import dotenv_values
 from sqlalchemy import text
 
+from ontapulse_worker.entrypoints.worker import WorkerShutdown, run_worker
 from ontapulse_worker.modules.scans.adapters.inbound.rabbitmq.consumer import RabbitMqScanConsumer
 from ontapulse_worker.modules.scans.adapters.outbound.http.http_scan_executor import (
     HttpScanExecutor,
@@ -32,9 +35,43 @@ pytestmark = pytest.mark.integration
 
 def docker(*args):
     result = subprocess.run(
-        ["docker", "exec", "ontapulse-rabbitmq", *args], capture_output=True, timeout=45
+        ["docker", "exec", "ontapulse-rabbitmq", *args],
+        capture_output=True,
+        text=True,
+        timeout=45,
     )
     assert result.returncode == 0, "Isolated RabbitMQ fixture command failed"
+    return result.stdout
+
+
+def management_request(broker, path, method="GET"):
+    parsed = urlsplit(broker)
+    management_port = os.environ.get("RABBITMQ_MANAGEMENT_PORT") or dotenv_values(
+        REPOSITORY_ROOT / ".env"
+    ).get("RABBITMQ_MANAGEMENT_PORT", "15672")
+    credentials = f"{unquote(parsed.username or '')}:{unquote(parsed.password or '')}"
+    return Request(
+        f"http://{parsed.hostname}:{management_port}/api/{path}",
+        method=method,
+        headers={"Authorization": f"Basic {b64encode(credentials.encode()).decode()}"},
+    )
+
+
+def broker_connection_names(broker, vhost):
+    with urlopen(management_request(broker, "connections"), timeout=10) as response:
+        connections = json.load(response)
+    return [
+        connection["name"]
+        for connection in connections
+        if connection["vhost"].removeprefix("/") == vhost.removeprefix("/")
+    ]
+
+
+def close_broker_connection(broker, connection_name):
+    connection_path = quote(connection_name, safe="")
+    request = management_request(broker, f"connections/{connection_path}", "DELETE")
+    with urlopen(request, timeout=10) as response:
+        assert response.status == 204
 
 
 @pytest.fixture
@@ -157,6 +194,85 @@ def scan_row(engine, scan_id):
         )
 
 
+def wait_for(predicate, timeout=30):
+    deadline = monotonic() + timeout
+    while monotonic() < deadline:
+        if predicate():
+            return
+        sleep(0.1)
+    assert predicate()
+
+
+class LocalFixtureValidator:
+    def __init__(self, target):
+        self._target = target
+
+    def validate(self, url):
+        assert url == self._target
+
+
+class RecoveryWorker:
+    def __init__(self, broker, database_url, target):
+        self._broker = broker
+        self._ready = Event()
+        self._ready_count = 0
+        self._ready_lock = Lock()
+        self._shutdown = WorkerShutdown()
+        settings = Settings.model_validate(
+            {
+                "NODE_ENV": "test",
+                "DATABASE_URL": database_url,
+                "RABBITMQ_URL": broker,
+            }
+        )
+        self._engine = create_database_engine(settings)
+        self._executor = HttpScanExecutor(target_validator=LocalFixtureValidator(target))
+        repository = sqlalchemy_scan_repository.SqlAlchemyScanRepository(
+            create_session_factory(self._engine)
+        )
+        self._lifecycle = ScanLifecycleService(repository, self._executor)
+        self._thread = Thread(target=run_worker, args=(self, self._shutdown), daemon=True)
+
+    def build_consumer(self):
+        worker = self
+
+        class ObservedConsumer(RabbitMqScanConsumer):
+            def run(self, on_ready=None):
+                def observed_ready():
+                    with worker._ready_lock:
+                        worker._ready_count += 1
+                    worker._ready.set()
+                    if on_ready:
+                        on_ready()
+
+                super().run(on_ready=observed_ready)
+
+        return ObservedConsumer(self._broker, self._lifecycle.handle)
+
+    def close(self):
+        self._shutdown.request()
+        self._thread.join(timeout=10)
+        assert not self._thread.is_alive()
+        self._executor.close()
+        self._engine.dispose()
+
+    def start(self):
+        self._thread.start()
+        assert self._ready.wait(timeout=10)
+
+    def wait_until_ready(self, count):
+        wait_for(lambda: self.ready_count >= count)
+
+    def database_backend_ids(self):
+        with self._engine.connect() as connection:
+            return [connection.execute(text("SELECT pg_backend_pid()")).scalar_one()]
+
+    @property
+    def ready_count(self):
+        with self._ready_lock:
+            return self._ready_count
+
+
 def test_api_broker_get_database_ack(infrastructure):
     engine, broker, _, _ = infrastructure
     requests = []
@@ -256,6 +372,76 @@ def test_scheduler_broker_worker_database_ack(infrastructure):
         assert row["statusCode"] == 200
         assert row["responseTimeMs"] >= 0
     finally:
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=5)
+
+
+def test_scheduler_worker_recovers_after_broker_connection_is_closed(infrastructure):
+    engine, broker, _, values = infrastructure
+
+    class Handler(BaseHTTPRequestHandler):
+        def do_GET(self):
+            self.send_response(200)
+            self.end_headers()
+
+        def log_message(self, *_args):
+            pass
+
+    server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+    thread = Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    target = f"http://127.0.0.1:{server.server_port}/broker-recovery"
+    worker = RecoveryWorker(broker, values["DATABASE_URL"], target)
+
+    try:
+        worker.start()
+        vhost = unquote(urlsplit(broker).path.removeprefix("/"))
+        wait_for(lambda: len(broker_connection_names(broker, vhost)) == 1)
+        connection_names = broker_connection_names(broker, vhost)
+        assert len(connection_names) == 1
+        close_broker_connection(broker, connection_names[0])
+        worker.wait_until_ready(2)
+
+        job = schedule(infrastructure, target)
+        wait_for(lambda: scan_row(engine, job["scan_id"])["status"] == "SUCCEEDED")
+    finally:
+        worker.close()
+        server.shutdown()
+        server.server_close()
+        thread.join(timeout=5)
+
+
+def test_scheduler_worker_reconnects_to_database_after_backend_termination(infrastructure):
+    engine, broker, _, values = infrastructure
+
+    class Handler(BaseHTTPRequestHandler):
+        def do_GET(self):
+            self.send_response(200)
+            self.end_headers()
+
+        def log_message(self, *_args):
+            pass
+
+    server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+    thread = Thread(target=server.serve_forever, daemon=True)
+    thread.start()
+    target = f"http://127.0.0.1:{server.server_port}/database-recovery"
+    worker = RecoveryWorker(broker, values["DATABASE_URL"], target)
+
+    try:
+        worker.start()
+        backend_ids = worker.database_backend_ids()
+        with engine.begin() as connection:
+            for backend_id in backend_ids:
+                connection.execute(text("SELECT pg_terminate_backend(:pid)"), {"pid": backend_id})
+
+        job = schedule(infrastructure, target)
+        wait_for(lambda: scan_row(engine, job["scan_id"])["status"] == "SUCCEEDED")
+        recovered_backend_ids = worker.database_backend_ids()
+        assert set(recovered_backend_ids).isdisjoint(backend_ids)
+    finally:
+        worker.close()
         server.shutdown()
         server.server_close()
         thread.join(timeout=5)

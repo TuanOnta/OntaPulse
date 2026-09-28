@@ -42,7 +42,7 @@ tasks:
       - "worker:sync"
 
   coverage:
-    command: 'uv run --locked --no-sync coverage run -m pytest -m "not integration" && uv run --locked --no-sync coverage xml'
+    script: 'uv run --locked --no-sync coverage run -m pytest -m "not integration" && uv run --locked --no-sync coverage xml'
     deps:
       - "worker:sync"
 
