@@ -254,6 +254,7 @@ export type ScanWhereInput = {
   createdAt?: Prisma.DateTimeFilter<"Scan"> | Date | string
   monitor?: Prisma.XOR<Prisma.MonitorScalarRelationFilter, Prisma.MonitorWhereInput>
   findings?: Prisma.ScanFindingListRelationFilter
+  outboxEvents?: Prisma.ScanOutboxEventListRelationFilter
 }
 
 export type ScanOrderByWithRelationInput = {
@@ -268,6 +269,7 @@ export type ScanOrderByWithRelationInput = {
   createdAt?: Prisma.SortOrder
   monitor?: Prisma.MonitorOrderByWithRelationInput
   findings?: Prisma.ScanFindingOrderByRelationAggregateInput
+  outboxEvents?: Prisma.ScanOutboxEventOrderByRelationAggregateInput
 }
 
 export type ScanWhereUniqueInput = Prisma.AtLeast<{
@@ -285,6 +287,7 @@ export type ScanWhereUniqueInput = Prisma.AtLeast<{
   createdAt?: Prisma.DateTimeFilter<"Scan"> | Date | string
   monitor?: Prisma.XOR<Prisma.MonitorScalarRelationFilter, Prisma.MonitorWhereInput>
   findings?: Prisma.ScanFindingListRelationFilter
+  outboxEvents?: Prisma.ScanOutboxEventListRelationFilter
 }, "id">
 
 export type ScanOrderByWithAggregationInput = {
@@ -330,6 +333,7 @@ export type ScanCreateInput = {
   createdAt?: Date | string
   monitor: Prisma.MonitorCreateNestedOneWithoutScansInput
   findings?: Prisma.ScanFindingCreateNestedManyWithoutScanInput
+  outboxEvents?: Prisma.ScanOutboxEventCreateNestedManyWithoutScanInput
 }
 
 export type ScanUncheckedCreateInput = {
@@ -343,6 +347,7 @@ export type ScanUncheckedCreateInput = {
   finishedAt?: Date | string | null
   createdAt?: Date | string
   findings?: Prisma.ScanFindingUncheckedCreateNestedManyWithoutScanInput
+  outboxEvents?: Prisma.ScanOutboxEventUncheckedCreateNestedManyWithoutScanInput
 }
 
 export type ScanUpdateInput = {
@@ -356,6 +361,7 @@ export type ScanUpdateInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   monitor?: Prisma.MonitorUpdateOneRequiredWithoutScansNestedInput
   findings?: Prisma.ScanFindingUpdateManyWithoutScanNestedInput
+  outboxEvents?: Prisma.ScanOutboxEventUpdateManyWithoutScanNestedInput
 }
 
 export type ScanUncheckedUpdateInput = {
@@ -369,6 +375,7 @@ export type ScanUncheckedUpdateInput = {
   finishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   findings?: Prisma.ScanFindingUncheckedUpdateManyWithoutScanNestedInput
+  outboxEvents?: Prisma.ScanOutboxEventUncheckedUpdateManyWithoutScanNestedInput
 }
 
 export type ScanCreateManyInput = {
@@ -525,6 +532,20 @@ export type NullableDateTimeFieldUpdateOperationsInput = {
   set?: Date | string | null
 }
 
+export type ScanCreateNestedOneWithoutOutboxEventsInput = {
+  create?: Prisma.XOR<Prisma.ScanCreateWithoutOutboxEventsInput, Prisma.ScanUncheckedCreateWithoutOutboxEventsInput>
+  connectOrCreate?: Prisma.ScanCreateOrConnectWithoutOutboxEventsInput
+  connect?: Prisma.ScanWhereUniqueInput
+}
+
+export type ScanUpdateOneRequiredWithoutOutboxEventsNestedInput = {
+  create?: Prisma.XOR<Prisma.ScanCreateWithoutOutboxEventsInput, Prisma.ScanUncheckedCreateWithoutOutboxEventsInput>
+  connectOrCreate?: Prisma.ScanCreateOrConnectWithoutOutboxEventsInput
+  upsert?: Prisma.ScanUpsertWithoutOutboxEventsInput
+  connect?: Prisma.ScanWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.ScanUpdateToOneWithWhereWithoutOutboxEventsInput, Prisma.ScanUpdateWithoutOutboxEventsInput>, Prisma.ScanUncheckedUpdateWithoutOutboxEventsInput>
+}
+
 export type ScanCreateNestedOneWithoutFindingsInput = {
   create?: Prisma.XOR<Prisma.ScanCreateWithoutFindingsInput, Prisma.ScanUncheckedCreateWithoutFindingsInput>
   connectOrCreate?: Prisma.ScanCreateOrConnectWithoutFindingsInput
@@ -549,6 +570,7 @@ export type ScanCreateWithoutMonitorInput = {
   finishedAt?: Date | string | null
   createdAt?: Date | string
   findings?: Prisma.ScanFindingCreateNestedManyWithoutScanInput
+  outboxEvents?: Prisma.ScanOutboxEventCreateNestedManyWithoutScanInput
 }
 
 export type ScanUncheckedCreateWithoutMonitorInput = {
@@ -561,6 +583,7 @@ export type ScanUncheckedCreateWithoutMonitorInput = {
   finishedAt?: Date | string | null
   createdAt?: Date | string
   findings?: Prisma.ScanFindingUncheckedCreateNestedManyWithoutScanInput
+  outboxEvents?: Prisma.ScanOutboxEventUncheckedCreateNestedManyWithoutScanInput
 }
 
 export type ScanCreateOrConnectWithoutMonitorInput = {
@@ -604,6 +627,74 @@ export type ScanScalarWhereInput = {
   createdAt?: Prisma.DateTimeFilter<"Scan"> | Date | string
 }
 
+export type ScanCreateWithoutOutboxEventsInput = {
+  id?: string
+  status?: $Enums.ScanStatus
+  statusCode?: number | null
+  responseTimeMs?: number | null
+  errorMessage?: string | null
+  startedAt?: Date | string | null
+  finishedAt?: Date | string | null
+  createdAt?: Date | string
+  monitor: Prisma.MonitorCreateNestedOneWithoutScansInput
+  findings?: Prisma.ScanFindingCreateNestedManyWithoutScanInput
+}
+
+export type ScanUncheckedCreateWithoutOutboxEventsInput = {
+  id?: string
+  monitorId: string
+  status?: $Enums.ScanStatus
+  statusCode?: number | null
+  responseTimeMs?: number | null
+  errorMessage?: string | null
+  startedAt?: Date | string | null
+  finishedAt?: Date | string | null
+  createdAt?: Date | string
+  findings?: Prisma.ScanFindingUncheckedCreateNestedManyWithoutScanInput
+}
+
+export type ScanCreateOrConnectWithoutOutboxEventsInput = {
+  where: Prisma.ScanWhereUniqueInput
+  create: Prisma.XOR<Prisma.ScanCreateWithoutOutboxEventsInput, Prisma.ScanUncheckedCreateWithoutOutboxEventsInput>
+}
+
+export type ScanUpsertWithoutOutboxEventsInput = {
+  update: Prisma.XOR<Prisma.ScanUpdateWithoutOutboxEventsInput, Prisma.ScanUncheckedUpdateWithoutOutboxEventsInput>
+  create: Prisma.XOR<Prisma.ScanCreateWithoutOutboxEventsInput, Prisma.ScanUncheckedCreateWithoutOutboxEventsInput>
+  where?: Prisma.ScanWhereInput
+}
+
+export type ScanUpdateToOneWithWhereWithoutOutboxEventsInput = {
+  where?: Prisma.ScanWhereInput
+  data: Prisma.XOR<Prisma.ScanUpdateWithoutOutboxEventsInput, Prisma.ScanUncheckedUpdateWithoutOutboxEventsInput>
+}
+
+export type ScanUpdateWithoutOutboxEventsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumScanStatusFieldUpdateOperationsInput | $Enums.ScanStatus
+  statusCode?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  responseTimeMs?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  errorMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  startedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  finishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  monitor?: Prisma.MonitorUpdateOneRequiredWithoutScansNestedInput
+  findings?: Prisma.ScanFindingUpdateManyWithoutScanNestedInput
+}
+
+export type ScanUncheckedUpdateWithoutOutboxEventsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  monitorId?: Prisma.StringFieldUpdateOperationsInput | string
+  status?: Prisma.EnumScanStatusFieldUpdateOperationsInput | $Enums.ScanStatus
+  statusCode?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  responseTimeMs?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  errorMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  startedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  finishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  findings?: Prisma.ScanFindingUncheckedUpdateManyWithoutScanNestedInput
+}
+
 export type ScanCreateWithoutFindingsInput = {
   id?: string
   status?: $Enums.ScanStatus
@@ -614,6 +705,7 @@ export type ScanCreateWithoutFindingsInput = {
   finishedAt?: Date | string | null
   createdAt?: Date | string
   monitor: Prisma.MonitorCreateNestedOneWithoutScansInput
+  outboxEvents?: Prisma.ScanOutboxEventCreateNestedManyWithoutScanInput
 }
 
 export type ScanUncheckedCreateWithoutFindingsInput = {
@@ -626,6 +718,7 @@ export type ScanUncheckedCreateWithoutFindingsInput = {
   startedAt?: Date | string | null
   finishedAt?: Date | string | null
   createdAt?: Date | string
+  outboxEvents?: Prisma.ScanOutboxEventUncheckedCreateNestedManyWithoutScanInput
 }
 
 export type ScanCreateOrConnectWithoutFindingsInput = {
@@ -654,6 +747,7 @@ export type ScanUpdateWithoutFindingsInput = {
   finishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   monitor?: Prisma.MonitorUpdateOneRequiredWithoutScansNestedInput
+  outboxEvents?: Prisma.ScanOutboxEventUpdateManyWithoutScanNestedInput
 }
 
 export type ScanUncheckedUpdateWithoutFindingsInput = {
@@ -666,6 +760,7 @@ export type ScanUncheckedUpdateWithoutFindingsInput = {
   startedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   finishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  outboxEvents?: Prisma.ScanOutboxEventUncheckedUpdateManyWithoutScanNestedInput
 }
 
 export type ScanCreateManyMonitorInput = {
@@ -689,6 +784,7 @@ export type ScanUpdateWithoutMonitorInput = {
   finishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   findings?: Prisma.ScanFindingUpdateManyWithoutScanNestedInput
+  outboxEvents?: Prisma.ScanOutboxEventUpdateManyWithoutScanNestedInput
 }
 
 export type ScanUncheckedUpdateWithoutMonitorInput = {
@@ -701,6 +797,7 @@ export type ScanUncheckedUpdateWithoutMonitorInput = {
   finishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   findings?: Prisma.ScanFindingUncheckedUpdateManyWithoutScanNestedInput
+  outboxEvents?: Prisma.ScanOutboxEventUncheckedUpdateManyWithoutScanNestedInput
 }
 
 export type ScanUncheckedUpdateManyWithoutMonitorInput = {
@@ -721,10 +818,12 @@ export type ScanUncheckedUpdateManyWithoutMonitorInput = {
 
 export type ScanCountOutputType = {
   findings: number
+  outboxEvents: number
 }
 
 export type ScanCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   findings?: boolean | ScanCountOutputTypeCountFindingsArgs
+  outboxEvents?: boolean | ScanCountOutputTypeCountOutboxEventsArgs
 }
 
 /**
@@ -744,6 +843,13 @@ export type ScanCountOutputTypeCountFindingsArgs<ExtArgs extends runtime.Types.E
   where?: Prisma.ScanFindingWhereInput
 }
 
+/**
+ * ScanCountOutputType without action
+ */
+export type ScanCountOutputTypeCountOutboxEventsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.ScanOutboxEventWhereInput
+}
+
 
 export type ScanSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -757,6 +863,7 @@ export type ScanSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   createdAt?: boolean
   monitor?: boolean | Prisma.MonitorDefaultArgs<ExtArgs>
   findings?: boolean | Prisma.Scan$findingsArgs<ExtArgs>
+  outboxEvents?: boolean | Prisma.Scan$outboxEventsArgs<ExtArgs>
   _count?: boolean | Prisma.ScanCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["scan"]>
 
@@ -802,6 +909,7 @@ export type ScanOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = run
 export type ScanInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   monitor?: boolean | Prisma.MonitorDefaultArgs<ExtArgs>
   findings?: boolean | Prisma.Scan$findingsArgs<ExtArgs>
+  outboxEvents?: boolean | Prisma.Scan$outboxEventsArgs<ExtArgs>
   _count?: boolean | Prisma.ScanCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type ScanIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -816,6 +924,7 @@ export type $ScanPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
   objects: {
     monitor: Prisma.$MonitorPayload<ExtArgs>
     findings: Prisma.$ScanFindingPayload<ExtArgs>[]
+    outboxEvents: Prisma.$ScanOutboxEventPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1223,6 +1332,7 @@ export interface Prisma__ScanClient<T, Null = never, ExtArgs extends runtime.Typ
   readonly [Symbol.toStringTag]: "PrismaPromise"
   monitor<T extends Prisma.MonitorDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.MonitorDefaultArgs<ExtArgs>>): Prisma.Prisma__MonitorClient<runtime.Types.Result.GetResult<Prisma.$MonitorPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   findings<T extends Prisma.Scan$findingsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Scan$findingsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ScanFindingPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  outboxEvents<T extends Prisma.Scan$outboxEventsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Scan$outboxEventsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ScanOutboxEventPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1683,6 +1793,30 @@ export type Scan$findingsArgs<ExtArgs extends runtime.Types.Extensions.InternalA
   take?: number
   skip?: number
   distinct?: Prisma.ScanFindingScalarFieldEnum | Prisma.ScanFindingScalarFieldEnum[]
+}
+
+/**
+ * Scan.outboxEvents
+ */
+export type Scan$outboxEventsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the ScanOutboxEvent
+   */
+  select?: Prisma.ScanOutboxEventSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the ScanOutboxEvent
+   */
+  omit?: Prisma.ScanOutboxEventOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.ScanOutboxEventInclude<ExtArgs> | null
+  where?: Prisma.ScanOutboxEventWhereInput
+  orderBy?: Prisma.ScanOutboxEventOrderByWithRelationInput | Prisma.ScanOutboxEventOrderByWithRelationInput[]
+  cursor?: Prisma.ScanOutboxEventWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.ScanOutboxEventScalarFieldEnum | Prisma.ScanOutboxEventScalarFieldEnum[]
 }
 
 /**

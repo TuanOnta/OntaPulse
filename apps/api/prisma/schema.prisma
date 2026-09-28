@@ -28,6 +28,11 @@ enum WorkspaceRole {
   MEMBER
 }
 
+enum OutboxEventStatus {
+  PENDING
+  PUBLISHED
+}
+
 model User {
   id           String   @id @default(uuid()) @db.Uuid
   email        String   @unique
@@ -109,10 +114,38 @@ model Scan {
   createdAt      DateTime   @default(now())
 
   monitor  Monitor       @relation(fields: [monitorId], references: [id], onDelete: Cascade)
-  findings ScanFinding[]
+  findings     ScanFinding[]
+  outboxEvents ScanOutboxEvent[]
 
   @@index([monitorId, createdAt])
 }
+
+model ScanOutboxEvent {
+  id          String           @id @default(uuid()) @db.Uuid
+  scanId      String           @unique @db.Uuid
+  monitorId   String           @db.Uuid
+  status      OutboxEventStatus @default(PENDING)
+  attempts    Int              @default(0)
+  lastError   String?
+  publishedAt DateTime?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  scan Scan @relation(fields: [scanId], references: [id], onDelete: Cascade)
+
+  @@index([status, createdAt])
+}
+
+model OperationsAuditLog {
+  id        String   @id @default(uuid()) @db.Uuid
+  action    String
+  actor     String
+  details   Json?
+  createdAt DateTime @default(now())
+
+  @@index([action, createdAt])
+}
+
 
 model ScanFinding {
   id             String          @id @default(uuid()) @db.Uuid

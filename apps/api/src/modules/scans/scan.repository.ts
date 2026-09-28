@@ -19,10 +19,34 @@ export class ScanRepository {
   }
 
   create(monitorId: string) {
-    return prisma.scan.create({
-      data: {
-        monitorId,
-      },
+    return prisma.$transaction(async (transaction) => {
+      const scan = await transaction.scan.create({ data: { monitorId } });
+      await transaction.scanOutboxEvent.create({
+        data: { scanId: scan.id, monitorId },
+      });
+      return scan;
+    });
+  }
+
+  pendingOutboxEvents() {
+    return prisma.scanOutboxEvent.findMany({
+      where: { status: "PENDING" },
+      orderBy: { createdAt: "asc" },
+      take: 100,
+    });
+  }
+
+  markOutboxPublished(id: string) {
+    return prisma.scanOutboxEvent.update({
+      where: { id },
+      data: { status: "PUBLISHED", publishedAt: new Date(), lastError: null },
+    });
+  }
+
+  recordOutboxFailure(id: string, error: unknown) {
+    return prisma.scanOutboxEvent.update({
+      where: { id },
+      data: { attempts: { increment: 1 }, lastError: error instanceof Error ? error.message : "Queue unavailable" },
     });
   }
 

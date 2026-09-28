@@ -36,3 +36,11 @@ export const WorkspaceRole = {
 } as const
 
 export type WorkspaceRole = (typeof WorkspaceRole)[keyof typeof WorkspaceRole]
+
+
+export const OutboxEventStatus = {
+  PENDING: 'PENDING',
+  PUBLISHED: 'PUBLISHED'
+} as const
+
+export type OutboxEventStatus = (typeof OutboxEventStatus)[keyof typeof OutboxEventStatus]

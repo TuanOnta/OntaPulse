@@ -48,6 +48,16 @@ export type Monitor = Prisma.MonitorModel
  */
 export type Scan = Prisma.ScanModel
 /**
+ * Model ScanOutboxEvent
+ * 
+ */
+export type ScanOutboxEvent = Prisma.ScanOutboxEventModel
+/**
+ * Model OperationsAuditLog
+ * 
+ */
+export type OperationsAuditLog = Prisma.OperationsAuditLogModel
+/**
  * Model ScanFinding
  * 
  */

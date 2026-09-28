@@ -57,6 +57,8 @@ export const ModelName = {
   Project: 'Project',
   Monitor: 'Monitor',
   Scan: 'Scan',
+  ScanOutboxEvent: 'ScanOutboxEvent',
+  OperationsAuditLog: 'OperationsAuditLog',
   ScanFinding: 'ScanFinding'
 } as const
 
@@ -148,6 +150,32 @@ export const ScanScalarFieldEnum = {
 } as const
 
 export type ScanScalarFieldEnum = (typeof ScanScalarFieldEnum)[keyof typeof ScanScalarFieldEnum]
+
+
+export const ScanOutboxEventScalarFieldEnum = {
+  id: 'id',
+  scanId: 'scanId',
+  monitorId: 'monitorId',
+  status: 'status',
+  attempts: 'attempts',
+  lastError: 'lastError',
+  publishedAt: 'publishedAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ScanOutboxEventScalarFieldEnum = (typeof ScanOutboxEventScalarFieldEnum)[keyof typeof ScanOutboxEventScalarFieldEnum]
+
+
+export const OperationsAuditLogScalarFieldEnum = {
+  id: 'id',
+  action: 'action',
+  actor: 'actor',
+  details: 'details',
+  createdAt: 'createdAt'
+} as const
+
+export type OperationsAuditLogScalarFieldEnum = (typeof OperationsAuditLogScalarFieldEnum)[keyof typeof OperationsAuditLogScalarFieldEnum]
 
 
 export const ScanFindingScalarFieldEnum = {

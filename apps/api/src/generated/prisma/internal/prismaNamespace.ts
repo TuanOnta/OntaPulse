@@ -403,6 +403,8 @@ export const ModelName = {
   Project: 'Project',
   Monitor: 'Monitor',
   Scan: 'Scan',
+  ScanOutboxEvent: 'ScanOutboxEvent',
+  OperationsAuditLog: 'OperationsAuditLog',
   ScanFinding: 'ScanFinding'
 } as const
 
@@ -419,7 +421,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "workspace" | "workspaceMember" | "project" | "monitor" | "scan" | "scanFinding"
+    modelProps: "user" | "workspace" | "workspaceMember" | "project" | "monitor" | "scan" | "scanOutboxEvent" | "operationsAuditLog" | "scanFinding"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -867,6 +869,154 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    ScanOutboxEvent: {
+      payload: Prisma.$ScanOutboxEventPayload<ExtArgs>
+      fields: Prisma.ScanOutboxEventFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.ScanOutboxEventFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ScanOutboxEventPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.ScanOutboxEventFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ScanOutboxEventPayload>
+        }
+        findFirst: {
+          args: Prisma.ScanOutboxEventFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ScanOutboxEventPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.ScanOutboxEventFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ScanOutboxEventPayload>
+        }
+        findMany: {
+          args: Prisma.ScanOutboxEventFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ScanOutboxEventPayload>[]
+        }
+        create: {
+          args: Prisma.ScanOutboxEventCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ScanOutboxEventPayload>
+        }
+        createMany: {
+          args: Prisma.ScanOutboxEventCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.ScanOutboxEventCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ScanOutboxEventPayload>[]
+        }
+        delete: {
+          args: Prisma.ScanOutboxEventDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ScanOutboxEventPayload>
+        }
+        update: {
+          args: Prisma.ScanOutboxEventUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ScanOutboxEventPayload>
+        }
+        deleteMany: {
+          args: Prisma.ScanOutboxEventDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.ScanOutboxEventUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.ScanOutboxEventUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ScanOutboxEventPayload>[]
+        }
+        upsert: {
+          args: Prisma.ScanOutboxEventUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ScanOutboxEventPayload>
+        }
+        aggregate: {
+          args: Prisma.ScanOutboxEventAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateScanOutboxEvent>
+        }
+        groupBy: {
+          args: Prisma.ScanOutboxEventGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ScanOutboxEventGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.ScanOutboxEventCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ScanOutboxEventCountAggregateOutputType> | number
+        }
+      }
+    }
+    OperationsAuditLog: {
+      payload: Prisma.$OperationsAuditLogPayload<ExtArgs>
+      fields: Prisma.OperationsAuditLogFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.OperationsAuditLogFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$OperationsAuditLogPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.OperationsAuditLogFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$OperationsAuditLogPayload>
+        }
+        findFirst: {
+          args: Prisma.OperationsAuditLogFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$OperationsAuditLogPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.OperationsAuditLogFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$OperationsAuditLogPayload>
+        }
+        findMany: {
+          args: Prisma.OperationsAuditLogFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$OperationsAuditLogPayload>[]
+        }
+        create: {
+          args: Prisma.OperationsAuditLogCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$OperationsAuditLogPayload>
+        }
+        createMany: {
+          args: Prisma.OperationsAuditLogCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.OperationsAuditLogCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$OperationsAuditLogPayload>[]
+        }
+        delete: {
+          args: Prisma.OperationsAuditLogDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$OperationsAuditLogPayload>
+        }
+        update: {
+          args: Prisma.OperationsAuditLogUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$OperationsAuditLogPayload>
+        }
+        deleteMany: {
+          args: Prisma.OperationsAuditLogDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.OperationsAuditLogUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.OperationsAuditLogUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$OperationsAuditLogPayload>[]
+        }
+        upsert: {
+          args: Prisma.OperationsAuditLogUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$OperationsAuditLogPayload>
+        }
+        aggregate: {
+          args: Prisma.OperationsAuditLogAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateOperationsAuditLog>
+        }
+        groupBy: {
+          args: Prisma.OperationsAuditLogGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.OperationsAuditLogGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.OperationsAuditLogCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.OperationsAuditLogCountAggregateOutputType> | number
+        }
+      }
+    }
     ScanFinding: {
       payload: Prisma.$ScanFindingPayload<ExtArgs>
       fields: Prisma.ScanFindingFieldRefs
@@ -1054,6 +1204,32 @@ export const ScanScalarFieldEnum = {
 export type ScanScalarFieldEnum = (typeof ScanScalarFieldEnum)[keyof typeof ScanScalarFieldEnum]
 
 
+export const ScanOutboxEventScalarFieldEnum = {
+  id: 'id',
+  scanId: 'scanId',
+  monitorId: 'monitorId',
+  status: 'status',
+  attempts: 'attempts',
+  lastError: 'lastError',
+  publishedAt: 'publishedAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ScanOutboxEventScalarFieldEnum = (typeof ScanOutboxEventScalarFieldEnum)[keyof typeof ScanOutboxEventScalarFieldEnum]
+
+
+export const OperationsAuditLogScalarFieldEnum = {
+  id: 'id',
+  action: 'action',
+  actor: 'actor',
+  details: 'details',
+  createdAt: 'createdAt'
+} as const
+
+export type OperationsAuditLogScalarFieldEnum = (typeof OperationsAuditLogScalarFieldEnum)[keyof typeof OperationsAuditLogScalarFieldEnum]
+
+
 export const ScanFindingScalarFieldEnum = {
   id: 'id',
   scanId: 'scanId',
@@ -1194,16 +1370,16 @@ export type ListEnumScanStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$P
 
 
 /**
- * Reference to a field of type 'FindingSeverity'
+ * Reference to a field of type 'OutboxEventStatus'
  */
-export type EnumFindingSeverityFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'FindingSeverity'>
+export type EnumOutboxEventStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'OutboxEventStatus'>
     
 
 
 /**
- * Reference to a field of type 'FindingSeverity[]'
+ * Reference to a field of type 'OutboxEventStatus[]'
  */
-export type ListEnumFindingSeverityFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'FindingSeverity[]'>
+export type ListEnumOutboxEventStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'OutboxEventStatus[]'>
     
 
 
@@ -1218,6 +1394,20 @@ export type JsonFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'J
  * Reference to a field of type 'QueryMode'
  */
 export type EnumQueryModeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'QueryMode'>
+    
+
+
+/**
+ * Reference to a field of type 'FindingSeverity'
+ */
+export type EnumFindingSeverityFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'FindingSeverity'>
+    
+
+
+/**
+ * Reference to a field of type 'FindingSeverity[]'
+ */
+export type ListEnumFindingSeverityFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'FindingSeverity[]'>
     
 
 
@@ -1391,6 +1581,8 @@ export type GlobalOmitConfig = {
   project?: Prisma.ProjectOmit
   monitor?: Prisma.MonitorOmit
   scan?: Prisma.ScanOmit
+  scanOutboxEvent?: Prisma.ScanOutboxEventOmit
+  operationsAuditLog?: Prisma.OperationsAuditLogOmit
   scanFinding?: Prisma.ScanFindingOmit
 }
 
