@@ -145,7 +145,9 @@ describe("resource authorization", () => {
 
     expect(monitorResponse.statusCode).toBe(201);
     expect(scanResponse.statusCode).toBe(202);
-    expect(scanQueue.jobs).toHaveLength(1);
+    await expect(
+      prisma.scanOutboxEvent.findUnique({ where: { scanId: scanResponse.json().id as string } }),
+    ).resolves.toMatchObject({ monitorId: fixture.monitorId, status: "PENDING" });
   });
 
   it("rejects monitor and scan writes by a MEMBER", async () => {

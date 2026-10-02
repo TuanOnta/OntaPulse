@@ -67,16 +67,15 @@ Do not copy Monitor configuration into the message. The worker loads current dat
 ## Producer responsibility
 
 1. For a manual request, confirm that the Monitor exists and that the user is authorized. For a scheduled request, atomically claim a due active Monitor.
-2. Create a Scan with status `QUEUED`.
-3. Publish the message using a confirm channel.
-4. Wait for broker confirmation.
-5. If publishing fails, mark the Scan `FAILED` and return `503 SCAN_QUEUE_UNAVAILABLE`.
+2. Create a Scan with status `QUEUED` and a `PENDING` outbox event in one database transaction.
+3. Lease the event, publish the message using a confirm channel, and wait for broker confirmation.
+4. Mark the event `PUBLISHED` only after confirmation; on failure, release it to `PENDING` with a safe operational error.
 
-The persisted failure uses the safe message `Scan queue is unavailable` and sets `finishedAt`. The technical error remains attached as the application error cause for structured server logging and must not be returned to the client.
+Manual triggering returns `202 Accepted` once the Scan and outbox event are durable. It does not wait for broker publication.
 
 The API may be running without an open RabbitMQ connection because the producer connects lazily. The API scheduler checks due active monitors every 10 seconds and uses the same producer lifecycle as manual requests. Fastify shutdown closes both the confirm channel and its connection when they have been created.
 
-The database write and broker publish are not atomic. Publisher confirms establish that RabbitMQ accepted a publication, but they do not make the preceding database insert part of the same transaction. A connection failure can also be ambiguous: the broker may have accepted the message even though the producer did not receive confirmation. A transactional outbox is the planned reliability improvement if broker failure recovery becomes insufficient.
+Scan creation also creates a `ScanOutboxEvent` in the same PostgreSQL transaction. The outbox publisher leases pending events, publishes through a confirm channel, and marks an event `PUBLISHED` only after broker confirmation. A failed or expired lease returns the event to `PENDING`; duplicate delivery remains safe because the worker uses `scanId` as its idempotency key.
 
 ## Consumer responsibility
 
@@ -142,6 +141,14 @@ An expected GET execution error is persisted as `FAILED` and ACKed, without retr
 The final rejection uses the existing main queue's dead-letter mechanism; unlike the
 new quorum retry queues, its classic queue dead-letter transfer is not replicated or
 publisher-confirmed. Do not delete existing queues to change their type.
+
+## Dead-letter redrive
+
+Owners can redrive a specific scan using `POST /api/workspaces/:workspaceId/operations/dlq/:scanId/redrive`. The operation verifies that the scan belongs to the workspace, republishes it with publisher confirmation, and ACKs the original dead-letter delivery only afterward. Every completed or failed request is recorded in `OperationsAuditLog`.
+
+For safety, the tool handles only the current head of `scan.jobs.dead`; an unrelated or invalid head is requeued unchanged and the API reports `HEAD_MISMATCH` or `INVALID_MESSAGE`. Inspect and resolve that head before retrying a later scan.
+
+`GET /api/workspaces/:workspaceId/operations/queue-health` is owner-only. Its broker counts are instance-wide, while pending outbox, queued, stuck-running, and recently failed scan counts are scoped to the selected workspace.
 
 ## Testing boundary
 

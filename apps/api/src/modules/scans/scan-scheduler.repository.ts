@@ -48,24 +48,15 @@ export class ScanSchedulerRepository {
         return null;
       }
 
-      return transaction.scan.create({
+      const scan = await transaction.scan.create({
         data: {
           monitorId: monitor.id,
         },
       });
-    });
-  }
-
-  markFailed(scanId: string, errorMessage: string) {
-    return prisma.scan.update({
-      where: {
-        id: scanId,
-      },
-      data: {
-        status: "FAILED",
-        errorMessage,
-        finishedAt: new Date(),
-      },
+      await transaction.scanOutboxEvent.create({
+        data: { scanId: scan.id, monitorId: monitor.id },
+      });
+      return scan;
     });
   }
 }

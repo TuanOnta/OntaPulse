@@ -30,6 +30,7 @@ enum WorkspaceRole {
 
 enum OutboxEventStatus {
   PENDING
+  PUBLISHING
   PUBLISHED
 }
 
@@ -127,6 +128,7 @@ model ScanOutboxEvent {
   status      OutboxEventStatus @default(PENDING)
   attempts    Int              @default(0)
   lastError   String?
+  claimedAt   DateTime?
   publishedAt DateTime?
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt

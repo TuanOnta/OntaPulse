@@ -40,6 +40,7 @@ export type WorkspaceRole = (typeof WorkspaceRole)[keyof typeof WorkspaceRole]
 
 export const OutboxEventStatus = {
   PENDING: 'PENDING',
+  PUBLISHING: 'PUBLISHING',
   PUBLISHED: 'PUBLISHED'
 } as const
 

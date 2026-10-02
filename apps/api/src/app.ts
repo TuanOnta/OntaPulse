@@ -8,6 +8,7 @@ import { loggerOptions } from "./infrastructure/logger/logger.js";
 
 import { NoopScanQueue } from "./infrastructure/queue/noop-scan-queue.js";
 import type { ScanQueue } from "./infrastructure/queue/scan-queue.js";
+import type { ScanQueueOperations } from "./infrastructure/queue/scan-queue.js";
 
 import { NoopSessionStore } from "./infrastructure/session/noop-session-store.js";
 import type { SessionStore } from "./infrastructure/session/session-store.js";
@@ -15,6 +16,7 @@ import type { SessionStore } from "./infrastructure/session/session-store.js";
 import { authRoutes } from "./modules/auth/auth.routes.js";
 import { projectRoutes } from "./modules/projects/project.routes.js";
 import { monitorRoutes } from "./modules/monitors/monitor.routes.js";
+import { operationsRoutes } from "./modules/operations/operations.routes.js";
 import { scanRoutes } from "./modules/scans/scan.routes.js";
 import { workspaceRoutes } from "./modules/workspaces/workspace.routes.js";
 
@@ -24,11 +26,13 @@ import { registerErrorHandlers } from "./plugins/error-handler.js";
 
 interface BuildAppOptions {
   scanQueue?: ScanQueue;
+  queueOperations?: ScanQueueOperations;
   sessionStore?: SessionStore;
 }
 
 export function buildApp(options: BuildAppOptions = {}) {
   const scanQueue = options.scanQueue ?? new NoopScanQueue();
+  const queueOperations = options.queueOperations ?? new NoopScanQueue();
 
   const sessionStore = options.sessionStore ?? new NoopSessionStore();
 
@@ -66,7 +70,8 @@ export function buildApp(options: BuildAppOptions = {}) {
 
   void app.register(authRoutes, { prefix: "/api", sessionStore });
   void app.register(monitorRoutes, { prefix: "/api" });
-  void app.register(scanRoutes, { prefix: "/api", scanQueue });
+  void app.register(scanRoutes, { prefix: "/api" });
+  void app.register(operationsRoutes, { prefix: "/api", queueOperations });
   void app.register(workspaceRoutes, { prefix: "/api" });
   void app.register(projectRoutes, { prefix: "/api" });
   app.addHook("onClose", async () => {

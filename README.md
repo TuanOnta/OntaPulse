@@ -4,7 +4,7 @@ A monorepo-based website and API monitoring platform for managing targets, runni
 
 OntaPulse separates request handling from scan execution. The API persists a scan with the `QUEUED` status and publishes a job to RabbitMQ. A Python worker consumes the job, validates URL safety, performs the HTTP check, evaluates the result, and stores the terminal status and findings in PostgreSQL. The web client provides interfaces for authentication, workspaces, projects, monitors, scans, and member management.
 
-> **Project status:** actively developed. The primary workflow from the web client through the worker is available. Capabilities such as automatic scheduling, notifications, and update/delete operations for several resources have not been implemented yet.
+> **Project status:** actively developed. The primary workflow from the web client through the worker is available. Capabilities such as notifications and update/delete operations for several resources have not been implemented yet.
 
 ## Table of contents
 
@@ -63,7 +63,7 @@ OntaPulse separates request handling from scan execution. The API persists a sca
 | Projects and monitors       |   Available   | Create and list operations; update/delete are not available                           |
 | Scan API                    |   Available   | Trigger, list by monitor, and scan details                                            |
 | PostgreSQL persistence      |   Available   | Prisma in the API and SQLAlchemy in the worker                                        |
-| RabbitMQ producer           |   Available   | Durable topology, mandatory routing, and publisher confirms                           |
+| RabbitMQ producer           |   Available   | Transactional outbox, durable topology, mandatory routing, and publisher confirms     |
 | Python scan worker          |   Available   | HTTP execution, database lifecycle, retries, DLQ, and controlled shutdown             |
 | Findings                    |   Available   | Client errors, server errors, and slow responses                                      |
 | Automatic scheduling        |   Available   | Active monitors are queued at their configured interval                               |
@@ -122,10 +122,10 @@ sequenceDiagram
 
     User->>Web: Trigger scan
     Web->>API: POST /api/monitors/:monitorId/scans
-    API->>DB: Create Scan (QUEUED)
-    API->>MQ: Publish scan.requested
-    MQ-->>API: Publisher confirmation
+    API->>DB: Create Scan + outbox event (QUEUED/PENDING)
     API-->>Web: 202 Accepted
+    API->>MQ: Publish scan.requested from outbox
+    MQ-->>API: Publisher confirmation
     MQ->>Worker: Deliver job
     Worker->>DB: Claim Scan and mark RUNNING
     Worker->>Target: HTTP GET
@@ -137,13 +137,13 @@ sequenceDiagram
 
 Important lifecycle properties:
 
-1. The API returns `202 Accepted` only after RabbitMQ confirms the publication.
-2. If publication fails, the API marks the scan as `FAILED`, stores a safe error message, and returns `503 SCAN_QUEUE_UNAVAILABLE`.
+1. The API returns `202 Accepted` after the Scan and pending outbox event have committed together.
+2. The outbox publisher waits for RabbitMQ confirmation before marking an event `PUBLISHED`.
 3. RabbitMQ provides at-least-once delivery. The worker treats `scanId` as an idempotency key.
 4. HTTP 4xx and 5xx responses still mean the target returned an HTTP response. The scan becomes `SUCCEEDED` and may produce a finding.
 5. Timeouts, DNS failures, and target connection failures are stored as terminal `FAILED` scan results and do not use RabbitMQ retries.
 6. RabbitMQ retries are reserved for infrastructure failures that prevent the worker from completing the database lifecycle safely.
-7. The database write and broker publication are not one atomic transaction. A transactional outbox is the intended improvement if stronger delivery guarantees become necessary.
+7. The outbox publisher marks an event published only after RabbitMQ confirmation and retries events whose lease expires or publish fails.
 
 ## Domain model
 
@@ -862,8 +862,7 @@ Use the RabbitMQ Management UI to inspect queues, connections, channels, and del
 - The API does not provide update/delete operations for workspaces, projects, or monitors.
 - Monitors cannot be paused or resumed even though the database already contains an `isActive` field.
 - There is no aggregated dashboard for uptime, SLA/SLO, incident history, or response-time trends.
-- There is no transactional outbox between PostgreSQL and RabbitMQ.
-- There is no automatic redrive procedure for the dead-letter queue.
+- The outbox publisher retries pending events, but does not yet apply a bounded retry limit or escalation policy.
 - The worker performs HTTP GET requests without following redirects or reading response bodies.
 - Targets available only on private networks are intentionally rejected by public URL validation.
 

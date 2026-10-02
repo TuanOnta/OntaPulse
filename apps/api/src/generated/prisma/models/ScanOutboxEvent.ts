@@ -41,6 +41,7 @@ export type ScanOutboxEventMinAggregateOutputType = {
   status: $Enums.OutboxEventStatus | null
   attempts: number | null
   lastError: string | null
+  claimedAt: Date | null
   publishedAt: Date | null
   createdAt: Date | null
   updatedAt: Date | null
@@ -53,6 +54,7 @@ export type ScanOutboxEventMaxAggregateOutputType = {
   status: $Enums.OutboxEventStatus | null
   attempts: number | null
   lastError: string | null
+  claimedAt: Date | null
   publishedAt: Date | null
   createdAt: Date | null
   updatedAt: Date | null
@@ -65,6 +67,7 @@ export type ScanOutboxEventCountAggregateOutputType = {
   status: number
   attempts: number
   lastError: number
+  claimedAt: number
   publishedAt: number
   createdAt: number
   updatedAt: number
@@ -87,6 +90,7 @@ export type ScanOutboxEventMinAggregateInputType = {
   status?: true
   attempts?: true
   lastError?: true
+  claimedAt?: true
   publishedAt?: true
   createdAt?: true
   updatedAt?: true
@@ -99,6 +103,7 @@ export type ScanOutboxEventMaxAggregateInputType = {
   status?: true
   attempts?: true
   lastError?: true
+  claimedAt?: true
   publishedAt?: true
   createdAt?: true
   updatedAt?: true
@@ -111,6 +116,7 @@ export type ScanOutboxEventCountAggregateInputType = {
   status?: true
   attempts?: true
   lastError?: true
+  claimedAt?: true
   publishedAt?: true
   createdAt?: true
   updatedAt?: true
@@ -210,6 +216,7 @@ export type ScanOutboxEventGroupByOutputType = {
   status: $Enums.OutboxEventStatus
   attempts: number
   lastError: string | null
+  claimedAt: Date | null
   publishedAt: Date | null
   createdAt: Date
   updatedAt: Date
@@ -245,6 +252,7 @@ export type ScanOutboxEventWhereInput = {
   status?: Prisma.EnumOutboxEventStatusFilter<"ScanOutboxEvent"> | $Enums.OutboxEventStatus
   attempts?: Prisma.IntFilter<"ScanOutboxEvent"> | number
   lastError?: Prisma.StringNullableFilter<"ScanOutboxEvent"> | string | null
+  claimedAt?: Prisma.DateTimeNullableFilter<"ScanOutboxEvent"> | Date | string | null
   publishedAt?: Prisma.DateTimeNullableFilter<"ScanOutboxEvent"> | Date | string | null
   createdAt?: Prisma.DateTimeFilter<"ScanOutboxEvent"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"ScanOutboxEvent"> | Date | string
@@ -258,6 +266,7 @@ export type ScanOutboxEventOrderByWithRelationInput = {
   status?: Prisma.SortOrder
   attempts?: Prisma.SortOrder
   lastError?: Prisma.SortOrderInput | Prisma.SortOrder
+  claimedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   publishedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -274,6 +283,7 @@ export type ScanOutboxEventWhereUniqueInput = Prisma.AtLeast<{
   status?: Prisma.EnumOutboxEventStatusFilter<"ScanOutboxEvent"> | $Enums.OutboxEventStatus
   attempts?: Prisma.IntFilter<"ScanOutboxEvent"> | number
   lastError?: Prisma.StringNullableFilter<"ScanOutboxEvent"> | string | null
+  claimedAt?: Prisma.DateTimeNullableFilter<"ScanOutboxEvent"> | Date | string | null
   publishedAt?: Prisma.DateTimeNullableFilter<"ScanOutboxEvent"> | Date | string | null
   createdAt?: Prisma.DateTimeFilter<"ScanOutboxEvent"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"ScanOutboxEvent"> | Date | string
@@ -287,6 +297,7 @@ export type ScanOutboxEventOrderByWithAggregationInput = {
   status?: Prisma.SortOrder
   attempts?: Prisma.SortOrder
   lastError?: Prisma.SortOrderInput | Prisma.SortOrder
+  claimedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   publishedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -307,6 +318,7 @@ export type ScanOutboxEventScalarWhereWithAggregatesInput = {
   status?: Prisma.EnumOutboxEventStatusWithAggregatesFilter<"ScanOutboxEvent"> | $Enums.OutboxEventStatus
   attempts?: Prisma.IntWithAggregatesFilter<"ScanOutboxEvent"> | number
   lastError?: Prisma.StringNullableWithAggregatesFilter<"ScanOutboxEvent"> | string | null
+  claimedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"ScanOutboxEvent"> | Date | string | null
   publishedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"ScanOutboxEvent"> | Date | string | null
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"ScanOutboxEvent"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"ScanOutboxEvent"> | Date | string
@@ -318,6 +330,7 @@ export type ScanOutboxEventCreateInput = {
   status?: $Enums.OutboxEventStatus
   attempts?: number
   lastError?: string | null
+  claimedAt?: Date | string | null
   publishedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -331,6 +344,7 @@ export type ScanOutboxEventUncheckedCreateInput = {
   status?: $Enums.OutboxEventStatus
   attempts?: number
   lastError?: string | null
+  claimedAt?: Date | string | null
   publishedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -342,6 +356,7 @@ export type ScanOutboxEventUpdateInput = {
   status?: Prisma.EnumOutboxEventStatusFieldUpdateOperationsInput | $Enums.OutboxEventStatus
   attempts?: Prisma.IntFieldUpdateOperationsInput | number
   lastError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  claimedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   publishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -355,6 +370,7 @@ export type ScanOutboxEventUncheckedUpdateInput = {
   status?: Prisma.EnumOutboxEventStatusFieldUpdateOperationsInput | $Enums.OutboxEventStatus
   attempts?: Prisma.IntFieldUpdateOperationsInput | number
   lastError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  claimedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   publishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -367,6 +383,7 @@ export type ScanOutboxEventCreateManyInput = {
   status?: $Enums.OutboxEventStatus
   attempts?: number
   lastError?: string | null
+  claimedAt?: Date | string | null
   publishedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -378,6 +395,7 @@ export type ScanOutboxEventUpdateManyMutationInput = {
   status?: Prisma.EnumOutboxEventStatusFieldUpdateOperationsInput | $Enums.OutboxEventStatus
   attempts?: Prisma.IntFieldUpdateOperationsInput | number
   lastError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  claimedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   publishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -390,6 +408,7 @@ export type ScanOutboxEventUncheckedUpdateManyInput = {
   status?: Prisma.EnumOutboxEventStatusFieldUpdateOperationsInput | $Enums.OutboxEventStatus
   attempts?: Prisma.IntFieldUpdateOperationsInput | number
   lastError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  claimedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   publishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -412,6 +431,7 @@ export type ScanOutboxEventCountOrderByAggregateInput = {
   status?: Prisma.SortOrder
   attempts?: Prisma.SortOrder
   lastError?: Prisma.SortOrder
+  claimedAt?: Prisma.SortOrder
   publishedAt?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -428,6 +448,7 @@ export type ScanOutboxEventMaxOrderByAggregateInput = {
   status?: Prisma.SortOrder
   attempts?: Prisma.SortOrder
   lastError?: Prisma.SortOrder
+  claimedAt?: Prisma.SortOrder
   publishedAt?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -440,6 +461,7 @@ export type ScanOutboxEventMinOrderByAggregateInput = {
   status?: Prisma.SortOrder
   attempts?: Prisma.SortOrder
   lastError?: Prisma.SortOrder
+  claimedAt?: Prisma.SortOrder
   publishedAt?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -501,6 +523,7 @@ export type ScanOutboxEventCreateWithoutScanInput = {
   status?: $Enums.OutboxEventStatus
   attempts?: number
   lastError?: string | null
+  claimedAt?: Date | string | null
   publishedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -512,6 +535,7 @@ export type ScanOutboxEventUncheckedCreateWithoutScanInput = {
   status?: $Enums.OutboxEventStatus
   attempts?: number
   lastError?: string | null
+  claimedAt?: Date | string | null
   publishedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -553,6 +577,7 @@ export type ScanOutboxEventScalarWhereInput = {
   status?: Prisma.EnumOutboxEventStatusFilter<"ScanOutboxEvent"> | $Enums.OutboxEventStatus
   attempts?: Prisma.IntFilter<"ScanOutboxEvent"> | number
   lastError?: Prisma.StringNullableFilter<"ScanOutboxEvent"> | string | null
+  claimedAt?: Prisma.DateTimeNullableFilter<"ScanOutboxEvent"> | Date | string | null
   publishedAt?: Prisma.DateTimeNullableFilter<"ScanOutboxEvent"> | Date | string | null
   createdAt?: Prisma.DateTimeFilter<"ScanOutboxEvent"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"ScanOutboxEvent"> | Date | string
@@ -564,6 +589,7 @@ export type ScanOutboxEventCreateManyScanInput = {
   status?: $Enums.OutboxEventStatus
   attempts?: number
   lastError?: string | null
+  claimedAt?: Date | string | null
   publishedAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -575,6 +601,7 @@ export type ScanOutboxEventUpdateWithoutScanInput = {
   status?: Prisma.EnumOutboxEventStatusFieldUpdateOperationsInput | $Enums.OutboxEventStatus
   attempts?: Prisma.IntFieldUpdateOperationsInput | number
   lastError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  claimedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   publishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -586,6 +613,7 @@ export type ScanOutboxEventUncheckedUpdateWithoutScanInput = {
   status?: Prisma.EnumOutboxEventStatusFieldUpdateOperationsInput | $Enums.OutboxEventStatus
   attempts?: Prisma.IntFieldUpdateOperationsInput | number
   lastError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  claimedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   publishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -597,6 +625,7 @@ export type ScanOutboxEventUncheckedUpdateManyWithoutScanInput = {
   status?: Prisma.EnumOutboxEventStatusFieldUpdateOperationsInput | $Enums.OutboxEventStatus
   attempts?: Prisma.IntFieldUpdateOperationsInput | number
   lastError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  claimedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   publishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -611,6 +640,7 @@ export type ScanOutboxEventSelect<ExtArgs extends runtime.Types.Extensions.Inter
   status?: boolean
   attempts?: boolean
   lastError?: boolean
+  claimedAt?: boolean
   publishedAt?: boolean
   createdAt?: boolean
   updatedAt?: boolean
@@ -624,6 +654,7 @@ export type ScanOutboxEventSelectCreateManyAndReturn<ExtArgs extends runtime.Typ
   status?: boolean
   attempts?: boolean
   lastError?: boolean
+  claimedAt?: boolean
   publishedAt?: boolean
   createdAt?: boolean
   updatedAt?: boolean
@@ -637,6 +668,7 @@ export type ScanOutboxEventSelectUpdateManyAndReturn<ExtArgs extends runtime.Typ
   status?: boolean
   attempts?: boolean
   lastError?: boolean
+  claimedAt?: boolean
   publishedAt?: boolean
   createdAt?: boolean
   updatedAt?: boolean
@@ -650,12 +682,13 @@ export type ScanOutboxEventSelectScalar = {
   status?: boolean
   attempts?: boolean
   lastError?: boolean
+  claimedAt?: boolean
   publishedAt?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type ScanOutboxEventOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "scanId" | "monitorId" | "status" | "attempts" | "lastError" | "publishedAt" | "createdAt" | "updatedAt", ExtArgs["result"]["scanOutboxEvent"]>
+export type ScanOutboxEventOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "scanId" | "monitorId" | "status" | "attempts" | "lastError" | "claimedAt" | "publishedAt" | "createdAt" | "updatedAt", ExtArgs["result"]["scanOutboxEvent"]>
 export type ScanOutboxEventInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   scan?: boolean | Prisma.ScanDefaultArgs<ExtArgs>
 }
@@ -678,6 +711,7 @@ export type $ScanOutboxEventPayload<ExtArgs extends runtime.Types.Extensions.Int
     status: $Enums.OutboxEventStatus
     attempts: number
     lastError: string | null
+    claimedAt: Date | null
     publishedAt: Date | null
     createdAt: Date
     updatedAt: Date
@@ -1111,6 +1145,7 @@ export interface ScanOutboxEventFieldRefs {
   readonly status: Prisma.FieldRef<"ScanOutboxEvent", 'OutboxEventStatus'>
   readonly attempts: Prisma.FieldRef<"ScanOutboxEvent", 'Int'>
   readonly lastError: Prisma.FieldRef<"ScanOutboxEvent", 'String'>
+  readonly claimedAt: Prisma.FieldRef<"ScanOutboxEvent", 'DateTime'>
   readonly publishedAt: Prisma.FieldRef<"ScanOutboxEvent", 'DateTime'>
   readonly createdAt: Prisma.FieldRef<"ScanOutboxEvent", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"ScanOutboxEvent", 'DateTime'>

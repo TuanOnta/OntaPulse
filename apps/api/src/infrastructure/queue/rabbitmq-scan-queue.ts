@@ -2,7 +2,13 @@ import { once } from "node:events";
 import * as amqp from "amqplib";
 import type { ChannelModel, ConfirmChannel } from "amqplib";
 
-import type { ScanJob, ScanQueue } from "./scan-queue.js";
+import type {
+  DeadLetterRedriveResult,
+  QueueHealth,
+  ScanJob,
+  ScanQueue,
+  ScanQueueOperations,
+} from "./scan-queue.js";
 
 const SCAN_EXCHANGE = "scan";
 const SCAN_QUEUE = "scan.jobs";
@@ -12,7 +18,7 @@ const SCAN_DEAD_LETTER_EXCHANGE = "scan.dlx";
 const SCAN_DEAD_LETTER_QUEUE = "scan.jobs.dead";
 const SCAN_DEAD_LETTER_ROUTING_KEY = "scan.dead";
 
-export class RabbitMqScanQueue implements ScanQueue {
+export class RabbitMqScanQueue implements ScanQueue, ScanQueueOperations {
   private connection: ChannelModel | null = null;
   private channel: ConfirmChannel | null = null;
   private connecting: Promise<ConfirmChannel> | null = null;
@@ -54,6 +60,42 @@ export class RabbitMqScanQueue implements ScanQueue {
     if (connection) {
       await connection.close();
     }
+  }
+
+  async health(): Promise<QueueHealth> {
+    const channel = await this.getChannel();
+    const [main, retry5, retry30, retry120, deadLetter] = await Promise.all([
+      channel.checkQueue(SCAN_QUEUE),
+      channel.checkQueue("scan.jobs.retry.5s"),
+      channel.checkQueue("scan.jobs.retry.30s"),
+      channel.checkQueue("scan.jobs.retry.120s"),
+      channel.checkQueue(SCAN_DEAD_LETTER_QUEUE),
+    ]);
+    return {
+      main: main.messageCount,
+      retry: retry5.messageCount + retry30.messageCount + retry120.messageCount,
+      deadLetter: deadLetter.messageCount,
+    };
+  }
+
+  async redriveDeadLetter(job: ScanJob): Promise<DeadLetterRedriveResult> {
+    const channel = await this.getChannel();
+    const message = await channel.get(SCAN_DEAD_LETTER_QUEUE, { noAck: false });
+    if (!message) return "EMPTY";
+
+    const payload = parseScanJob(message.content);
+    if (!payload) {
+      channel.nack(message, false, true);
+      return "INVALID_MESSAGE";
+    }
+    if (payload.scanId !== job.scanId || payload.monitorId !== job.monitorId) {
+      channel.nack(message, false, true);
+      return "HEAD_MISMATCH";
+    }
+
+    await this.enqueue(job);
+    channel.ack(message);
+    return "REDRIVEN";
   }
 
   private async getChannel(): Promise<ConfirmChannel> {
@@ -135,4 +177,21 @@ export class RabbitMqScanQueue implements ScanQueue {
 
     return channel;
   }
+}
+
+function parseScanJob(content: Buffer): ScanJob | null {
+  try {
+    const value: unknown = JSON.parse(content.toString("utf8"));
+    if (
+      typeof value === "object" &&
+      value !== null &&
+      "scanId" in value &&
+      "monitorId" in value &&
+      typeof value.scanId === "string" &&
+      typeof value.monitorId === "string"
+    ) {
+      return { scanId: value.scanId, monitorId: value.monitorId };
+    }
+  } catch {}
+  return null;
 }

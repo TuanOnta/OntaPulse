@@ -80,16 +80,16 @@ instances do not queue the same scheduled occurrence twice. Each next execution
 is calculated from the claim time plus `intervalSeconds`; missed intervals do not
 produce a catch-up burst.
 
-If scheduler publication fails, the persisted Scan is marked `FAILED` with the
-safe queue-unavailable message. The monitor keeps its advanced `nextScheduledAt`,
-so that retrying a scheduler cycle cannot duplicate the same scheduled occurrence;
-the next interval produces a new Scan. Each non-empty scheduler cycle emits the
-structured `Scan scheduler run completed` event with `dueMonitorCount`,
-`scheduledCount`, `failedEnqueueCount`, and `durationMs` for log-derived metrics.
+The scheduler creates its Scan and pending outbox event in the same transaction.
+The monitor keeps its advanced `nextScheduledAt`, so retrying a scheduler cycle
+cannot duplicate the same scheduled occurrence; a temporary broker outage leaves
+the outbox event pending instead of failing the Scan. Each non-empty scheduler cycle
+emits the structured `Scan scheduler run completed` event with `dueMonitorCount`,
+`scheduledCount`, and `durationMs` for log-derived metrics.
 
 RabbitMQ delivery is at-least-once. The worker must therefore treat `scanId` as an idempotency key and avoid processing a completed scan twice.
 
-The database insert and RabbitMQ publish are separate operations. They cannot provide atomic commit semantics: an interrupted or ambiguous publish can leave a database record whose state does not perfectly represent broker delivery. A transactional outbox is the intended upgrade if stronger delivery guarantees become necessary.
+The database transaction stores the Scan and outbox event atomically. A publisher leases pending events and marks each event published only after RabbitMQ confirmation. An interrupted or ambiguous publication can still duplicate a broker delivery after the lease expires, so the worker continues to use `scanId` for idempotency.
 
 ### Failure flow
 

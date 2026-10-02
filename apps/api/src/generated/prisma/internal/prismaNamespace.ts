@@ -1211,6 +1211,7 @@ export const ScanOutboxEventScalarFieldEnum = {
   status: 'status',
   attempts: 'attempts',
   lastError: 'lastError',
+  claimedAt: 'claimedAt',
   publishedAt: 'publishedAt',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'

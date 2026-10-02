@@ -1,0 +1,3 @@
+ALTER TYPE "OutboxEventStatus" ADD VALUE 'PUBLISHING';
+
+ALTER TABLE "ScanOutboxEvent" ADD COLUMN "claimedAt" TIMESTAMP(3);

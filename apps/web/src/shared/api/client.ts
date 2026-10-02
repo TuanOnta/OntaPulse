@@ -4,6 +4,7 @@ import type {
   Project,
   Scan,
   ScanDetail,
+  QueueHealth,
   User,
   Workspace,
   WorkspaceMember,
@@ -98,4 +99,11 @@ export const api = {
     request<Scan>(`/monitors/${monitorId}/scans`, { method: "POST" }),
   scans: (monitorId: string) => request<Scan[]>(`/monitors/${monitorId}/scans`),
   scan: (scanId: string) => request<ScanDetail>(`/scans/${scanId}`),
+  queueHealth: (workspaceId: string) =>
+    request<QueueHealth>(`/workspaces/${workspaceId}/operations/queue-health`),
+  redriveDeadLetter: (workspaceId: string, scanId: string) =>
+    request<{ result: "REDRIVEN" | "EMPTY" | "HEAD_MISMATCH" | "INVALID_MESSAGE" }>(
+      `/workspaces/${workspaceId}/operations/dlq/${scanId}/redrive`,
+      { method: "POST" },
+    ),
 };

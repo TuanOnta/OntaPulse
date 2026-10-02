@@ -143,7 +143,7 @@ describe("Scan API", () => {
       });
     });
 
-    it("enqueues the created scan", async () => {
+    it("creates an outbox event for the created scan", async () => {
       const projectId = await createProject();
       const monitorId = await createMonitor(projectId);
 
@@ -153,15 +153,12 @@ describe("Scan API", () => {
       });
 
       expect(response.statusCode).toBe(202);
-      expect(scanQueue.jobs).toEqual([
-        {
-          scanId: response.json().id,
-          monitorId,
-        },
-      ]);
+      await expect(
+        prisma.scanOutboxEvent.findUnique({ where: { scanId: response.json().id as string } }),
+      ).resolves.toMatchObject({ monitorId, status: "PENDING" });
     });
 
-    it("returns 503 and persists a failed scan when enqueue fails", async () => {
+    it("accepts a scan even when the publisher will retry later", async () => {
       const projectId = await createProject();
       const monitorId = await createMonitor(projectId);
 
@@ -172,13 +169,7 @@ describe("Scan API", () => {
         url: `/api/monitors/${monitorId}/scans`,
       });
 
-      expect(response.statusCode).toBe(503);
-      expect(response.json()).toMatchObject({
-        statusCode: 503,
-        code: "SCAN_QUEUE_UNAVAILABLE",
-        message: "Scan queue is unavailable",
-      });
-      expect(response.json()).toHaveProperty("requestId");
+      expect(response.statusCode).toBe(202);
 
       const storedScan = await prisma.scan.findFirst({
         where: {
@@ -188,10 +179,13 @@ describe("Scan API", () => {
 
       expect(storedScan).toMatchObject({
         monitorId,
-        status: "FAILED",
-        errorMessage: "Scan queue is unavailable",
-        finishedAt: expect.any(Date),
+        status: "QUEUED",
+        errorMessage: null,
+        finishedAt: null,
       });
+      await expect(
+        prisma.scanOutboxEvent.findUnique({ where: { scanId: storedScan!.id } }),
+      ).resolves.toMatchObject({ status: "PENDING" });
     });
 
     it("creates different scan records for repeated triggers", async () => {

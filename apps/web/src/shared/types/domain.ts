@@ -73,3 +73,14 @@ export interface ApiErrorShape {
   details?: Record<string, string[] | undefined>;
   requestId?: string;
 }
+
+export interface QueueHealth {
+  workspace: {
+    pendingOutbox: number;
+    queued: number;
+    stuckRunning: number;
+    failedRecently: number;
+    generatedAt: string;
+  };
+  broker: { main: number; retry: number; deadLetter: number };
+}

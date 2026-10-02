@@ -1,4 +1,14 @@
-import { ArrowRight, Crown, Layers3, Plus, RadioTower, ShieldCheck, Users } from "lucide-react";
+import {
+  ArrowRight,
+  Crown,
+  Layers3,
+  Plus,
+  RadioTower,
+  ShieldCheck,
+  Timer,
+  Users,
+  Workflow,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
@@ -7,7 +17,7 @@ import { AppShell } from "@/app/layouts/app-shell";
 import { api } from "@/shared/api/client";
 import { getErrorMessage } from "@/shared/lib/api-error";
 import { formatDate } from "@/shared/lib/format";
-import type { Workspace } from "@/shared/types/domain";
+import type { QueueHealth, Workspace } from "@/shared/types/domain";
 import { BlurFade } from "@/shared/ui/blur-fade";
 import { Button } from "@/shared/ui/button";
 import { EmptyState } from "@/shared/ui/empty-state";
@@ -17,6 +27,7 @@ import { Skeleton } from "@/shared/ui/skeleton";
 
 export function DashboardPage() {
   const [workspaces, setWorkspaces] = useState<Workspace[]>([]);
+  const [queueHealth, setQueueHealth] = useState<QueueHealth | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -26,6 +37,15 @@ export function DashboardPage() {
       .catch((error) => toast.error(getErrorMessage(error)))
       .finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => {
+    const operationsWorkspace = workspaces.find((workspace) => workspace.role === "OWNER");
+    if (!operationsWorkspace) return;
+    api
+      .queueHealth(operationsWorkspace.id)
+      .then(setQueueHealth)
+      .catch(() => setQueueHealth(null));
+  }, [workspaces]);
 
   const managedCount = workspaces.filter(
     (workspace) => workspace.role === "OWNER" || workspace.role === "ADMIN",
@@ -101,6 +121,42 @@ export function DashboardPage() {
           </BlurFade>
         ))}
       </div>
+
+      {queueHealth && (
+        <section className="mb-8 rounded-2xl border border-border/80 bg-surface/70 p-5 shadow-[inset_0_1px_rgba(255,255,255,.025)]">
+          <div className="mb-4 flex items-start justify-between gap-4">
+            <div>
+              <p className="flex items-center gap-2 text-sm font-medium text-slate-100">
+                <Workflow className="size-4 text-signal" /> Queue operations
+              </p>
+              <p className="mt-1 text-xs text-muted">
+                Broker backlog and scans awaiting recovery for your owner workspace.
+              </p>
+            </div>
+            <span className="inline-flex items-center gap-1.5 text-xs text-muted">
+              <Timer className="size-3" /> Live check
+            </span>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
+            {[
+              ["Queue backlog", queueHealth.broker.main, "text-info"],
+              ["Retrying", queueHealth.broker.retry, "text-highlight"],
+              ["Dead letters", queueHealth.broker.deadLetter, "text-danger"],
+              ["Pending outbox", queueHealth.workspace.pendingOutbox, "text-highlight"],
+              ["Stuck scans", queueHealth.workspace.stuckRunning, "text-danger"],
+              ["Recent failures", queueHealth.workspace.failedRecently, "text-danger"],
+            ].map(([label, value, color]) => (
+              <div
+                className="rounded-xl border border-border/70 bg-card/60 px-4 py-3"
+                key={String(label)}
+              >
+                <p className={`text-xl font-semibold ${color}`}>{value}</p>
+                <p className="mt-1 text-xs text-muted">{label}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       <PageHeading
         title="Monitoring workspaces"

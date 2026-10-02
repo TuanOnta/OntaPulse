@@ -36,17 +36,47 @@ export class ScanRepository {
     });
   }
 
+  async claimPendingOutboxEvents(now = new Date()) {
+    const staleBefore = new Date(now.getTime() - 60_000);
+    const candidates = await prisma.scanOutboxEvent.findMany({
+      where: {
+        OR: [{ status: "PENDING" }, { status: "PUBLISHING", claimedAt: { lt: staleBefore } }],
+      },
+      orderBy: { createdAt: "asc" },
+      take: 100,
+    });
+
+    const claimed = [];
+    for (const event of candidates) {
+      const result = await prisma.scanOutboxEvent.updateMany({
+        where: {
+          id: event.id,
+          OR: [{ status: "PENDING" }, { status: "PUBLISHING", claimedAt: { lt: staleBefore } }],
+        },
+        data: { status: "PUBLISHING", claimedAt: now },
+      });
+      if (result.count === 1) claimed.push(event);
+    }
+
+    return claimed;
+  }
+
   markOutboxPublished(id: string) {
     return prisma.scanOutboxEvent.update({
       where: { id },
-      data: { status: "PUBLISHED", publishedAt: new Date(), lastError: null },
+      data: { status: "PUBLISHED", publishedAt: new Date(), claimedAt: null, lastError: null },
     });
   }
 
   recordOutboxFailure(id: string, error: unknown) {
     return prisma.scanOutboxEvent.update({
       where: { id },
-      data: { attempts: { increment: 1 }, lastError: error instanceof Error ? error.message : "Queue unavailable" },
+      data: {
+        status: "PENDING",
+        claimedAt: null,
+        attempts: { increment: 1 },
+        lastError: "Queue publication failed",
+      },
     });
   }
 

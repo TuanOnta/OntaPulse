@@ -10,6 +10,7 @@ export async function resetDatabase(): Promise<void> {
   }
 
   await prisma.scanFinding.deleteMany();
+  await prisma.operationsAuditLog.deleteMany();
   await prisma.scan.deleteMany();
   await prisma.monitor.deleteMany();
   await prisma.project.deleteMany();

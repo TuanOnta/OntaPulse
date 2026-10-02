@@ -16,14 +16,15 @@ const sessionStore = new RedisSessionStore(env.REDIS_URL);
 
 const app = buildApp({
   scanQueue,
+  queueOperations: scanQueue,
   sessionStore,
 });
 
 const scanScheduler = new ScanScheduler(
-  new ScanSchedulerService(new ScanSchedulerRepository(), scanQueue, app.log),
+  new ScanSchedulerService(new ScanSchedulerRepository(), app.log),
   app.log,
 );
-const scanOutboxPublisher = new ScanOutboxPublisher(new ScanRepository(), scanQueue);
+const scanOutboxPublisher = new ScanOutboxPublisher(new ScanRepository(), scanQueue, app.log);
 
 sessionStore.onError((error) => {
   app.log.error({ err: error }, "Redis session store error");

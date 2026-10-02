@@ -1,12 +1,10 @@
 import { AppError } from "../../infrastructure/errors/app-error.js";
-import type { ScanQueue } from "../../infrastructure/queue/scan-queue.js";
 import type { WorkspaceAccessService } from "../workspaces/workspace-access.service.js";
 import { ScanRepository } from "./scan.repository.js";
 
 export class ScanService {
   constructor(
     private readonly scanRepository: ScanRepository,
-    private readonly scanQueue: ScanQueue,
     private readonly workspaceAccessService: WorkspaceAccessService,
   ) {}
 
@@ -25,19 +23,6 @@ export class ScanService {
     );
 
     const scan = await this.scanRepository.create(monitorId);
-
-    try {
-      await this.scanQueue.enqueue({
-        scanId: scan.id,
-        monitorId,
-      });
-    } catch (error) {
-      await this.scanRepository.markFailed(scan.id, "Scan queue is unavailable");
-
-      throw new AppError("Scan queue is unavailable", 503, "SCAN_QUEUE_UNAVAILABLE", undefined, {
-        cause: error,
-      });
-    }
 
     return scan;
   }
