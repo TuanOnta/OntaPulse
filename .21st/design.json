@@ -46,8 +46,7 @@
     "Signal field direction: layered observability grids, restrained aqua secondary signals, and one orchestrated BlurFade entrance per view; preserve mint for healthy status.",
     "Authentication lives inside the landing reveal as one animated login/register panel; legacy /login and /register URLs redirect home.",
     "The landing sign-in card uses the supplied sign-in-card reference as a dark, interactive pattern: restrained 3D hover, mint/aqua travelling border beams, icon-led fields, password visibility, and real product-only actions.",
-    "The landing section revealed after Glyph Portal fades in place once when 22% enters the viewport; it never translates, and reduced-motion users see the content immediately.",
-    "Glyph Portal's background uses the supplied OGL/WebGL2 GradientWaves shader, mapped to Mint Signal: evergreen-charcoal horizon (#143c34), mint waves (#4dd5a2), and pale mint crests (#d8f5e5). The portal paper and field use non-black, low-chroma evergreen tones for depth and contrast; the canvas is non-intercepting and honors reduced motion."
+    "The landing page opens directly on the product message and authentication panel; the large Glyph Portal wordmark is intentionally omitted."
   ],
   "evidence": [
     {
