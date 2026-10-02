@@ -1,7 +1,7 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 
 import { AppError } from "../../infrastructure/errors/app-error.js";
-import { createMonitorBodySchema, projectIdParamsSchema } from "./monitor.schema.js";
+import { createMonitorBodySchema, monitorIdParamsSchema, projectIdParamsSchema, updateMonitorBodySchema } from "./monitor.schema.js";
 import { MonitorService } from "./monitor.service.js";
 
 export class MonitorController {
@@ -40,6 +40,20 @@ export class MonitorController {
     const monitors = await this.monitorService.findAll(params.data.projectId, userId);
 
     return reply.send(monitors);
+  };
+
+  update = async (request: FastifyRequest) => {
+    const userId = getAuthenticatedUserId(request);
+    const params = monitorIdParamsSchema.parse(request.params);
+    const body = updateMonitorBodySchema.parse(request.body);
+    return this.monitorService.update(params.monitorId, userId, body);
+  };
+
+  delete = async (request: FastifyRequest, reply: FastifyReply) => {
+    const userId = getAuthenticatedUserId(request);
+    const params = monitorIdParamsSchema.parse(request.params);
+    await this.monitorService.delete(params.monitorId, userId);
+    return reply.status(204).send();
   };
 }
 

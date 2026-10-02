@@ -27,4 +27,6 @@ export const monitorRoutes: FastifyPluginAsync = async (app) => {
     { schema: findAllMonitorsRouteSchema },
     monitorController.findAll,
   );
+  app.patch("/monitors/:monitorId", monitorController.update);
+  app.delete("/monitors/:monitorId", monitorController.delete);
 };

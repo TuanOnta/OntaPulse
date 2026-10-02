@@ -4,6 +4,8 @@ export const projectIdParamsSchema = z.object({
   projectId: z.string().uuid(),
 });
 
+export const monitorIdParamsSchema = z.object({ monitorId: z.string().uuid() });
+
 export const createMonitorBodySchema = z.object({
   name: z.string().trim().min(1).max(120),
 
@@ -20,3 +22,8 @@ export const createMonitorBodySchema = z.object({
 });
 
 export type CreateMonitorInput = z.infer<typeof createMonitorBodySchema>;
+
+export const updateMonitorBodySchema = createMonitorBodySchema.partial().extend({
+  isActive: z.boolean().optional(),
+});
+export type UpdateMonitorInput = z.infer<typeof updateMonitorBodySchema>;
