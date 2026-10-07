@@ -42,7 +42,6 @@ Thumbs.db
 .windsurf/
 .agents/
 skills-lock.json
-AGENTS.md
 
 
 .env.test
