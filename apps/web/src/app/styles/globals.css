@@ -30,6 +30,41 @@
   --color-ink: var(--foreground);
 }
 
+/*
+ * Landing tokens, ported from the :root block of apps/web/references/landing-prototype.html.
+ * Kept separate from the app tokens above so existing screens are unchanged. Dark only.
+ * `static` keeps every variable in the output even before a utility uses it (the scene reads them).
+ */
+@theme static {
+  --color-landing-bg: #0a0e0d;
+  --color-landing-bg-2: #0d1311;
+  --color-landing-surface: #111715;
+  --color-landing-border: #22302b;
+  --color-landing-border-strong: #2e4039;
+  --color-landing-text: #e8f1ec;
+  --color-landing-text-2: #b6c6be;
+  --color-landing-muted: #93a59c;
+  --color-landing-accent: #5ef2a0;
+  --color-landing-accent-ink: #04140c;
+  --color-landing-info: #7cc4ff;
+  --color-landing-warn: #ffb454;
+  --color-landing-danger: #ff7a6b;
+
+  /* One-off tints the prototype hard-codes on the status pill, findings and severity chips. */
+  --color-landing-status-border: #1f5a3d;
+  --color-landing-status-text: #7ff0b0;
+  --color-landing-failed-border: #5a2b25;
+  --color-landing-failed-text: #ff9a8d;
+  --color-landing-finding-high-border: #3a2420;
+  --color-landing-finding-medium-border: #3a2f1a;
+  --color-landing-sev-medium-border: #5a4520;
+  --color-landing-sev-medium-text: #ffc879;
+
+  --font-display: "Bricolage Grotesque Variable", system-ui, sans-serif;
+  --font-landing-body: "Instrument Sans Variable", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono Variable", ui-monospace, monospace;
+}
+
 @layer base {
   :root {
     --background: oklch(0.145 0.024 164);

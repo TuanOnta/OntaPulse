@@ -35,13 +35,13 @@ user: keep it there. AGENTS.md path references need a separate correction (not p
 
 ## 4. Decisions and assumptions
 
-| Decision | Source |
-| --- | --- |
-| Prototype tokens are added as **separate, landing-scoped** tokens. Existing oklch tokens are not changed or removed. | User (Q2) |
-| Prototype path stays `apps/web/references/`. | User (Q3) |
-| Auth moves to `/login` and `/register` in a later phase (phase 2). Not touched here. | User (Q1) |
-| Dark only; no light theme. | AGENTS.md section 8 |
-| Self-hosted fonts via `@fontsource`; no Google Fonts link. | AGENTS.md sections 4, 7, 13 |
+| Decision                                                                                                             | Source                      |
+| -------------------------------------------------------------------------------------------------------------------- | --------------------------- |
+| Prototype tokens are added as **separate, landing-scoped** tokens. Existing oklch tokens are not changed or removed. | User (Q2)                   |
+| Prototype path stays `apps/web/references/`.                                                                         | User (Q3)                   |
+| Auth moves to `/login` and `/register` in a later phase (phase 2). Not touched here.                                 | User (Q1)                   |
+| Dark only; no light theme.                                                                                           | AGENTS.md section 8         |
+| Self-hosted fonts via `@fontsource`; no Google Fonts link.                                                           | AGENTS.md sections 4, 7, 13 |
 
 Assumption to confirm during execution: prefer **variable** font packages if they cover the
 prototype's axes (Bricolage opsz 12..96 + wght 500/700; Instrument Sans wght 400-600; JetBrains Mono
@@ -56,7 +56,7 @@ importing; do not rely on memory.
 Add to `apps/web` only (exact versions pinned by the lockfile; `npm view` showed 5.3.0 for these):
 
 - `@fontsource-variable/bricolage-grotesque` (display)
-- `@fontsource-variable/instrument-sans` (body)  — or `@fontsource/instrument-sans` if the variable package is unavailable
+- `@fontsource-variable/instrument-sans` (body) — or `@fontsource/instrument-sans` if the variable package is unavailable
 - `@fontsource-variable/jetbrains-mono` (data)
 
 No `three` in this phase. No other dependency.
@@ -74,24 +74,24 @@ Add a second `@theme` block (not `inline`, so utilities and `var()` both work) w
 Names use a `landing-` prefix to avoid colliding with existing `--color-surface`, `--color-info`,
 `--color-warning`, `--color-danger`, `--color-border`, `--color-accent`:
 
-| Prototype var | Value | New token |
-| --- | --- | --- |
-| `--bg` | `#0A0E0D` | `--color-landing-bg` |
-| `--bg-2` | `#0D1311` | `--color-landing-bg-2` |
-| `--surface` | `#111715` | `--color-landing-surface` |
-| `--border` | `#22302B` | `--color-landing-border` |
-| `--border-strong` | `#2E4039` | `--color-landing-border-strong` |
-| `--text` | `#E8F1EC` | `--color-landing-text` |
-| `--text-2` | `#B6C6BE` | `--color-landing-text-2` |
-| `--muted` | `#93A59C` | `--color-landing-muted` |
-| `--accent` | `#5EF2A0` | `--color-landing-accent` |
-| `--accent-ink` | `#04140C` | `--color-landing-accent-ink` |
-| `--info` | `#7CC4FF` | `--color-landing-info` |
-| `--warn` | `#FFB454` | `--color-landing-warn` |
-| `--danger` | `#FF7A6B` | `--color-landing-danger` |
-| `--font-display` | Bricolage Grotesque | `--font-display` |
-| `--font-body` | Instrument Sans | `--font-landing-body` (see note) |
-| `--font-mono` | JetBrains Mono | `--font-mono` |
+| Prototype var     | Value               | New token                        |
+| ----------------- | ------------------- | -------------------------------- |
+| `--bg`            | `#0A0E0D`           | `--color-landing-bg`             |
+| `--bg-2`          | `#0D1311`           | `--color-landing-bg-2`           |
+| `--surface`       | `#111715`           | `--color-landing-surface`        |
+| `--border`        | `#22302B`           | `--color-landing-border`         |
+| `--border-strong` | `#2E4039`           | `--color-landing-border-strong`  |
+| `--text`          | `#E8F1EC`           | `--color-landing-text`           |
+| `--text-2`        | `#B6C6BE`           | `--color-landing-text-2`         |
+| `--muted`         | `#93A59C`           | `--color-landing-muted`          |
+| `--accent`        | `#5EF2A0`           | `--color-landing-accent`         |
+| `--accent-ink`    | `#04140C`           | `--color-landing-accent-ink`     |
+| `--info`          | `#7CC4FF`           | `--color-landing-info`           |
+| `--warn`          | `#FFB454`           | `--color-landing-warn`           |
+| `--danger`        | `#FF7A6B`           | `--color-landing-danger`         |
+| `--font-display`  | Bricolage Grotesque | `--font-display`                 |
+| `--font-body`     | Instrument Sans     | `--font-landing-body` (see note) |
+| `--font-mono`     | JetBrains Mono      | `--font-mono`                    |
 
 Notes:
 
@@ -206,3 +206,46 @@ Visual parity (no screen is ported yet); real-device performance; the e2e suite 
   both redirect to `/`), CTA wiring, removal of old hero (`SignalField`, `BlurFade` usage on landing),
   and updating `e2e/monitoring-flow.spec.ts` if the auth entry point moves.
 - Phase 3: scene core (`three@0.170.0` pinned). Phase 4: scroll link. Phase 5: perf + a11y pass.
+
+## Result
+
+Executed on `refactor/landing-page`.
+
+Changed: `apps/web/package.json` + `pnpm-lock.yaml` (3 `@fontsource-variable/*` packages, 5.3.0),
+`apps/web/src/main.tsx` (font CSS imports), `apps/web/src/app/styles/globals.css` (landing
+`@theme static` block).
+
+Deviations from the plan:
+
+- `@theme static` instead of plain `@theme`: Tailwind 4 drops unused theme variables from the build,
+  and the scene (phase 3) reads the colors from CSS at creation time.
+- `--font-mono` / `--font-display` used directly: `font-mono`/`font-display` are not used by any app
+  screen, so no `--font-landing-mono` was needed. `--font-landing-body` stays landing-only.
+- Bricolage Grotesque imported from `opsz.css` (family `Bricolage Grotesque Variable`, optical size
+  axis). Instrument Sans and JetBrains Mono use `index.css` (wght axis).
+- Prototype CSS vars not turned into tokens: none; all 13 colors and 3 fonts are ported, plus 8
+  one-off tints.
+
+Checks (run from `apps/web` with pnpm because `moon` is not installed in this environment, and Node is
+22.22.0 not 24.14.0):
+
+- `pnpm typecheck`: pass. `pnpm test`: 6 files / 10 tests pass. `pnpm build` (tsc + vite): pass.
+- Prettier on the changed source files: pass. `pnpm format:check` on the whole repo reports 23
+  files that were already unformatted before this change (baseline), not touched here.
+- `git diff --check`: clean.
+- Build output: 10 `.woff2` files, 256 KB total on disk. The browser downloaded only the 3 latin
+  files (about 147 KB) on `/`, because the other subsets are gated by `unicode-range`.
+- No `fonts.googleapis.com` / `fonts.gstatic.com` / `cdn.jsdelivr.net` anywhere in `dist/`.
+- Headless Chromium on `vite preview`: `--color-landing-accent` resolves to `#5ef2a0`; all three font
+  families report `loaded`; every request stayed on localhost.
+- Contrast (WCAG): text 16.85, text-2 10.92, muted 7.49, accent 13.58, info 10.35, warn 11.01, danger
+  7.63 on `bg`; accent-ink on accent 13.22; status/failed/severity text on `surface` 8.87 to 12.96. All
+  pass AA.
+
+Not verified: `moon run ...` commands themselves, `moon run web:test-e2e` (not required, no
+routes changed), Node 24 behavior, any visual parity (no screen ported yet), the whole-repo
+`format:check` (pre-existing failures).
+
+Open point for you: the unused font subsets (cyrillic, greek, vietnamese, latin-ext) still ship in
+`dist/`. They are never downloaded for English copy; remove them in phase 5 if you want a smaller
+build.
