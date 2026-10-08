@@ -25,7 +25,7 @@ type Props = {
 };
 
 const GRID =
-  "grid grid-cols-[repeat(auto-fill,minmax(300px,1fr))] gap-4 max-[520px]:grid-cols-[minmax(0,1fr)]";
+  "grid [perspective:1200px] grid-cols-[repeat(auto-fill,minmax(300px,1fr))] gap-4 max-[520px]:grid-cols-[minmax(0,1fr)]";
 
 /** Stats, filters and workspace cards, with the loading, empty, error and no-results states. */
 export function WorkspaceOverview({ status, workspaces, error, onRetry }: Props) {

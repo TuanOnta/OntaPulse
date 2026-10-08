@@ -112,3 +112,42 @@ results. Extra: hover screenshots (tilt, border light) in both with motion enabl
 4. Reload: every workspace keeps the same tone and wave.
 5. DevTools reduced motion: no tilt, lift or animation.
 6. 360 / 768 px: one or two columns, no horizontal scroll.
+
+## Result
+
+Executed on `refactor/dashboard-page` (follow-up commit).
+
+Implemented as planned. Differences and findings:
+
+- **Prototype quirk, hover transform.** In the prototype the cards keep the entrance animation
+  (`.rise`, `animation-fill-mode: both`), whose last keyframe is `transform: none`, and an animation
+  value beats the stylesheet. Measured in the prototype: after hovering a card its computed transform is
+  still the identity matrix and the card does not move, although `--rx` / `--ry` are set. So the card
+  lift (also present in the earlier version) and the new 3D tilt never show there. The port uses
+  `animation-fill-mode: backwards`, so the lift (about 5 px) and the tilt work as the CSS intends. The
+  visible effects the prototype does show (banner, glow shadow, orbiting border light, avatar scale,
+  dot-grid shift, faster wave) are identical. To get the prototype's exact (static) hover instead, drop
+  `[animation-fill-mode:backwards]` from `CARD_CLASS`.
+- Colours: tone colours use the existing tokens through `--t` and `color-mix`, no raw rgba triplets.
+- `createRng` / `hashString` live in `shared/lib/seeded-random.ts` (the entity cannot import from the
+  landing widget); `workspace-look.ts` has a regression test that compares tone, waveform and glow delay
+  with a verbatim copy of the prototype's algorithms for six workspaces (identical).
+- The role badge now carries an icon (crown / shield / person) and is used on the cover; the card link's
+  visible text gains an `sr-only` "(owner)" / "(admin)" / "(member)".
+
+Checks (pnpm from `apps/web`; `moon` not installed, Node 22.22.0): typecheck pass; 22 files / 108 tests
+pass; coverage thresholds pass (40.1 / 35.6 / 52.1 / 40.3); Prettier pass; `pnpm build` pass (dashboard
+chunk 6.3 KB gzip, no 3D reference); `git diff --check` clean; e2e `monitoring-flow` passes (sandbox
+Chromium, temporary config).
+
+Parity (headless Chromium, clock frozen at 2026-10-08 in both, reduced motion on, prototype with local
+fonts, port with a mocked API and the prototype's four workspaces), 1440 / 1024 / 768 / 360 px:
+
+- Card heights identical (266 px workspace cards, 260 px create card) and identical total page height.
+- Share of pixels differing by more than 40/255: full 0.00 % at all four widths; admin filter 0.00-0.18 %;
+  no results 0.03-0.08 %.
+- Hover (motion on): viewed side by side at 1440. Port: lift and tilt visible, border light and glow
+  match. Prototype: static for the reason above.
+
+Not verified: the exact look of each frame of the animated waveform and border light (checked only on a
+still frame during hover), real devices, `moon` / Node 24.

@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 
-import { trackSpotlight } from "@/shared/lib/pointer-spotlight";
+import { resetTilt, trackSpotlight } from "@/shared/lib/pointer-spotlight";
 
 import { PlusIcon } from "./buttons";
 import { riseStyle } from "./rise";
@@ -13,8 +13,9 @@ export function CreateWorkspaceCard({ index }: { index: number }) {
     <article
       className={cn(
         CARD_CLASS,
-        "items-center justify-center gap-2.5 border-dashed border-landing-border-strong bg-transparent text-center text-landing-text-2",
+        "min-h-[260px] items-center justify-center gap-2.5 border-dashed border-landing-border-strong bg-transparent text-center text-landing-text-2",
       )}
+      onPointerLeave={resetTilt}
       onPointerMove={trackSpotlight}
       style={riseStyle(index)}
     >

@@ -12,3 +12,10 @@ export {
   type WorkspaceSummary,
 } from "./model/workspace-stats";
 export { WorkspaceRoleBadge } from "./ui/workspace-role-badge";
+export {
+  WORKSPACE_TONES,
+  formatAge,
+  workspaceLook,
+  type WorkspaceLook,
+  type WorkspaceTone,
+} from "./model/workspace-look";

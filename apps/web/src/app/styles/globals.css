@@ -226,6 +226,7 @@
   --animate-dash-drop: dash-drop 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both;
   --animate-dash-orbit: dash-orbit 18s linear infinite;
   --animate-dash-pulse-line: dash-pulse-line 3s ease-in-out infinite;
+  --animate-dash-wave: dash-wave 5s linear infinite;
 
   @keyframes dash-rise {
     from {
@@ -274,6 +275,11 @@
   @keyframes dash-orbit {
     to {
       transform: rotate(360deg);
+    }
+  }
+  @keyframes dash-wave {
+    to {
+      stroke-dashoffset: -1000;
     }
   }
   @keyframes dash-pulse-line {
@@ -400,6 +406,54 @@
     .auth-panel::before {
       animation: none;
       background: linear-gradient(135deg, rgb(94 242 160 / 0.35), transparent 40%);
+    }
+  }
+}
+
+/* Workspace card border light (card v2): a conic gradient in the card tone orbits the border on hover. */
+@property --card-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@keyframes card-orbit {
+  to {
+    --card-angle: 360deg;
+  }
+}
+
+@layer components {
+  .workspace-card::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.35s;
+    background: conic-gradient(
+      from var(--card-angle),
+      transparent 0 62%,
+      color-mix(in srgb, var(--t) 95%, transparent) 80%,
+      transparent 96%
+    );
+    -webkit-mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask:
+      linear-gradient(#000 0 0) content-box exclude,
+      linear-gradient(#000 0 0);
+    animation: card-orbit 4s linear infinite;
+  }
+  .workspace-card:hover::after {
+    opacity: 1;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .workspace-card::after {
+      animation: none;
     }
   }
 }

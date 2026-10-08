@@ -104,6 +104,32 @@ describe("DashboardPage", () => {
     expect(screen.getByText("dzaki@example.com")).toBeInTheDocument();
   });
 
+  it("shows each card's role as text, its age next to the date, and a stable tone", async () => {
+    vi.useFakeTimers({ toFake: ["Date"], now: new Date("2026-10-08T12:00:00Z") });
+    try {
+      mocks.workspaces.mockResolvedValue(LIST);
+      renderDashboard();
+      await screen.findByRole("heading", { name: "Welcome back, Dzaki" });
+
+      const cards = main().getAllByRole("article");
+      const first = within(cards[0]);
+      expect(first.getByText("OWNER")).toBeInTheDocument();
+      expect(first.getByText("(owner)")).toBeInTheDocument();
+      expect(first.getByText(/^Created /)).toBeInTheDocument();
+      expect(first.getByText("7 mo ago")).toBeInTheDocument(); // 2026-03-04 -> 2026-10-08
+      expect(within(cards[3]).getByText("7 mo ago")).toBeInTheDocument();
+      expect(within(cards[2]).getByText("(admin)")).toBeInTheDocument();
+
+      const toneOf = (el: HTMLElement) =>
+        /\[--t:var\(--color-landing-(\w+)\)\]/.exec(el.className)?.[1];
+      const tones = cards.slice(0, 4).map((card) => toneOf(card));
+      expect(tones.every(Boolean)).toBe(true);
+      expect(new Set(tones).size).toBeGreaterThan(1);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it("filters by role and hides the create card while a filter is active", async () => {
     const user = userEvent.setup();
     mocks.workspaces.mockResolvedValue(LIST);
