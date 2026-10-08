@@ -7,10 +7,10 @@ import {
   initials,
   type WorkspaceTone,
 } from "@/entities/workspace";
-import { LockIcon } from "@/features/workspaces/members-pane";
 import { formatDay } from "@/shared/lib/format";
 import { riseStyle } from "@/shared/lib/rise";
 import type { WorkspaceRole } from "@/shared/types/domain";
+import { LockIcon } from "@/shared/ui/lock-icon";
 import { ActionButton, PlusIcon } from "@/shared/ui/pill-button";
 
 const pluralize = (count: number, word: string) => `${count} ${word}${count === 1 ? "" : "s"}`;

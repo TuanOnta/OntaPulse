@@ -4,13 +4,9 @@ import type { Project } from "@/shared/types/domain";
 import { ActionButton, PlusIcon } from "@/shared/ui/pill-button";
 import { StateArt } from "@/shared/ui/state-art";
 
-import {
-  LoadErrorBanner,
-  PANEL,
-  PANEL_TEXT,
-  PANEL_TITLE,
-  ProjectsSkeleton,
-} from "./workspace-states";
+import { LoadErrorBanner, PANEL, PANEL_TEXT, PANEL_TITLE } from "@/shared/ui/state-panel";
+
+import { ProjectsSkeleton } from "./workspace-states";
 
 /** Index of the first project card in the entrance sequence (hero is 1, tabs are 2). */
 const FIRST_CARD_RISE = 3;

@@ -17,7 +17,7 @@ const MonitorPage = lazy(() =>
   import("@/pages/monitor-page").then(({ MonitorPage: Page }) => ({ default: Page })),
 );
 const ProjectPage = lazy(() =>
-  import("@/pages/project-page").then(({ ProjectPage: Page }) => ({ default: Page })),
+  import("@/pages/project/project-page").then(({ ProjectPage: Page }) => ({ default: Page })),
 );
 const ScanPage = lazy(() =>
   import("@/pages/scan-page").then(({ ScanPage: Page }) => ({ default: Page })),

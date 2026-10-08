@@ -14,7 +14,9 @@ export {
 export { WorkspaceRoleBadge } from "./ui/workspace-role-badge";
 export {
   WAVE_VIEW,
+  ROLE_TONE,
   WORKSPACE_TONES,
+  toneForRole,
   formatAge,
   workspaceLook,
   type WorkspaceLook,
