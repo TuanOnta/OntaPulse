@@ -111,6 +111,8 @@ export type SceneOptions = {
   tier: SceneTier;
   reduced: boolean;
   colors: SceneColors;
+  /** Scroll keyframes; defaults to the landing page poses. */
+  keyframes?: readonly Keyframe[];
   onFirstFrame?: () => void;
   onContextLost?: () => void;
   /** Called about every 10 frames with a reused object. Used by the dev HUD only. */
@@ -174,7 +176,15 @@ type Disposable = { dispose: () => void };
 /** Creates the scene on `canvas`, or returns null when WebGL is unavailable. */
 export function createLandingScene(
   canvas: HTMLCanvasElement,
-  { tier, reduced, colors, onFirstFrame, onContextLost, onStats }: SceneOptions,
+  {
+    tier,
+    reduced,
+    colors,
+    keyframes = KEYFRAMES,
+    onFirstFrame,
+    onContextLost,
+    onStats,
+  }: SceneOptions,
 ): LandingScene | null {
   const cfg = TIERS[tier];
   const C = {
@@ -600,7 +610,7 @@ export function createLandingScene(
   const tmpB = new Color();
   const travelColor = new Color();
   const weights: LifecycleWeights = { q: 0, r: 0, d: 1 };
-  const kf: Keyframe = { ...KEYFRAMES[0] };
+  const kf: Keyframe = { ...keyframes[0] };
 
   function simulate(dt: number, w: LifecycleWeights): void {
     const t = state.time;
@@ -767,7 +777,7 @@ export function createLandingScene(
   function tick(dt: number): void {
     if (state.reduced) state.f = state.fTarget = 0.5;
     else state.f += (state.fTarget - state.f) * (1 - Math.exp(-dt * 5));
-    sampleKeyframes(KEYFRAMES, state.f, kf);
+    sampleKeyframes(keyframes, state.f, kf);
     if (state.reduced) {
       weights.q = 0;
       weights.r = 0;

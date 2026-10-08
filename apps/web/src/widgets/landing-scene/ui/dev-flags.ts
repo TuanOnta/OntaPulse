@@ -5,6 +5,9 @@ export type DevFlags = {
   quality?: SceneTier;
   reduceMotion: boolean;
   webglOff: boolean;
+  /** Auth screen preview: ?tab=register, ?state=error|loading|success. */
+  tab?: "login" | "register";
+  state?: "error" | "loading" | "success";
 };
 
 const NONE: DevFlags = { debug: false, reduceMotion: false, webglOff: false };
@@ -22,5 +25,14 @@ export function readDevFlags(search: string = window.location.search): DevFlags 
     quality: quality === "low" || quality === "high" ? quality : undefined,
     reduceMotion: params.get("motion") === "reduce",
     webglOff: params.get("webgl") === "off",
+    tab:
+      params.get("tab") === "register"
+        ? "register"
+        : params.get("tab") === "login"
+          ? "login"
+          : undefined,
+    state: ["error", "loading", "success"].includes(params.get("state") ?? "")
+      ? (params.get("state") as DevFlags["state"])
+      : undefined,
   };
 }

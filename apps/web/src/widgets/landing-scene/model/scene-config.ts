@@ -173,3 +173,27 @@ export const KEYFRAMES: readonly Keyframe[] = [
 
 /** Ordered landing section ids; the scroll keyframes depend on this order. */
 export const SECTION_IDS = ["hero", "how", "result", "features", "cta"] as const;
+
+/**
+ * Auth screen pose (apps/web/references/auth-prototype.html): every keyframe is the same single
+ * pose, orb large on the left, centered and dimmed behind the panel on narrow screens. Only the
+ * lifecycle weights change, driven by the progress value (see AUTH_PROGRESS).
+ */
+const AUTH_POSE = {
+  x: -3.3,
+  y: 0,
+  s: 2.9,
+  rotX: 0.25,
+  opacity: 1,
+  xN: 0,
+  yN: 0.2,
+  sN: 2.3,
+  opacityN: 0.55,
+} as const;
+export const AUTH_KEYFRAMES: readonly Keyframe[] = [0.5, 1.5, 2.5, 3.5, 4.5].map((f) => ({
+  f,
+  ...AUTH_POSE,
+}));
+
+/** Progress values the auth page feeds the scene: finished look, and RUNNING while submitting. */
+export const AUTH_PROGRESS = { idle: 0.5, busy: 1.5 } as const;

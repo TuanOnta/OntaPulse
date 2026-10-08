@@ -60,9 +60,160 @@
   --color-landing-sev-medium-border: #5a4520;
   --color-landing-sev-medium-text: #ffc879;
 
+  /* Auth screen (apps/web/references/auth-prototype.html). */
+  --color-landing-surface-2: #17201c;
+  --color-landing-danger-text: #ff9a8d;
+  --color-landing-danger-strong: #ffc1b8;
+  --color-landing-placeholder: #5f7168;
+  --color-landing-border-hover: #3b5148;
+
   --font-display: "Bricolage Grotesque Variable", system-ui, sans-serif;
   --font-landing-body: "Instrument Sans Variable", system-ui, sans-serif;
   --font-mono: "JetBrains Mono Variable", ui-monospace, monospace;
+}
+
+/* Auth panel motion (ported from the auth prototype "Card motion" section). */
+@property --auth-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@theme {
+  --animate-auth-panel:
+    auth-panel-in 0.7s cubic-bezier(0.2, 0.8, 0.2, 1) both, auth-breathe 6s ease-in-out 1s infinite;
+  --animate-auth-rise: auth-rise 0.55s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  --animate-auth-rise-slow: auth-rise 0.6s 0.25s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  --animate-auth-beam: auth-beam 3.6s linear infinite;
+  --animate-auth-spin: auth-spin 0.8s linear infinite;
+  --animate-auth-indeterminate: auth-indeterminate 1.15s ease-in-out infinite;
+  --animate-auth-nudge: auth-nudge 0.38s;
+  --animate-auth-fade-up: auth-fade-up 0.28s ease-out;
+  --animate-auth-drop: auth-drop 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+  --animate-auth-pop: auth-pop 0.55s cubic-bezier(0.2, 1.4, 0.4, 1) both;
+  --animate-auth-ring: auth-ring 2.2s ease-out infinite;
+  --animate-auth-ring-late: auth-ring 2.2s 1.1s ease-out infinite;
+  --animate-auth-draw: auth-draw 0.6s 0.2s ease-out forwards;
+  --animate-auth-fill: auth-fill 2.2s 0.4s linear both;
+
+  @keyframes auth-panel-in {
+    from {
+      opacity: 0;
+      transform: translateY(28px) scale(0.98);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  @keyframes auth-breathe {
+    0%,
+    100% {
+      box-shadow:
+        0 30px 80px rgb(0 0 0 / 0.45),
+        0 0 40px rgb(94 242 160 / 0.04);
+    }
+    50% {
+      box-shadow:
+        0 30px 80px rgb(0 0 0 / 0.45),
+        0 0 70px rgb(94 242 160 / 0.14);
+    }
+  }
+  @keyframes auth-rise {
+    from {
+      opacity: 0;
+      transform: translateY(14px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  @keyframes auth-beam {
+    to {
+      stroke-dashoffset: -1;
+    }
+  }
+  @keyframes auth-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+  @keyframes auth-indeterminate {
+    0% {
+      transform: translateX(-100%);
+    }
+    100% {
+      transform: translateX(260%);
+    }
+  }
+  @keyframes auth-nudge {
+    20% {
+      transform: translateX(-5px);
+    }
+    45% {
+      transform: translateX(5px);
+    }
+    70% {
+      transform: translateX(-3px);
+    }
+    100% {
+      transform: none;
+    }
+  }
+  @keyframes auth-fade-up {
+    from {
+      opacity: 0;
+      transform: translateY(-4px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  @keyframes auth-drop {
+    from {
+      opacity: 0;
+      transform: translateY(-12px) scale(0.98);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  @keyframes auth-pop {
+    from {
+      transform: scale(0.4);
+      opacity: 0;
+    }
+    to {
+      transform: none;
+      opacity: 1;
+    }
+  }
+  @keyframes auth-ring {
+    0% {
+      transform: scale(1);
+      opacity: 0.6;
+    }
+    100% {
+      transform: scale(2.6);
+      opacity: 0;
+    }
+  }
+  @keyframes auth-draw {
+    to {
+      stroke-dashoffset: 0;
+    }
+  }
+  @keyframes auth-fill {
+    from {
+      transform: scaleX(0);
+    }
+    to {
+      transform: scaleX(1);
+    }
+  }
 }
 
 @layer base {
@@ -117,6 +268,68 @@
   }
   :focus-visible {
     @apply outline-2 outline-offset-2 outline-signal;
+  }
+}
+
+/*
+ * Auth panel border light and pointer spotlight. Kept as CSS: the conic gradient needs the
+ * `@property --auth-angle` registration and a mask-composite cut-out, which Tailwind cannot express.
+ */
+@keyframes auth-orbit {
+  to {
+    --auth-angle: 360deg;
+  }
+}
+
+@layer components {
+  .auth-panel {
+    position: relative;
+    isolation: isolate;
+  }
+  .auth-panel > * {
+    position: relative;
+    z-index: 1;
+  }
+  .auth-panel::before {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    z-index: 0;
+    border-radius: inherit;
+    padding: 1px;
+    pointer-events: none;
+    background: conic-gradient(
+      from var(--auth-angle),
+      transparent 0 62%,
+      rgb(94 242 160 / 0.85) 80%,
+      rgb(124 196 255 / 0.6) 88%,
+      transparent 100%
+    );
+    -webkit-mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    animation: auth-orbit 7s linear infinite;
+  }
+  .auth-panel::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    background: radial-gradient(
+      360px circle at var(--mx, 50%) var(--my, 0%),
+      rgb(94 242 160 / 0.08),
+      transparent 65%
+    );
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .auth-panel::before {
+      animation: none;
+      background: linear-gradient(135deg, rgb(94 242 160 / 0.35), transparent 40%);
+    }
   }
 }
 

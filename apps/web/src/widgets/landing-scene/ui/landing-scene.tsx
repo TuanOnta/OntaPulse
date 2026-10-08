@@ -1,10 +1,15 @@
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
 
-import { progressBus } from "../model/progress-bus";
-import { FINE_POINTER_QUERY, LOW_TIER_QUERY, TOKEN_NAMES } from "../model/scene-config";
+import { progressBus, type ProgressBus } from "../model/progress-bus";
+import {
+  FINE_POINTER_QUERY,
+  LOW_TIER_QUERY,
+  TOKEN_NAMES,
+  type Keyframe,
+} from "../model/scene-config";
 import type { LandingScene as SceneHandle, SceneColors } from "../model/create-scene";
 import { readDevFlags } from "./dev-flags";
-import { SceneFallback } from "./scene-fallback";
+import { SceneFallback, type FallbackSide } from "./scene-fallback";
 
 const REDUCED_QUERY = "(prefers-reduced-motion: reduce)";
 
@@ -28,7 +33,20 @@ function readColors(): SceneColors {
  * loaded with a dynamic import, so `three` lives in its own chunk) and fully disposed on cleanup.
  * Only coarse state ("ready") goes through React.
  */
-export default function LandingScene() {
+export type LandingSceneProps = {
+  /** Scroll progress source. Defaults to the landing page bus. */
+  progress?: ProgressBus;
+  /** Scene poses. Defaults to the landing page keyframes. */
+  keyframes?: readonly Keyframe[];
+  /** Which side the static fallback orb sits on. */
+  fallbackSide?: FallbackSide;
+};
+
+export default function LandingScene({
+  progress = progressBus,
+  keyframes,
+  fallbackSide = "right",
+}: LandingSceneProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [ready, setReady] = useState(false);
 
@@ -59,6 +77,7 @@ export default function LandingScene() {
         tier,
         reduced: isReduced(),
         colors: readColors(),
+        keyframes,
         onFirstFrame: () => setReady(true),
         onContextLost: () => {
           canvas.style.opacity = "0";
@@ -93,8 +112,8 @@ export default function LandingScene() {
       reducedQuery.addEventListener("change", onReducedChange);
       teardown.push(() => reducedQuery.removeEventListener("change", onReducedChange));
 
-      teardown.push(progressBus.subscribe((f) => created.setScroll(f)));
-      created.setScroll(progressBus.get());
+      teardown.push(progress.subscribe((f) => created.setScroll(f)));
+      created.setScroll(progress.get());
       created.start();
       if (isReduced()) created.setReduced(true);
     });
@@ -106,11 +125,11 @@ export default function LandingScene() {
       scene = null;
       setReady(false);
     };
-  }, []);
+  }, [progress, keyframes]);
 
   return (
     <>
-      <SceneFallback ready={ready} />
+      <SceneFallback ready={ready} side={fallbackSide} />
       <canvas
         aria-hidden="true"
         className="pointer-events-none fixed inset-0 z-0 h-full w-full opacity-0"

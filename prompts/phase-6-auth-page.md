@@ -224,3 +224,62 @@ difference; do not claim "pixel-perfect". Screenshots stay out of the repo.
 
 Real GPU frame rate, real mobile device, Node 24 / `moon`, a live API/worker run end to end (unit and
 mocked e2e only unless the services can be started).
+
+## Result
+
+Executed on `feat/auth-page`.
+
+Implemented per the file plan, with these deviations:
+
+- Both views (sign in / create account) stay mounted and the inactive one is `hidden`, as in the
+  prototype, so typed values survive a tab switch. Tests and e2e scope queries with
+  `getByRole("tabpanel")` (hidden panels are excluded).
+- The card shake uses the Web Animations API (restartable, skipped under reduced motion) instead of a CSS
+  keyframe; the shake keyframes were removed from `globals.css`.
+- The DEV `html.reduce-motion` class from the prototype was not ported: reduced motion is verified with
+  the real `prefers-reduced-motion` media query (Playwright `reducedMotion: "reduce"`). `?motion=reduce`
+  still freezes the 3D scene in DEV.
+- `staggerStyle` and the shared field classes live in `features/auth`; `widgets/auth-panel` imports them
+  from the feature index.
+- Tab switching navigates without keeping the query string (only matters for the DEV preview flags).
+- Elements the prototype styles with the `font:` shorthand (hint, banner request id, done path) reset
+  `line-height` to normal; the port sets `leading-[normal]` there so heights match.
+
+### Checks (pnpm from `apps/web`; `moon` is not installed here, Node is 22.22.0)
+
+- `pnpm typecheck`: pass. `pnpm test`: 13 files / 55 tests pass. `pnpm coverage`: thresholds pass
+  (32.1 / 28.9 / 39.7 / 32.6). Prettier on `src`, `e2e`, `package.json`: pass. `git diff --check`: clean.
+- `pnpm build`: pass. The 3D chunk (`create-scene`, 126.9 KB gzip) is imported only by the
+  `landing-scene` UI chunk, which only the landing and auth chunks reach; `/dashboard` and the other
+  app pages do not load it (chunk graph, not a network trace). No `fonts.googleapis`/`cdn.jsdelivr`,
+  no demo request id or HUD text in `dist/`.
+- E2E: `monitoring-flow` passes through the sandbox Chromium with a temporary config. It now enters via
+  "Get started" -> `/register`, waits for the success view, then the redirect to `/dashboard`.
+
+### Parity (headless Chromium, reduced motion in both, prototype served with local three and fonts)
+
+Sign in, create account, error banner, loading, success, and register + error at 1440, 1024, 768 and
+360 px:
+
+- Panel height and position are identical in every case (after the line-height fix). Largest differing
+  pixel share against the prototype is 0.45 % (360 px loading); most cases are 0.00-0.20 %.
+- Viewed visually: register + error at 1440 and sign in at 360.
+
+Deliberately different from the prototype: real API and error messages (with `requestId`), URL-synced
+tabs, router links instead of `#`, password toggle has an `aria-label` ("Show password"/"Hide
+password") on top of the visible text, preview flags and HUD only in DEV.
+
+### Behavior verified in a browser (dev server, mocked API)
+
+Tab switch keeps the same `<canvas>` element and updates the URL; the orb moves to RUNNING while the
+request is pending and back afterwards; error banner with message and `Request ID`; password toggle;
+losing the WebGL context brings the SVG fallback back and hides the canvas; StrictMode: one canvas.
+
+### Not verified
+
+- Non-reduced-motion pixel comparison (animations run), the border light, pointer spotlight and shake
+  were checked only as "no errors", not frame by frame.
+- A live API/worker end to end (the e2e and browser checks use mocked API responses).
+- Real GPU frame rate and real mobile devices; `moon`/Node 24.
+- `?webgl=off` on the auth page was not re-run after the port (the fallback component is shared with
+  the landing page, which was exercised before).

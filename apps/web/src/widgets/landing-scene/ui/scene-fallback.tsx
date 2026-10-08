@@ -4,19 +4,31 @@ import { cn } from "cn";
  * Static stand-in for the 3D orb (ported from #scene-fallback). It shows first, cross-fades out
  * when the first WebGL frame is drawn, and stays when WebGL is unavailable or the context is lost.
  */
-export function SceneFallback({ ready }: { ready: boolean }) {
+export type FallbackSide = "right" | "left";
+
+export function SceneFallback({ ready, side = "right" }: { ready: boolean; side?: FallbackSide }) {
   return (
     <div
       aria-hidden="true"
       className={cn(
-        "pointer-events-none fixed inset-0 z-0 flex items-center justify-end pr-[4vw] transition-opacity duration-[800ms] ease-in-out motion-reduce:transition-none",
-        "max-[959px]:justify-center max-[959px]:pr-0",
-        ready ? "opacity-0" : "opacity-100 max-[959px]:opacity-35",
+        "pointer-events-none fixed inset-0 z-0 flex items-center transition-opacity duration-[800ms] ease-in-out motion-reduce:transition-none",
+        side === "right"
+          ? "justify-end pr-[4vw] max-[959px]:pr-0"
+          : "justify-start pl-[3vw] max-[959px]:pl-0",
+        "max-[959px]:justify-center",
+        ready
+          ? "opacity-0"
+          : side === "right"
+            ? "opacity-100 max-[959px]:opacity-35"
+            : "opacity-100 max-[959px]:opacity-30",
       )}
       data-testid="scene-fallback"
     >
       <svg
-        className="h-auto w-[min(640px,52vw)] max-[959px]:w-[min(520px,90vw)]"
+        className={cn(
+          "h-auto max-[959px]:w-[min(520px,90vw)]",
+          side === "right" ? "w-[min(640px,52vw)]" : "w-[min(700px,56vw)]",
+        )}
         fill="none"
         viewBox="0 0 600 600"
       >
