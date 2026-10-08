@@ -15,11 +15,18 @@
   The API has NO uptime, SLA, incident or response-time aggregates (README, "Current
   limitations"), so this screen shows none. Summary counts are derived from the list.
 
+  Create workspace has NO page of its own (decision: no /workspaces/new route). It is a dialog opened from the
+  sidebar and the header button. With zero workspaces (state=empty) the same form is inline in the empty state.
+  POST /api/workspaces needs only a name (creator becomes OWNER). Name limit 1-120 is ASSUMED, verify against
+  apps/api. On success the real app navigates to /workspaces/:id and shows a toast; this prototype adds the
+  workspace to the list instead. Mobile: the dialog becomes a bottom sheet.
+
   Sample data below is demo content only.
 
   Query flags (prototype only, remove in the port):
     ?state=full | loading | empty | error      default: full
     ?motion=reduce                              disables animation
+    ?new=1                                      opens New workspace dialog on load
 
   App shell (sidebar + topbar) is reused by every later app screen
   (workspace, project, monitor, scan). Build it once in widgets/app-shell.
@@ -243,6 +250,7 @@ h1 { font-size: clamp(32px, 4vw, 46px); line-height: 1.08; letter-spacing: -.02e
 .card.tone-1 { --t: 232,241,236; }
 .card.tone-2 { --t: 255,180,84; }
 .card.tone-3 { --t: 94,242,160; }
+.card.tone-4 { --t: 147,165,156; }
 .card:hover { transform: translateY(-4px) rotateX(var(--rx)) rotateY(var(--ry)); border-color: rgba(var(--t), .35); box-shadow: 0 28px 56px -26px rgba(0,0,0,.85), 0 0 40px -14px rgba(var(--t), .35); }
 .card::after {
   content: ''; position: absolute; inset: 0; border-radius: inherit; padding: 1px; pointer-events: none; opacity: 0; transition: opacity .35s;
@@ -347,6 +355,53 @@ html.reduce-motion .card { transform: none !important; }
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
 html.reduce-motion *, html.reduce-motion *::before, html.reduce-motion *::after { animation: none !important; transition: none !important; }
+/* ---------- Form controls ---------- */
+.field-in { width: 100%; min-height: 48px; padding: 0 14px; background: rgba(10,14,13,.8); border: 1px solid var(--border-strong); border-radius: 14px; color: var(--text); font: 400 16px var(--font-body); transition: border-color .2s, box-shadow .2s; }
+textarea.field-in { padding: 12px 14px; min-height: 96px; resize: vertical; line-height: 1.45; }
+.field-in::placeholder { color: var(--muted); }
+.field-in:focus { outline: none; border-color: var(--text-2); box-shadow: 0 0 0 4px rgba(232,241,236,.08); }
+.field-in[aria-invalid="true"] { border-color: var(--danger); box-shadow: 0 0 0 4px rgba(255,122,107,.12); }
+.err { min-height: 20px; margin-top: 6px; font-size: 14px; color: var(--danger-text); }
+.btn-sm { min-height: 40px; padding: 0 16px; font-size: 14px; }
+.btn-danger { background: transparent; color: var(--danger-text); border: 1px solid rgba(255,122,107,.4); }
+.btn-danger::after { display: none; }
+.btn-danger:hover { background: rgba(255,122,107,.1); box-shadow: none; }
+
+/* ---------- Dialog ---------- */
+dialog { width: min(520px, calc(100vw - 32px)); padding: 0; border: 1px solid var(--border-strong); border-radius: 24px; background: var(--surface); color: var(--text); box-shadow: 0 40px 80px -20px rgba(0,0,0,.9); }
+dialog::backdrop { background: rgba(0,0,0,.65); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); }
+dialog[open] { animation: pop .3s cubic-bezier(.2,.8,.2,1); }
+@keyframes pop { from { opacity: 0; transform: translateY(12px) scale(.97); } to { opacity: 1; transform: none; } }
+.dlg { padding: 26px; display: flex; flex-direction: column; gap: 18px; }
+.dlg h2 { font-size: 26px; letter-spacing: -.01em; }
+.dlg .lead { color: var(--muted); margin-top: -10px; }
+.dlg label { display: flex; justify-content: space-between; font: 500 14px var(--font-body); margin-bottom: 6px; color: var(--text-2); }
+.dlg .count { font: 400 13px var(--font-mono); color: var(--muted); }
+.dlg .count.over { color: var(--danger-text); }
+.dlg-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 10px; margin-top: 4px; }
+
+/* ---------- Toast ---------- */
+.toasts { position: fixed; z-index: 80; right: 20px; bottom: 20px; display: flex; flex-direction: column; gap: 10px; pointer-events: none; }
+.toast { display: flex; align-items: center; gap: 12px; padding: 14px 18px; border-radius: 16px; background: var(--surface-2); border: 1px solid var(--border-strong); box-shadow: 0 20px 40px -16px rgba(0,0,0,.8); font-size: 15px; animation: toast-in .4s cubic-bezier(.2,.8,.2,1) both; }
+.toast .ok { width: 20px; height: 20px; flex: none; color: var(--accent); }
+.toast.out { animation: toast-out .3s ease forwards; }
+@keyframes toast-in { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+@keyframes toast-out { to { opacity: 0; transform: translateY(8px); } }
+
+/* new workspace: inline first-run form + mobile sheet */
+.first-form { display: flex; gap: 10px; width: min(460px, 100%); margin-top: 14px; text-align: left; }
+.first-form .field-in { flex: 1; min-width: 0; }
+.first-form .btn { flex: none; }
+.first-err { min-height: 20px; margin-top: 6px; font-size: 14px; color: var(--danger-text); text-align: left; width: min(460px, 100%); }
+.dlg .hint { margin: 6px 0 0; font-size: 14px; color: var(--muted); }
+@media (max-width: 640px) {
+  .first-form { flex-direction: column; }
+  dialog#ws-dialog { width: 100vw; max-width: 100vw; margin: auto 0 0; border-radius: 24px 24px 0 0; border-bottom: 0; }
+  dialog#ws-dialog[open] { animation: sheet .3s cubic-bezier(.2,.8,.2,1); }
+  .dlg-actions .btn { flex: 1 1 120px; white-space: nowrap; padding: 0 16px; }
+  .dlg-actions .btn:not(.btn-ghost) { flex: 2 1 180px; }
+}
+@keyframes sheet { from { transform: translateY(40px); opacity: 0; } to { transform: none; opacity: 1; } }
 </style>
 </head>
 <body>
@@ -364,7 +419,7 @@ html.reduce-motion *, html.reduce-motion *::before, html.reduce-motion *::after 
         <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><rect x="2.5" y="2.5" width="6" height="6" rx="1.8" stroke="currentColor" stroke-width="1.5"/><rect x="11.5" y="2.5" width="6" height="6" rx="1.8" stroke="currentColor" stroke-width="1.5"/><rect x="2.5" y="11.5" width="6" height="6" rx="1.8" stroke="currentColor" stroke-width="1.5"/><rect x="11.5" y="11.5" width="6" height="6" rx="1.8" stroke="currentColor" stroke-width="1.5"/></svg>
         Dashboard
       </a>
-      <a href="#">
+      <a href="#" data-new-ws>
         <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M10 4 V16 M4 10 H16" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
         New workspace
       </a>
@@ -407,10 +462,10 @@ html.reduce-motion *, html.reduce-motion *::before, html.reduce-motion *::after 
           <h1 id="greeting">Welcome back, Dzaki</h1>
           <p class="sub">Your workspaces. Open one to manage its projects, monitors and members.</p>
         </div>
-        <a class="btn" href="#">
+        <button class="btn" type="button" data-new-ws>
           <svg width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M10 4 V16 M4 10 H16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
           New workspace
-        </a>
+        </button>
       </header>
 
       <div class="trace rise" style="--i:1" aria-hidden="true">
@@ -434,6 +489,25 @@ html.reduce-motion *, html.reduce-motion *::before, html.reduce-motion *::after 
     </main>
   </div>
 </div>
+
+<dialog id="ws-dialog" aria-labelledby="ws-title">
+  <form class="dlg" id="ws-form" novalidate method="dialog">
+    <h2 id="ws-title">New workspace</h2>
+    <p class="lead">A workspace holds your projects, monitors and teammates. You will be its owner.</p>
+    <div>
+      <label for="ws-name"><span>Workspace name</span><span class="count" id="ws-count">0 / 120</span></label>
+      <input class="field-in" id="ws-name" type="text" autocomplete="off" placeholder="e.g. Acme Platform" aria-describedby="ws-hint ws-err" required>
+      <p class="hint" id="ws-hint">You can add members once it is created.</p>
+      <p class="err" id="ws-err" role="alert"></p>
+    </div>
+    <div class="dlg-actions">
+      <button class="btn btn-ghost" type="button" id="ws-cancel">Cancel</button>
+      <button class="btn" type="submit">Create workspace</button>
+    </div>
+  </form>
+</dialog>
+
+<div class="toasts" id="toasts" aria-live="polite"></div>
 
 <script>
 /* PROTOTYPE GLUE — not for production. Demo data + view switching only. */
@@ -530,7 +604,7 @@ html.reduce-motion *, html.reduce-motion *::before, html.reduce-motion *::after 
     return Math.floor(m / 12) + ' yr ago';
   }
   function card(w, i) {
-    var h = hash(w.id + w.name), tone = h % 4, d = wavePath(h), delay = -((h % 50) / 10);
+    var h = hash(w.id + w.name), tone = { OWNER: 1, ADMIN: 0, MEMBER: 4 }[w.role], d = wavePath(h), delay = -((h % 50) / 10);
     return '<article class="card tone-' + tone + ' rise" style="--i:' + (i + 4) + '">' +
       '<div class="cover" aria-hidden="true"><span class="role ' + w.role.toLowerCase() + '">' + ROLE_ICON[w.role] + w.role + '</span>' +
       '<svg viewBox="0 0 400 72" preserveAspectRatio="none"><path class="wave" d="' + d + '"/><path class="glow" style="--d:' + delay + 's" d="' + d + '"/></svg></div>' +
@@ -588,8 +662,13 @@ html.reduce-motion *, html.reduce-motion *::before, html.reduce-motion *::after 
   }
   function showEmpty() {
     stats.hidden = true; toolbar.hidden = true;
-    view.innerHTML = '<div class="panel rise" style="--i:3">' + ART + '<h2>Create your first workspace</h2><p>A workspace holds your projects, monitors and teammates. Add a target and OntaPulse starts checking it.</p><div class="btns"><a class="btn" href="#">' + PLUS + 'Create workspace</a></div></div>';
+    view.innerHTML = '<div class="panel rise" style="--i:3">' + ART + '<h2>Create your first workspace</h2><p>A workspace holds your projects, monitors and teammates. Add a target and OntaPulse starts checking it.</p><form class="first-form" id="first-form" novalidate><label class="sr-only" for="first-name">Workspace name</label><input class="field-in" id="first-name" type="text" autocomplete="off" maxlength="200" placeholder="Workspace name" aria-describedby="first-err" required><button class="btn" type="submit">' + PLUS + 'Create workspace</button></form><p class="first-err" id="first-err" role="alert"></p></div>';
     renderSide();
+    $('first-form').addEventListener('submit', function (e) {
+      e.preventDefault(); var v = nameError($('first-name').value);
+      if (v) { $('first-name').setAttribute('aria-invalid', 'true'); $('first-err').textContent = v; $('first-name').focus(); return; }
+      createWorkspace($('first-name').value.trim());
+    });
   }
   function showFull() {
     renderSide(); renderStats(); renderChips(); renderGrid();
@@ -614,6 +693,40 @@ html.reduce-motion *, html.reduce-motion *::before, html.reduce-motion *::after 
   menu.addEventListener('click', function () { setNav(true); });
   $('scrim').addEventListener('click', function () { setNav(false); });
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && app.classList.contains('nav-open')) setNav(false); });
+
+  /* ---------- create workspace (dialog + first-run inline form) ---------- */
+  function toast(msg) {
+    var t = document.createElement('div'); t.className = 'toast'; t.setAttribute('role', 'status');
+    t.innerHTML = '<svg class="ok" viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="1.5"/><path d="M6.4 10.3 L9 12.8 L13.8 7.4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg><span>' + esc(msg) + '</span>';
+    $('toasts').appendChild(t);
+    setTimeout(function () { t.classList.add('out'); setTimeout(function () { t.remove(); }, 320); }, 3200);
+  }
+  function nameError(v) { v = v.trim(); return !v ? 'Workspace name is required.' : v.length > 120 ? 'Use 120 characters or fewer.' : ''; }
+  function createWorkspace(name) {
+    /* real app: POST /api/workspaces, then navigate to /workspaces/:id */
+    data.unshift({ id: 'w' + Date.now(), name: name, role: 'OWNER', createdAt: new Date().toISOString() });
+    state = 'full'; banner.hidden = true; filter = 'ALL'; query = ''; $('q').value = '';
+    if (wd.open) wd.close();
+    showFull(); toast('Workspace “' + name + '” created. Opening it…');
+  }
+  var wd = $('ws-dialog'), wsName = $('ws-name');
+  function wsCount() { var c = $('ws-count'); c.textContent = wsName.value.length + ' / 120'; c.classList.toggle('over', wsName.value.length > 120); }
+  function openNew() {
+    if (app.classList.contains('nav-open')) setNav(false);
+    $('ws-form').reset(); wsName.removeAttribute('aria-invalid'); $('ws-err').textContent = ''; wsCount();
+    wd.showModal(); wsName.focus();
+  }
+  wsName.addEventListener('input', wsCount);
+  $('ws-cancel').addEventListener('click', function () { wd.close(); });
+  wd.addEventListener('click', function (e) { if (e.target === wd) wd.close(); });
+  $('ws-form').addEventListener('submit', function (e) {
+    e.preventDefault(); var v = nameError(wsName.value);
+    wsName.removeAttribute('aria-invalid'); $('ws-err').textContent = '';
+    if (v) { wsName.setAttribute('aria-invalid', 'true'); $('ws-err').textContent = v; wsName.focus(); return; }
+    createWorkspace(wsName.value.trim());
+  });
+  document.querySelectorAll('[data-new-ws]').forEach(function (b) { b.addEventListener('click', openNew); });
+  if (params.get('new') === '1' && state !== 'loading' && state !== 'error') openNew();
 
   document.querySelectorAll('a[href="#"]').forEach(function (a) { a.addEventListener('click', function (e) { e.preventDefault(); }); });
 })();
