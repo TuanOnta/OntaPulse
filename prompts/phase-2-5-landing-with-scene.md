@@ -269,3 +269,65 @@ environment; equivalent pnpm scripts are used and that is reported.
 
 Real-device fps and thermal behavior; real mid-range phone; visual parity if the prototype cannot be
 rendered offline; Node 24 / `moon` task runner.
+
+## Result
+
+Executed on `refactor/landing-page` as one commit. Added `three@0.170.0` (exact) and
+`@types/three@0.170.0` (dev).
+
+Implemented as planned in the file plan, with these changes:
+
+- Header lives in `widgets/landing-sections` (not a separate `landing-header` widget): FSD does not
+  allow a widget to import another widget.
+- The scene takes resolved color strings, a canvas, and explicit `resize(width, height, dpr)` /
+  `setPointer(x, y)` calls, so `create-scene.ts` touches neither the DOM nor `window`. The dust sprite
+  is a `DataTexture` instead of a 2D canvas for the same reason.
+- Added `progress-bus.ts` (scroll progress to the scene without React state).
+
+### Checks (run from `apps/web` with pnpm; `moon` is not installed here, Node is 22.22.0)
+
+- `pnpm typecheck`: pass. `pnpm test`: 10 files / 30 tests pass (new: scroll-progress, lifecycle
+  store, landing page, auth page). `pnpm coverage`: thresholds pass (21.3 / 21.3 / 30.0 / 22.0).
+- Prettier on `src`, `e2e`, `package.json`: pass. `git diff --check`: clean.
+- `pnpm build`: pass. 3D chunk `create-scene` 126.9 KB gzip (cap 250 KB); only the `landing-scene`
+  chunk references it, so `/dashboard` and `/login` never load it (chunk graph; not checked in a
+  network trace). No `fonts.googleapis` / `cdn.jsdelivr` in `dist/`. HUD and URL flags are absent
+  from the production bundle. Font assets 256 KB.
+- E2E: `monitoring-flow` passes with Playwright's `chromium` from `/opt/pw-browsers` through a
+  temporary config (the repo config wants a browser build that is not installed here). The spec now
+  enters through "Get started" -> `/register`.
+- Scene budget, dev server `?debug`, software GL: 13 draw calls, 8,532 triangles / 14,406 points on
+  `high`, 7,500 / 5,430 on `low` (caps: 15 calls, ~8.5k/7.5k tris, 14.4k/5.4k points). Exactly one
+  `<canvas>` under StrictMode. No horizontal scroll at 360/768/1024/1440.
+
+### Parity (headless Chromium, prototype served with three and fonts from local files)
+
+- Section heights and total page height are identical at 1440, 1024, 768 and 360 px.
+- Reduced-motion screenshots: hero and how-it-works are pixel-identical to the prototype at 1440 (0.00%
+  of pixels differ by more than 40/255), and within 0.01% at 1024. The other sections differ by
+  0.2-5% only where the orb overlaps content (see below).
+
+Deliberate differences from the prototype:
+
+1. **Stacking.** In the prototype the fixed canvas paints over the cards and text (a `main,
+header.site,` selector is cut off, so `main` never got `position: relative; z-index: 1`). In the
+   port content sits above the scene, as AGENTS.md section 10 requires for readability.
+2. **Layout inset kept as rendered.** The same cut-off selector gives `main` and `header.site` the
+   `.container` rule (`max-width: 1200px; padding: 0 32px`), so insets stack: content column 1072 px
+   at 1440, 64 px side padding at 360, and the header bar is 1200 px wide with a bottom border that
+   stops short of the viewport edges. This is reproduced as rendered (`PAGE_INSET` in `landing-ui.tsx`).
+   If this is not the intended design, the prototype needs fixing and the constant removed.
+3. CTAs go to `/login` and `/register`; self-hosted fonts and npm `three`; skip link and landmarks;
+   HUD and flags only in dev.
+
+### Not verified
+
+- Real GPU or phone frame rate. Software GL measured 13-27 fps on `high` and 51-57 fps on `low`, which
+  says nothing about a real device.
+- Context loss recovery (`WEBGL_lose_context`) and tab-hidden pause were implemented but not exercised
+  in a browser. `?webgl=off` fallback and reduced motion were exercised.
+- Visual parity of the animated (non-reduced) scroll sequence beyond manual screenshots; no
+  side-by-side video.
+- Screenshots were taken at 1440/1024/768/360 for all five sections but compared numerically only in
+  reduced-motion mode.
+- `moon run ...` tasks, Node 24, the 2 MB total-assets budget measured in a network trace.

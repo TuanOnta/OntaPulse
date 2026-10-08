@@ -8,7 +8,10 @@ const DashboardPage = lazy(() =>
   import("@/pages/dashboard-page").then(({ DashboardPage: Page }) => ({ default: Page })),
 );
 const LandingPage = lazy(() =>
-  import("@/pages/landing-page").then(({ LandingPage: Page }) => ({ default: Page })),
+  import("@/pages/landing/landing-page").then(({ LandingPage: Page }) => ({ default: Page })),
+);
+const AuthPage = lazy(() =>
+  import("@/pages/auth/auth-page").then(({ AuthPage: Page }) => ({ default: Page })),
 );
 const MonitorPage = lazy(() =>
   import("@/pages/monitor-page").then(({ MonitorPage: Page }) => ({ default: Page })),
@@ -45,6 +48,12 @@ function Protected({ children }: { children: React.ReactNode }) {
   return user ? children : <Navigate to="/" replace />;
 }
 
+function GuestOnly({ mode }: { mode: "login" | "register" }) {
+  const { user, isLoading } = useAuth();
+  if (isLoading) return <RouteLoading />;
+  return user ? <Navigate to="/dashboard" replace /> : <AuthPage initialMode={mode} />;
+}
+
 function Home() {
   const { user, isLoading } = useAuth();
   if (isLoading) return <RouteLoading />;
@@ -58,8 +67,8 @@ export function AppRouter() {
         <Suspense fallback={<RouteLoading />}>
           <Routes>
             <Route path="/" element={<Home />} />
-            <Route path="/login" element={<Navigate to="/" replace />} />
-            <Route path="/register" element={<Navigate to="/" replace />} />
+            <Route path="/login" element={<GuestOnly mode="login" />} />
+            <Route path="/register" element={<GuestOnly mode="register" />} />
             <Route
               path="/dashboard"
               element={
