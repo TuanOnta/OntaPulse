@@ -47,9 +47,10 @@ export function WorkspaceCard({ workspace, index }: { workspace: Workspace; inde
     >
       <WorkspaceCover glowDelay={look.glowDelay} role={workspace.role} wave={look.wave} />
       <div className="relative flex flex-1 flex-col gap-3.5 px-[22px] pb-5">
+        {/* Opaque base under the tinted gradient, so the banner waveform never shows through the avatar. */}
         <div
           aria-hidden="true"
-          className="-mt-[26px] grid size-[52px] place-items-center rounded-2xl border border-[color-mix(in_srgb,var(--t)_45%,transparent)] bg-[linear-gradient(145deg,color-mix(in_srgb,var(--t)_22%,transparent),var(--color-landing-bg-2))] font-display text-[19px] leading-[normal] font-bold text-landing-text shadow-[0_10px_24px_-10px_rgb(0_0_0/0.8),inset_0_1px_0_rgb(255_255_255/0.08)] transition-transform duration-[350ms] ease-[cubic-bezier(.2,.8,.2,1)] [transform:translateZ(24px)] group-hover:[transform:translateZ(24px)_scale(1.06)_rotate(-3deg)] motion-reduce:transition-none motion-reduce:[transform:none!important]"
+          className="-mt-[26px] grid size-[52px] place-items-center rounded-2xl border border-[color-mix(in_srgb,var(--t)_45%,transparent)] [background:linear-gradient(145deg,color-mix(in_srgb,var(--t)_22%,transparent),var(--color-landing-bg-2)),var(--color-landing-bg-2)] font-display text-[19px] leading-[normal] font-bold text-landing-text shadow-[0_10px_24px_-10px_rgb(0_0_0/0.8),inset_0_1px_0_rgb(255_255_255/0.08)] transition-transform duration-[350ms] ease-[cubic-bezier(.2,.8,.2,1)] [transform:translateZ(24px)] group-hover:[transform:translateZ(24px)_scale(1.06)_rotate(-3deg)] motion-reduce:transition-none motion-reduce:[transform:none!important]"
         >
           {initials(workspace.name)}
         </div>

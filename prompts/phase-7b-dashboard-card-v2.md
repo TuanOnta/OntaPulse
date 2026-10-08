@@ -151,3 +151,14 @@ fonts, port with a mocked API and the prototype's four workspaces), 1440 / 1024 
 
 Not verified: the exact look of each frame of the animated waveform and border light (checked only on a
 still frame during hover), real devices, `moon` / Node 24.
+
+### Follow-up fix: waveform showing through the avatar
+
+Reported with a screenshot: on some workspaces the banner waveform ran through the avatar. Cause: the
+avatar background is `linear-gradient(145deg, tone 22 %, bg-2)`, whose first stop is mostly transparent,
+and the avatar overlaps the banner by 26 px, so a wave point low in the banner (and its glowing segment)
+shows through the avatar's upper-left corner. The prototype has the identical gradient, so the defect is
+in the prototype too. Fix: an opaque `bg-2` layer under the gradient (`background: gradient, solid`), so the
+line passes behind the avatar instead of through it. This is a deliberate difference from the prototype;
+the look is otherwise unchanged. Checked on four probe workspaces whose first waveform points are low
+(`Probe 0/2/4/6`): the line now disappears behind the avatar. Tests, build and format pass.
