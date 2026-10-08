@@ -48,12 +48,6 @@ function Protected({ children }: { children: React.ReactNode }) {
   return user ? children : <Navigate to="/" replace />;
 }
 
-function GuestOnly({ mode }: { mode: "login" | "register" }) {
-  const { user, isLoading } = useAuth();
-  if (isLoading) return <RouteLoading />;
-  return user ? <Navigate to="/dashboard" replace /> : <AuthPage initialMode={mode} />;
-}
-
 function Home() {
   const { user, isLoading } = useAuth();
   if (isLoading) return <RouteLoading />;
@@ -67,8 +61,10 @@ export function AppRouter() {
         <Suspense fallback={<RouteLoading />}>
           <Routes>
             <Route path="/" element={<Home />} />
-            <Route path="/login" element={<GuestOnly mode="login" />} />
-            <Route path="/register" element={<GuestOnly mode="register" />} />
+            <Route element={<AuthPage />}>
+              <Route path="/login" element={null} />
+              <Route path="/register" element={null} />
+            </Route>
             <Route
               path="/dashboard"
               element={

@@ -72,10 +72,13 @@ describe("LandingPage", () => {
     );
   });
 
-  it("keeps the decorative scene out of the accessibility tree and shows the fallback first", () => {
-    renderLanding();
-    expect(screen.getByTestId("scene-fallback")).toHaveAttribute("aria-hidden", "true");
-    expect(screen.getByTestId("scene-fallback")).toHaveClass("opacity-100");
+  it("keeps the decorative canvas out of the accessibility tree and draws no 2D orb", async () => {
+    const { container } = renderLanding();
+    const canvas = await screen.findByTestId("landing-canvas");
+    expect(canvas).toHaveAttribute("aria-hidden", "true");
+    expect(canvas).toHaveAttribute("tabindex", "-1");
+    expect(screen.queryByTestId("scene-fallback")).not.toBeInTheDocument();
+    expect(container.querySelector("svg circle[r='262']")).toBeNull();
   });
 
   it("highlights the active lifecycle step and pill from the store", async () => {

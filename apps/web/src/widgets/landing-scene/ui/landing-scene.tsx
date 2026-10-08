@@ -1,10 +1,14 @@
-import { lazy, Suspense, useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useRef } from "react";
 
-import { progressBus } from "../model/progress-bus";
-import { FINE_POINTER_QUERY, LOW_TIER_QUERY, TOKEN_NAMES } from "../model/scene-config";
+import { progressBus, type ProgressBus } from "../model/progress-bus";
+import {
+  FINE_POINTER_QUERY,
+  LOW_TIER_QUERY,
+  TOKEN_NAMES,
+  type Keyframe,
+} from "../model/scene-config";
 import type { LandingScene as SceneHandle, SceneColors } from "../model/create-scene";
 import { readDevFlags } from "./dev-flags";
-import { SceneFallback } from "./scene-fallback";
 
 const REDUCED_QUERY = "(prefers-reduced-motion: reduce)";
 
@@ -26,11 +30,17 @@ function readColors(): SceneColors {
 /**
  * Owns the decorative WebGL canvas. The imperative scene is created inside the mount effect (and
  * loaded with a dynamic import, so `three` lives in its own chunk) and fully disposed on cleanup.
- * Only coarse state ("ready") goes through React.
+ * It holds no React state.
  */
-export default function LandingScene() {
+export type LandingSceneProps = {
+  /** Scroll progress source. Defaults to the landing page bus. */
+  progress?: ProgressBus;
+  /** Scene poses. Defaults to the landing page keyframes. */
+  keyframes?: readonly Keyframe[];
+};
+
+export default function LandingScene({ progress = progressBus, keyframes }: LandingSceneProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [ready, setReady] = useState(false);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -59,14 +69,13 @@ export default function LandingScene() {
         tier,
         reduced: isReduced(),
         colors: readColors(),
-        onFirstFrame: () => setReady(true),
+        keyframes,
         onContextLost: () => {
           canvas.style.opacity = "0";
-          setReady(false);
         },
         onStats,
       });
-      if (!created) return; // no WebGL: the SVG fallback stays
+      if (!created) return; // no WebGL: the page shows its content without the orb
       scene = created;
 
       const sync = (): void =>
@@ -93,8 +102,8 @@ export default function LandingScene() {
       reducedQuery.addEventListener("change", onReducedChange);
       teardown.push(() => reducedQuery.removeEventListener("change", onReducedChange));
 
-      teardown.push(progressBus.subscribe((f) => created.setScroll(f)));
-      created.setScroll(progressBus.get());
+      teardown.push(progress.subscribe((f) => created.setScroll(f)));
+      created.setScroll(progress.get());
       created.start();
       if (isReduced()) created.setReduced(true);
     });
@@ -104,13 +113,11 @@ export default function LandingScene() {
       teardown.forEach((fn) => fn());
       scene?.dispose();
       scene = null;
-      setReady(false);
     };
-  }, []);
+  }, [progress, keyframes]);
 
   return (
     <>
-      <SceneFallback ready={ready} />
       <canvas
         aria-hidden="true"
         className="pointer-events-none fixed inset-0 z-0 h-full w-full opacity-0"

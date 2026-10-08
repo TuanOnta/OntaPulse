@@ -228,14 +228,14 @@ Do not add any other dependency without stating why and asking first.
 
 Run the phases in order. Each phase gets its own prompt file and its own approval. **No phase starts before the previous one is approved.** Each phase ports a part of an approved prototype.
 
-| Phase | Scope                                                                                                                                                                                       | Reference                           |
-| ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------- |
-| 1     | Tokens and fonts: port the prototype's `:root` tokens to Tailwind 4 `@theme`, add self-hosted fonts, settle dark-only. No pages.                                                            | `landing-prototype.html` (`:root`)  |
-| 2     | Landing page without 3D: hero, How it works, Scan results, Features, CTA. Static SVG fallback in place of the scene. Real routing and auth CTAs.                                            | `landing-prototype.html`            |
-| 3     | Scene core: install `three`, port `createLandingScene` (orb, ripples, beacons, packets, atmosphere, rings, dust), quality tiers, reduced motion, no-WebGL fallback, lazy loading, disposal. | `landing-prototype.html`            |
-| 4     | Scroll link: section keyframes, lifecycle weights, step and status-pill sync, horizon hold, idle throttle.                                                                                  | `landing-prototype.html`            |
-| 5     | Landing performance and accessibility pass, against the budget in section 9.                                                                                                                | `landing-prototype.html`            |
-| 6+    | App screens, one phase each: layout shell and auth, dashboard, workspaces, projects, monitors, scans, members. **Each starts only after its prototype is in `reference/` and approved.**    | `reference/<screen>-prototype.html` |
+| Phase | Scope                                                                                                                                                                                                | Reference                           |
+| ----- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------- |
+| 1     | Tokens and fonts: port the prototype's `:root` tokens to Tailwind 4 `@theme`, add self-hosted fonts, settle dark-only. No pages.                                                                     | `landing-prototype.html` (`:root`)  |
+| 2     | Landing page without 3D: hero, How it works, Scan results, Features, CTA. No orb yet (the 3D scene arrives in phase 3). Real routing and auth CTAs.                                                  | `landing-prototype.html`            |
+| 3     | Scene core: install `three`, port `createLandingScene` (orb, ripples, beacons, packets, atmosphere, rings, dust), quality tiers, reduced motion, no-WebGL behavior (no orb), lazy loading, disposal. | `landing-prototype.html`            |
+| 4     | Scroll link: section keyframes, lifecycle weights, step and status-pill sync, horizon hold, idle throttle.                                                                                           | `landing-prototype.html`            |
+| 5     | Landing performance and accessibility pass, against the budget in section 9.                                                                                                                         | `landing-prototype.html`            |
+| 6+    | App screens, one phase each: layout shell and auth, dashboard, workspaces, projects, monitors, scans, members. **Each starts only after its prototype is in `reference/` and approved.**             | `reference/<screen>-prototype.html` |
 
 Rules:
 
@@ -259,7 +259,7 @@ Rules:
 - **Quality tiers** `high` and `low` are chosen once at creation (narrow viewport or coarse pointer means `low`). `low` keeps the scene alive with less detail (fewer dots and beacons, lower pixel ratio cap, no pointer parallax). Do not remove the scene on mobile.
 - **Pixel ratio** is capped (2 on `high`, 1.5 on `low`) and drops adaptively when frames are slow, never below 1.
 - **Reduced motion**: render one static frame (frozen hub pulse, no packets, no parallax, no boil). React to changes of the media query.
-- **No WebGL** or context creation failure: keep the SVG fallback. A lost context returns to the fallback. The fallback shows first and cross-fades out after the first frame (`scene-ready`), with no layout shift.
+- **No WebGL** or context creation failure: draw nothing. There is no 2D/SVG stand-in; the page shows its content over the plain background. A lost context hides the canvas. The orb fades in by itself after the first frame, with no layout shift.
 - **Decorative**: the canvas is `aria-hidden="true"`, not focusable, `pointer-events: none`. All content, copy, and CTAs are normal DOM.
 - No allocations inside the frame loop (`new Vector3()`, array literals). Reuse temporaries.
 - No light and no overlay follows the camera.
@@ -446,7 +446,7 @@ For landing page work, also check:
 - **Horizon hold**: from the "Scan results" section to the end of the page the orb stays in the same lower position and does not move down again.
 - **Reduced motion**: enable "reduce motion" in the OS or DevTools rendering panel; the scene is one static frame, with no parallax and no moving packets.
 - **Mobile viewport**: 360 px and 768 px; no horizontal scroll, readable copy over the orb, scene alive at lower detail, acceptable frame rate.
-- **WebGL fallback**: disable WebGL and confirm the SVG fallback renders with all content intact, and that a lost context returns to it.
+- **No WebGL**: disable WebGL (`?webgl=off` in dev) and confirm all content stays intact with no orb and no console errors, and that a lost context hides the canvas without breaking the page.
 - **Lazy loading**: Network tab on `/dashboard` must not load the 3D chunk.
 - **Tab hidden**: the render loop pauses.
 - **StrictMode**: in development there is exactly one canvas and one render loop.

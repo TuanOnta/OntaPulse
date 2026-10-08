@@ -1,12 +1,7 @@
 import { cn } from "cn";
 import { Suspense } from "react";
 
-import {
-  LandingScene,
-  SceneFallback,
-  useLandingScroll,
-  useLifecycleKey,
-} from "@/widgets/landing-scene";
+import { LandingScene, useLandingScroll, useLifecycleKey } from "@/widgets/landing-scene";
 import {
   CtaSection,
   FeaturesSection,
@@ -30,7 +25,7 @@ export function LandingPage() {
       >
         Skip to content
       </a>
-      <Suspense fallback={<SceneFallback ready={false} />}>
+      <Suspense fallback={null}>
         <LandingScene />
       </Suspense>
       <LandingHeader />

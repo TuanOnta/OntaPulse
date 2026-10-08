@@ -94,12 +94,15 @@ test("registers, creates a monitor, triggers a scan, and views its result", asyn
   await expect(page).toHaveTitle("OntaPulse");
   await page.getByRole("link", { name: "Get started" }).click();
   await expect(page).toHaveURL("/register");
-  await page.getByLabel("Name").fill("Person");
-  await page.getByLabel("Email address").fill("person@example.com");
-  await page.getByRole("textbox", { name: "Password" }).fill("correct-horse-battery-staple");
-  await page.getByRole("button", { name: "Create account" }).click();
+  const form = page.getByRole("tabpanel");
+  await form.getByLabel("Name").fill("Person");
+  await form.getByLabel("Email").fill("person@example.com");
+  await form.getByLabel("Password", { exact: true }).fill("correct-horse-battery-staple");
+  await form.getByRole("button", { name: "Create account" }).click();
+  await expect(page.getByRole("status")).toContainText("Your workspace is ready.");
 
-  await expect(page).toHaveURL("/dashboard");
+  // The success view stays for a moment before the redirect.
+  await expect(page).toHaveURL("/dashboard", { timeout: 10_000 });
   await page.getByRole("link", { name: workspace.name, exact: true }).click();
   await expect(page).toHaveURL(`/workspaces/${workspace.id}`);
 
