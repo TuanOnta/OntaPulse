@@ -80,7 +80,7 @@ export function WorkspaceHero({
         <div className="flex min-w-0 items-end gap-[18px] max-[520px]:flex-col max-[520px]:items-start max-[520px]:gap-2.5">
           <div
             aria-hidden="true"
-            className="-mt-9 grid size-[72px] flex-none place-items-center rounded-[22px] border border-[color-mix(in_srgb,var(--t)_45%,transparent)] [background:linear-gradient(145deg,color-mix(in_srgb,var(--t)_22%,transparent),var(--color-landing-bg-2)),var(--color-landing-bg-2)] font-display text-[26px] leading-[normal] font-bold text-landing-text shadow-[0_14px_30px_-12px_rgb(0_0_0/0.85),inset_0_1px_0_rgb(255_255_255/0.08)]"
+            className="relative z-[1] -mt-9 grid size-[72px] flex-none place-items-center rounded-[22px] border border-[color-mix(in_srgb,var(--t)_45%,transparent)] [background:linear-gradient(145deg,color-mix(in_srgb,var(--t)_22%,transparent),var(--color-landing-bg-2)),var(--color-landing-bg-2)] font-display text-[26px] leading-[normal] font-bold text-landing-text shadow-[0_14px_30px_-12px_rgb(0_0_0/0.85),inset_0_1px_0_rgb(255_255_255/0.08)]"
           >
             {initials(name)}
           </div>
