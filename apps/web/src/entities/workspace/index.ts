@@ -28,3 +28,4 @@ export {
 } from "./model/member-permissions";
 export { useWorkspaceMembers, type MembersError } from "./model/use-workspace-members";
 export { MemberAvatar } from "./ui/member-avatar";
+export { TONE_VAR } from "./ui/tone-var";

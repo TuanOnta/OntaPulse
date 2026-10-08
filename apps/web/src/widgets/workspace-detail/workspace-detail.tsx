@@ -64,6 +64,7 @@ export function WorkspaceDetail({
         onNewProject={() => setProjectDialogOpen(true)}
         projectCount={projects.status === "ready" ? projects.projects.length : null}
         role={workspace.role}
+        tone={look.tone}
         wave={look.wave}
       />
       <WorkspaceTabs

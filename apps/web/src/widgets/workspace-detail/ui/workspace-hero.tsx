@@ -1,19 +1,17 @@
 import type { ReactNode } from "react";
 
-import { WAVE_VIEW, WorkspaceRoleBadge, initials } from "@/entities/workspace";
+import {
+  TONE_VAR,
+  WAVE_VIEW,
+  WorkspaceRoleBadge,
+  initials,
+  type WorkspaceTone,
+} from "@/entities/workspace";
 import { LockIcon } from "@/features/workspaces/members-pane";
 import { formatDay } from "@/shared/lib/format";
 import { riseStyle } from "@/shared/lib/rise";
 import type { WorkspaceRole } from "@/shared/types/domain";
 import { ActionButton, PlusIcon } from "@/shared/ui/pill-button";
-
-/** Tone colour (`--t`) per role, as in the prototype's `tone-admin` / `tone-member`. */
-const ROLE_TONE: Record<WorkspaceRole | "NONE", string> = {
-  OWNER: "[--t:var(--color-landing-text)]",
-  ADMIN: "[--t:var(--color-landing-info)]",
-  MEMBER: "[--t:var(--color-landing-muted)]",
-  NONE: "[--t:var(--color-landing-text)]",
-};
 
 const pluralize = (count: number, word: string) => `${count} ${word}${count === 1 ? "" : "s"}`;
 
@@ -22,6 +20,8 @@ export type WorkspaceHeroProps = {
   createdAt: string;
   role?: WorkspaceRole;
   wave: string;
+  /** Same tone as the workspace card on the dashboard. */
+  tone: WorkspaceTone;
   memberCount: number | null;
   projectCount: number | null;
   canManage: boolean;
@@ -35,6 +35,7 @@ export function WorkspaceHero({
   createdAt,
   role,
   wave,
+  tone,
   memberCount,
   projectCount,
   canManage,
@@ -47,7 +48,7 @@ export function WorkspaceHero({
 
   return (
     <header
-      className={`relative animate-dash-rise overflow-hidden rounded-[26px] border border-landing-border bg-landing-surface/[.78] motion-reduce:animate-none ${ROLE_TONE[role ?? "NONE"]}`}
+      className={`relative animate-dash-rise overflow-hidden rounded-[26px] border border-landing-border bg-landing-surface/[.78] motion-reduce:animate-none ${TONE_VAR[tone]}`}
       style={riseStyle(1)}
     >
       <div
