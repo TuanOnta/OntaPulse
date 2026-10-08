@@ -23,7 +23,7 @@ const ScanPage = lazy(() =>
   import("@/pages/scan-page").then(({ ScanPage: Page }) => ({ default: Page })),
 );
 const WorkspacePage = lazy(() =>
-  import("@/pages/workspace-page").then(({ WorkspacePage: Page }) => ({ default: Page })),
+  import("@/pages/workspace/workspace-page").then(({ WorkspacePage: Page }) => ({ default: Page })),
 );
 const WorkspaceCreatePage = lazy(() =>
   import("@/pages/workspace-create-page").then(({ WorkspaceCreatePage: Page }) => ({

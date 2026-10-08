@@ -227,6 +227,9 @@
   --animate-dash-orbit: dash-orbit 18s linear infinite;
   --animate-dash-pulse-line: dash-pulse-line 3s ease-in-out infinite;
   --animate-dash-wave: dash-wave 5s linear infinite;
+  --animate-ws-leave: ws-leave 0.4s ease forwards;
+  --animate-ws-flash: ws-flash 1.6s ease;
+  --animate-ws-glow: ws-glow 7s linear infinite;
 
   @keyframes dash-rise {
     from {
@@ -280,6 +283,25 @@
   @keyframes dash-wave {
     to {
       stroke-dashoffset: -1000;
+    }
+  }
+  @keyframes ws-leave {
+    to {
+      opacity: 0;
+      transform: translateX(24px);
+    }
+  }
+  @keyframes ws-flash {
+    0% {
+      background: rgb(124 196 255 / 0.18);
+    }
+    100% {
+      background: transparent;
+    }
+  }
+  @keyframes ws-glow {
+    to {
+      stroke-dashoffset: -1400;
     }
   }
   @keyframes dash-pulse-line {

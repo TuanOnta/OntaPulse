@@ -28,3 +28,12 @@ export function resetTilt(event: PointerEvent<HTMLElement>): void {
   el.style.setProperty("--rx", "0deg");
   el.style.setProperty("--ry", "0deg");
 }
+
+/** Spotlight only (no tilt): writes the pointer position into `--mx` / `--my`. */
+export function trackPointer(event: PointerEvent<HTMLElement>): void {
+  if (prefersReducedMotion()) return;
+  const el = event.currentTarget;
+  const rect = el.getBoundingClientRect();
+  el.style.setProperty("--mx", `${event.clientX - rect.left}px`);
+  el.style.setProperty("--my", `${event.clientY - rect.top}px`);
+}
