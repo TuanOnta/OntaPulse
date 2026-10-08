@@ -74,3 +74,32 @@ Typecheck, unit tests, coverage, Prettier, build, `git diff --check`; e2e skippe
 updated, and it is run at the end). Screenshots against the prototype at 1440 / 1024 / 768 / 360 px. Manual:
 open a monitor from the project page, run a scan and watch queued, running, result; failed target; MEMBER view;
 filter chips; narrow viewport; reduced motion.
+
+## Result
+
+Implemented on `refactor/monitor-page`.
+
+- `entities/scan`: `scan-history.ts` (filters and counts, chart selection and scale, HTTP tone, relative time,
+  `SLOW_MS`, `HISTORY_LIMIT`), `ScanRow`, `ScanChip` (base of the lifecycle chip, with `live` off inside the
+  list). `features/monitors`: `useMonitorScans` (list, run, 2 s polling while busy, one result toast per scan
+  started here, cleaned up on unmount). `shared/lib`: `useNow`, `formatClock`. `widgets/monitor-detail` and
+  `pages/monitor` replace `pages/monitor-page.tsx`.
+- The header uses the workspace tone from the role (gold / blue / white). The chart is shown only when at least
+  one scan has finished (the prototype draws an empty frame); everything else follows the prototype.
+- A bug found in the prototype and the port during the 360 px check: the invisible tooltips of the last bars
+  stuck out of the card and widened the page to 402 px. Tooltips of the first third of the bars now align left,
+  the last third align right, so the page stays at 360 px.
+- `e2e/monitoring-flow.spec.ts`: the scan link is now found by `Open scan from ...` instead of `Inspect`; not
+  run, as agreed.
+
+Checks (`moon` not installed, Node 22.22.0): typecheck pass; 35 files / 196 tests pass (185 before; new
+tests for the history helpers, the polling hook, `useNow` and the page); coverage thresholds, build, Prettier
+and `git diff --check` pass (see the final run). Parity in headless Chromium with a mocked API and the
+prototype's demo data (reduced motion): 1440 / 1024 / 768 / 360 px, share of pixels differing by more than
+40/255 is 3.3 % (1440), 3.2 % (1024), 4.0 % (768) and 8.3 % (360); page heights within 15 px at 1440 / 1024 / 768 and 63 px at 360. Differences
+seen: fonts (the prototype could not load Google Fonts offline), the header tone (role), and the prototype's
+"Only recent scans are listed" sentence, which the port drops unless more than 50 scans exist.
+
+Not verified: a real scan lifecycle against the API and worker, the copy button in a real browser, hover frames
+and the new-bar glow, the error / loading / not-found / ADMIN / MEMBER states in a browser (unit tests only),
+real devices, `moon`, Node 24, e2e.

@@ -20,3 +20,14 @@ export function formatDay(value: string | null | undefined) {
     ? new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(new Date(value))
     : "—";
 }
+
+/** Time of day in the user's locale as a 24-hour clock, for example "14:05". */
+export function formatClock(value: string | null | undefined) {
+  return value
+    ? new Intl.DateTimeFormat(undefined, {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+      }).format(new Date(value))
+    : "—";
+}
