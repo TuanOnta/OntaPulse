@@ -92,7 +92,8 @@ test("registers, creates a monitor, triggers a scan, and views its result", asyn
   const response = await page.goto("/");
   expect(response?.status()).toBe(200);
   await expect(page).toHaveTitle("OntaPulse");
-  await page.getByRole("button", { name: "Create an account" }).click();
+  await page.getByRole("link", { name: "Get started" }).click();
+  await expect(page).toHaveURL("/register");
   await page.getByLabel("Name").fill("Person");
   await page.getByLabel("Email address").fill("person@example.com");
   await page.getByRole("textbox", { name: "Password" }).fill("correct-horse-battery-staple");
