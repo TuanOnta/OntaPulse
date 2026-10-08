@@ -13,9 +13,21 @@ export {
 } from "./model/workspace-stats";
 export { WorkspaceRoleBadge } from "./ui/workspace-role-badge";
 export {
+  WAVE_VIEW,
+  ROLE_TONE,
   WORKSPACE_TONES,
+  toneForRole,
   formatAge,
   workspaceLook,
   type WorkspaceLook,
   type WorkspaceTone,
 } from "./model/workspace-look";
+export {
+  canChangeRole,
+  canManageWorkspace,
+  canRemoveMember,
+  sortMembers,
+} from "./model/member-permissions";
+export { useWorkspaceMembers, type MembersError } from "./model/use-workspace-members";
+export { MemberAvatar } from "./ui/member-avatar";
+export { TONE_VAR } from "./ui/tone-var";

@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { Link } from "react-router-dom";
 
-import { formatAge, initials, workspaceLook, type WorkspaceTone } from "@/entities/workspace";
+import { TONE_VAR, formatAge, initials, workspaceLook } from "@/entities/workspace";
 import { formatDay } from "@/shared/lib/format";
 import { resetTilt, trackSpotlight } from "@/shared/lib/pointer-spotlight";
 import type { Workspace } from "@/shared/types/domain";
@@ -10,13 +10,7 @@ import { cn } from "cn";
 import { riseStyle } from "./rise";
 import { WorkspaceCover } from "./workspace-cover";
 
-/** Tone colour handed to the card as `--t`; every tinted part of the card derives from it. */
-export const TONE_VAR: Record<WorkspaceTone, string> = {
-  info: "[--t:var(--color-landing-info)]",
-  text: "[--t:var(--color-landing-text)]",
-  warn: "[--t:var(--color-landing-warn)]",
-  accent: "[--t:var(--color-landing-accent)]",
-};
+export { TONE_VAR };
 
 /**
  * Shared card chrome (workspace and create cards): tilt and lift on hover, tone glow, pointer

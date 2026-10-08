@@ -4,7 +4,7 @@ A monorepo-based website and API monitoring platform for managing targets, runni
 
 OntaPulse separates request handling from scan execution. The API persists a scan with the `QUEUED` status and publishes a job to RabbitMQ. A Python worker consumes the job, validates URL safety, performs the HTTP check, evaluates the result, and stores the terminal status and findings in PostgreSQL. The web client provides interfaces for authentication, workspaces, projects, monitors, scans, and member management.
 
-> **Project status:** actively developed. The primary workflow from the web client through the worker is available. Capabilities such as notifications and update/delete operations for several resources have not been implemented yet.
+> **Project status:** actively developed. The primary workflow from the web client through the worker is available. Capabilities such as notifications and monitor update/delete operations have not been implemented yet.
 
 ## Table of contents
 
@@ -60,7 +60,7 @@ OntaPulse separates request handling from scan execution. The API persists a sca
 | Web interface               |   Available   | Landing/auth, dashboard, workspaces, projects, monitors, scans, and workspace members |
 | Authentication and sessions |   Available   | Argon2id, session cookies, and Redis session storage                                  |
 | Workspaces and roles        |   Available   | `OWNER`, `ADMIN`, and `MEMBER` authorization                                          |
-| Projects and monitors       |   Available   | Create and list operations; update/delete are not available                           |
+| Projects and monitors       |   Available   | Create and list; rename and delete projects; monitors cannot be edited or deleted     |
 | Scan API                    |   Available   | Trigger, list by monitor, and scan details                                            |
 | PostgreSQL persistence      |   Available   | Prisma in the API and SQLAlchemy in the worker                                        |
 | RabbitMQ producer           |   Available   | Transactional outbox, durable topology, mandatory routing, and publisher confirms     |
@@ -68,7 +68,7 @@ OntaPulse separates request handling from scan execution. The API persists a sca
 | Findings                    |   Available   | Client errors, server errors, and slow responses                                      |
 | Automatic scheduling        |   Available   | Active monitors are queued at their configured interval                               |
 | Notifications and alerting  | Not available | No notification channel or escalation policy yet                                      |
-| Resource update/delete      |    Partial    | Not available for workspaces, projects, or monitors                                   |
+| Resource update/delete      |    Partial    | Workspaces and projects can be renamed and deleted; monitors cannot                   |
 
 ## System architecture
 
@@ -519,21 +519,25 @@ Sessions last seven days and are sent through the `ontapulse_session` cookie.
 | -------- | ---------------------------------------------- | ------------------ | -------------------------------------------- |
 | `GET`    | `/api/workspaces`                              | Authenticated user | Lists the user's workspaces                  |
 | `POST`   | `/api/workspaces`                              | Authenticated user | Creates a workspace with the user as `OWNER` |
+| `PATCH`  | `/api/workspaces/:workspaceId`                 | OWNER/ADMIN        | Renames a workspace                          |
+| `DELETE` | `/api/workspaces/:workspaceId`                 | OWNER              | Deletes a workspace and everything in it     |
 | `GET`    | `/api/workspaces/:workspaceId/members`         | Any member         | Lists workspace members                      |
 | `POST`   | `/api/workspaces/:workspaceId/members`         | OWNER/ADMIN        | Adds an already registered user              |
 | `PATCH`  | `/api/workspaces/:workspaceId/members/:userId` | OWNER              | Changes a role to `ADMIN` or `MEMBER`        |
 | `DELETE` | `/api/workspaces/:workspaceId/members/:userId` | OWNER/ADMIN        | Removes a member according to role rules     |
 
-A workspace name must contain 1-120 characters. A member email address must be valid, contain no more than 320 characters, and belong to a registered user.
+A workspace name must contain 1-120 characters. Deleting a workspace permanently removes its members, projects, monitors, scans, and findings. A member email address must be valid, contain no more than 320 characters, and belong to a registered user.
 
 ### Projects
 
-| Method | Endpoint                                | Access      | Purpose                       |
-| ------ | --------------------------------------- | ----------- | ----------------------------- |
-| `GET`  | `/api/workspaces/:workspaceId/projects` | Any member  | Lists projects in a workspace |
-| `POST` | `/api/workspaces/:workspaceId/projects` | OWNER/ADMIN | Creates a project             |
+| Method   | Endpoint                                | Access      | Purpose                                                 |
+| -------- | --------------------------------------- | ----------- | ------------------------------------------------------- |
+| `GET`    | `/api/workspaces/:workspaceId/projects` | Any member  | Lists projects in a workspace                           |
+| `POST`   | `/api/workspaces/:workspaceId/projects` | OWNER/ADMIN | Creates a project                                       |
+| `PATCH`  | `/api/projects/:projectId`              | OWNER/ADMIN | Renames a project or changes its description            |
+| `DELETE` | `/api/projects/:projectId`              | OWNER/ADMIN | Deletes a project and its monitors, scans, and findings |
 
-A project name must contain 1-120 characters. Its optional description may contain up to 500 characters.
+A project name must contain 1-120 characters. Its optional description may contain up to 500 characters; an empty description on update clears it. Deleting a project permanently removes its monitors, scans, and findings. Scan jobs already queued for deleted scans are rejected by the worker and end up in the dead-letter queue.
 
 ### Monitors
 
@@ -859,7 +863,7 @@ Use the RabbitMQ Management UI to inspect queues, connections, channels, and del
 ## Current limitations
 
 - There are no email, webhook, chat notification, escalation policy, or on-call integrations.
-- The API does not provide update/delete operations for workspaces, projects, or monitors.
+- The API does not provide update/delete operations for monitors.
 - Monitors cannot be paused or resumed even though the database already contains an `isActive` field.
 - There is no aggregated dashboard for uptime, SLA/SLO, incident history, or response-time trends.
 - The outbox publisher retries pending events, but does not yet apply a bounded retry limit or escalation policy.

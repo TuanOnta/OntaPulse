@@ -95,3 +95,51 @@ export const findAllProjectsRouteSchema: FastifySchema = {
     404: validationErrorSchema,
   },
 };
+
+const projectParamsSchema = {
+  type: "object",
+  additionalProperties: false,
+  required: ["projectId"],
+  properties: {
+    projectId: { type: "string", format: "uuid" },
+  },
+} as const;
+
+export const updateProjectRouteSchema: FastifySchema = {
+  tags: ["Projects"],
+  summary: "Update a project",
+  description:
+    "Owners and admins can rename a project or change its description. An empty description clears it.",
+  params: projectParamsSchema,
+  body: {
+    type: "object",
+    additionalProperties: false,
+    minProperties: 1,
+    properties: {
+      name: { type: "string", minLength: 1, maxLength: 120 },
+      description: { type: "string", maxLength: 500 },
+    },
+  },
+  response: {
+    200: projectResponseSchema,
+    400: validationErrorSchema,
+    401: validationErrorSchema,
+    403: validationErrorSchema,
+    404: validationErrorSchema,
+  },
+};
+
+export const deleteProjectRouteSchema: FastifySchema = {
+  tags: ["Projects"],
+  summary: "Delete a project",
+  description:
+    "Owners and admins can delete a project. Its monitors, scans and findings are removed permanently.",
+  params: projectParamsSchema,
+  response: {
+    204: { type: "null", description: "Project deleted" },
+    400: validationErrorSchema,
+    401: validationErrorSchema,
+    403: validationErrorSchema,
+    404: validationErrorSchema,
+  },
+};

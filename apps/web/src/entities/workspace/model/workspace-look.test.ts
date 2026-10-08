@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { WORKSPACE_TONES, formatAge, wavePath, workspaceLook } from "./workspace-look";
+import { WORKSPACE_TONES, formatAge, toneForRole, wavePath, workspaceLook } from "./workspace-look";
 
 const NAMES = [
   ["w1", "MrScraper Platform"],
@@ -25,9 +25,22 @@ describe("workspaceLook", () => {
     }
   });
 
-  it("spreads different workspaces over more than one tone", () => {
-    const tones = new Set(NAMES.map(([id, name]) => workspaceLook({ id, name }).tone));
-    expect(tones.size).toBeGreaterThan(1);
+  it("colours by role: gold for owner, blue for admin, white for member", () => {
+    expect(toneForRole("OWNER")).toBe("warn");
+    expect(toneForRole("ADMIN")).toBe("info");
+    expect(toneForRole("MEMBER")).toBe("text");
+    expect(toneForRole(undefined)).toBe("text");
+    const base = { id: "w1", name: "MrScraper Platform" };
+    expect(workspaceLook({ ...base, role: "OWNER" }).tone).toBe("warn");
+    expect(workspaceLook({ ...base, role: "ADMIN" }).tone).toBe("info");
+    expect(workspaceLook({ ...base, role: "MEMBER" }).tone).toBe("text");
+  });
+
+  it("keeps the same wave for every role of one workspace", () => {
+    const base = { id: "w1", name: "MrScraper Platform" };
+    expect(workspaceLook({ ...base, role: "OWNER" }).wave).toBe(
+      workspaceLook({ ...base, role: "MEMBER" }).wave,
+    );
   });
 });
 
@@ -140,7 +153,6 @@ describe("parity with the prototype algorithms", () => {
     const h = prototypeHash(id + name);
     const look = workspaceLook({ id, name });
     expect(look.wave).toBe(prototypeWavePath(h));
-    expect(WORKSPACE_TONES.indexOf(look.tone)).toBe(h % 4);
     expect(look.glowDelay).toBe(-((h % 50) / 10));
   });
 });

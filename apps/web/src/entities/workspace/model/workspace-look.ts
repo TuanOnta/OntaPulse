@@ -1,8 +1,20 @@
 import { createRng, hashString } from "@/shared/lib/seeded-random";
+import type { WorkspaceRole } from "@/shared/types/domain";
 
 /** Tone names, in the order of the prototype's `tone-0 .. tone-3`. */
 export const WORKSPACE_TONES = ["info", "text", "warn", "accent"] as const;
 export type WorkspaceTone = (typeof WORKSPACE_TONES)[number];
+
+/** Card colour by the user's role in the workspace: gold = owner, blue = admin, white = member. */
+export const ROLE_TONE: Record<WorkspaceRole, WorkspaceTone> = {
+  OWNER: "warn",
+  ADMIN: "info",
+  MEMBER: "text",
+};
+
+export function toneForRole(role?: WorkspaceRole): WorkspaceTone {
+  return role ? ROLE_TONE[role] : "text";
+}
 
 export const WAVE_VIEW = { width: 400, height: 72 } as const;
 const WAVE_POINTS = 14;
@@ -34,11 +46,18 @@ export function wavePath(seed: number): string {
   return path;
 }
 
-/** Each workspace keeps its own tone and waveform: both derive from a hash of its id and name. */
-export function workspaceLook(workspace: { id: string; name: string }): WorkspaceLook {
+/**
+ * The tone follows the user's role; the waveform and glow delay stay per workspace (a hash of its id and
+ * name). Used by the dashboard card, the workspace hero and the project header.
+ */
+export function workspaceLook(workspace: {
+  id: string;
+  name: string;
+  role?: WorkspaceRole;
+}): WorkspaceLook {
   const hash = hashString(workspace.id + workspace.name);
   return {
-    tone: WORKSPACE_TONES[hash % WORKSPACE_TONES.length],
+    tone: toneForRole(workspace.role),
     wave: wavePath(hash),
     glowDelay: -((hash % 50) / 10),
   };

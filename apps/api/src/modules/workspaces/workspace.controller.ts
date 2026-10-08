@@ -4,6 +4,7 @@ import { AppError } from "../../infrastructure/errors/app-error.js";
 import {
   addWorkspaceMemberBodySchema,
   createWorkspaceBodySchema,
+  updateWorkspaceBodySchema,
   updateWorkspaceMemberBodySchema,
   workspaceIdParamsSchema,
   workspaceMemberParamsSchema,
@@ -37,6 +38,27 @@ export class WorkspaceController {
     const userId = getAuthenticatedUserId(request);
 
     return this.workspaceService.findAll(userId);
+  };
+
+  update = async (request: FastifyRequest) => {
+    const userId = getAuthenticatedUserId(request);
+    const { workspaceId } = parseOrThrow(workspaceIdParamsSchema, request.params);
+    const body = parseOrThrow(updateWorkspaceBodySchema, request.body);
+    const workspace = await this.workspaceService.update(workspaceId, userId, body);
+
+    request.log.info({ workspaceId, userId }, "Workspace renamed");
+
+    return workspace;
+  };
+
+  delete = async (request: FastifyRequest, reply: FastifyReply) => {
+    const userId = getAuthenticatedUserId(request);
+    const { workspaceId } = parseOrThrow(workspaceIdParamsSchema, request.params);
+    await this.workspaceService.delete(workspaceId, userId);
+
+    request.log.info({ workspaceId, userId }, "Workspace deleted");
+
+    return reply.status(204).send();
   };
 
   findMembers = async (request: FastifyRequest) => {

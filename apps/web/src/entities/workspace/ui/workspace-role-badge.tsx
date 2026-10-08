@@ -3,9 +3,9 @@ import { cn } from "cn";
 import type { WorkspaceRole } from "@/shared/types/domain";
 
 const ROLE_STYLE: Record<WorkspaceRole, string> = {
-  OWNER: "bg-landing-text/[.06] text-landing-text",
+  OWNER: "bg-landing-warn/[.08] text-landing-warn",
   ADMIN: "bg-landing-info/[.08] text-landing-info",
-  MEMBER: "bg-landing-muted/[.06] text-landing-muted",
+  MEMBER: "bg-landing-text/[.06] text-landing-text",
 };
 
 const ICON_PROPS = { "aria-hidden": true, className: "size-3", fill: "none", viewBox: "0 0 12 12" };

@@ -33,7 +33,7 @@ function WorkspaceLinks({ status, workspaces }: ShellWorkspaces) {
         <NavLink className={NAV_LINK} key={workspace.id} to={`/workspaces/${workspace.id}`}>
           <span
             aria-hidden="true"
-            className="mx-[5px] size-2 flex-none rounded-full bg-landing-border-strong group-hover:bg-landing-text-2"
+            className="mx-[5px] size-2 flex-none rounded-full bg-landing-border-strong group-hover:bg-landing-text-2 group-aria-[current=page]:bg-landing-info group-aria-[current=page]:shadow-[0_0_8px_var(--color-landing-info)]"
           />
           <span className="truncate">{workspace.name}</span>
         </NavLink>

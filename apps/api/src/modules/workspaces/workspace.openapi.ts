@@ -78,6 +78,41 @@ export const createWorkspaceRouteSchema: FastifySchema = {
   },
 };
 
+export const updateWorkspaceRouteSchema: FastifySchema = {
+  tags: ["Workspaces"],
+  summary: "Rename a workspace",
+  description: "Owners and admins can rename a workspace.",
+  params: workspaceIdParamsSchema,
+  body: {
+    type: "object",
+    additionalProperties: false,
+    required: ["name"],
+    properties: { name: { type: "string", minLength: 1, maxLength: 120 } },
+  },
+  response: {
+    200: workspaceResponseSchema,
+    400: errorResponseSchema,
+    401: errorResponseSchema,
+    403: errorResponseSchema,
+    404: errorResponseSchema,
+  },
+};
+
+export const deleteWorkspaceRouteSchema: FastifySchema = {
+  tags: ["Workspaces"],
+  summary: "Delete a workspace",
+  description:
+    "Only the owner can delete a workspace. Its members, projects, monitors, scans and findings are removed permanently.",
+  params: workspaceIdParamsSchema,
+  response: {
+    204: { type: "null", description: "Workspace deleted" },
+    400: errorResponseSchema,
+    401: errorResponseSchema,
+    403: errorResponseSchema,
+    404: errorResponseSchema,
+  },
+};
+
 export const findAllWorkspacesRouteSchema: FastifySchema = {
   tags: ["Workspaces"],
   summary: "List current user workspaces",

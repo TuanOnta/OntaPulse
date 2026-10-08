@@ -3,7 +3,12 @@ import type { FastifyPluginAsync } from "fastify";
 import { WorkspaceAccessService } from "../workspaces/workspace-access.service.js";
 import { WorkspaceRepository } from "../workspaces/workspace.repository.js";
 import { ProjectController } from "./project.controller.js";
-import { createProjectRouteSchema, findAllProjectsRouteSchema } from "./project.openapi.js";
+import {
+  createProjectRouteSchema,
+  deleteProjectRouteSchema,
+  findAllProjectsRouteSchema,
+  updateProjectRouteSchema,
+} from "./project.openapi.js";
 import { ProjectRepository } from "./project.repository.js";
 import { ProjectService } from "./project.service.js";
 
@@ -25,5 +30,11 @@ export const projectRoutes: FastifyPluginAsync = async (app) => {
     "/workspaces/:workspaceId/projects",
     { schema: findAllProjectsRouteSchema },
     projectController.findAll,
+  );
+  app.patch("/projects/:projectId", { schema: updateProjectRouteSchema }, projectController.update);
+  app.delete(
+    "/projects/:projectId",
+    { schema: deleteProjectRouteSchema },
+    projectController.delete,
   );
 };

@@ -106,15 +106,18 @@ test("registers, creates a monitor, triggers a scan, and views its result", asyn
   await page.getByRole("link", { name: `Open workspace ${workspace.name}` }).click();
   await expect(page).toHaveURL(`/workspaces/${workspace.id}`);
 
-  await page.getByLabel("Project name").fill(project.name);
-  await page.getByLabel(/Description/).fill(project.description);
-  await page.getByRole("button", { name: "Create project" }).click();
+  await page.getByRole("button", { name: "New project" }).first().click();
+  const projectDialog = page.getByRole("dialog");
+  await projectDialog.getByLabel("Name").fill(project.name);
+  await projectDialog.getByLabel(/Description/).fill(project.description);
+  await projectDialog.getByRole("button", { name: "Create project" }).click();
   await page.getByRole("link", { name: /Public API/ }).click();
 
-  await page.locator("#monitor-name").fill(monitor.name);
-  await page.locator("#target-url").fill(monitor.targetUrl);
-  await page.getByRole("button", { name: "Add monitor" }).click();
-  await page.getByRole("link", { name: /Marketing homepage/ }).click();
+  await page.getByRole("button", { name: "Add monitor" }).first().click();
+  const monitorDialog = page.getByRole("dialog");
+  await monitorDialog.getByLabel("Target URL").fill(monitor.targetUrl);
+  await monitorDialog.getByRole("button", { name: "Add monitor" }).click();
+  await page.getByRole("link", { name: `Open monitor ${monitor.targetUrl}` }).click();
 
   await page.getByRole("button", { name: "Run scan" }).click();
   await page.getByRole("link", { name: /Inspect/ }).click();

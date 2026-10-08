@@ -66,6 +66,13 @@ export const api = {
   workspaces: () => request<Workspace[]>("/workspaces"),
   createWorkspace: (name: string) =>
     request<Workspace>("/workspaces", { method: "POST", body: JSON.stringify({ name }) }),
+  renameWorkspace: (workspaceId: string, name: string) =>
+    request<Workspace>(`/workspaces/${workspaceId}`, {
+      method: "PATCH",
+      body: JSON.stringify({ name }),
+    }),
+  deleteWorkspace: (workspaceId: string) =>
+    request<void>(`/workspaces/${workspaceId}`, { method: "DELETE" }),
   workspaceMembers: (workspaceId: string) =>
     request<WorkspaceMember[]>(`/workspaces/${workspaceId}/members`),
   addWorkspaceMember: (workspaceId: string, email: string) =>
@@ -86,6 +93,10 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ name, description: description || undefined }),
     }),
+  updateProject: (projectId: string, input: { name?: string; description?: string }) =>
+    request<Project>(`/projects/${projectId}`, { method: "PATCH", body: JSON.stringify(input) }),
+  deleteProject: (projectId: string) =>
+    request<void>(`/projects/${projectId}`, { method: "DELETE" }),
   monitors: (projectId: string) => request<Monitor[]>(`/projects/${projectId}/monitors`),
   createMonitor: (
     projectId: string,

@@ -17,8 +17,9 @@
     GET  /api/workspaces/:id/members           item fields used: userId, name, email, role
     POST /api/workspaces/:id/members           email of an already registered user (OWNER/ADMIN)
     PATCH/DELETE .../members/:userId           role change (OWNER only), removal (rules below)
-  Not available in the API, so not designed: rename/delete workspace or project, per-project
-  monitor counts or status. The decorative wave in the hero is NOT data.
+  Not available in the API, so not designed: per-project monitor counts or status.
+  Rename/delete workspace ("..." menu in the hero) is ASSUMED: README has no such endpoint, so the API needs
+  new PATCH/DELETE routes. Assumed rule: OWNER/ADMIN rename, OWNER only deletes; delete cascades to everything. The decorative wave in the hero is NOT data.
 
   Permissions mirror the README table (hide actions a role cannot perform; the API still decides):
     add member OWNER/ADMIN | change role OWNER only | remove MEMBER OWNER/ADMIN
@@ -393,6 +394,27 @@ dialog[open] { animation: pop .3s cubic-bezier(.2,.8,.2,1); }
   .hero-id { flex-direction: column; align-items: flex-start; gap: 10px; }
   .tab { padding: 0 12px; }
 }
+
+/* ---------- manage menu (rename / delete) ---------- */
+.hero-actions .btn.btn-icon { flex: 0 0 48px; width: 48px; padding: 0; min-width: 0; }
+.mmenu { position: fixed; z-index: 60; min-width: 232px; padding: 6px; border: 1px solid var(--border-strong); border-radius: 16px; background: var(--surface-2); box-shadow: 0 24px 48px -16px rgba(0,0,0,.85); animation: pop .18s cubic-bezier(.2,.8,.2,1); }
+.mmenu[hidden] { display: none; }
+.mmenu button { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 46px; padding: 0 12px; border: 0; border-radius: 11px; background: transparent; color: var(--text); font: 500 15px var(--font-body); text-align: left; cursor: pointer; }
+.mmenu button svg { flex: none; color: var(--muted); }
+.mmenu button:hover:not([disabled]), .mmenu button:focus-visible { background: rgba(232,241,236,.07); outline: none; }
+.mmenu button.danger { color: var(--danger-text); }
+.mmenu button.danger svg { color: var(--danger-text); }
+.mmenu button.danger:hover:not([disabled]) { background: rgba(255,122,107,.1); }
+.mmenu button[disabled] { opacity: .5; cursor: not-allowed; }
+.mmenu .sep { height: 1px; margin: 6px 4px; background: var(--border); }
+.mmenu .why { padding: 4px 12px 8px 46px; font-size: 13px; line-height: 1.35; color: var(--muted); }
+.dlg .warn-box { display: flex; gap: 12px; padding: 14px 16px; border: 1px solid rgba(255,122,107,.35); border-radius: 14px; background: rgba(255,122,107,.07); color: var(--text-2); font-size: 15px; line-height: 1.45; }
+.dlg .warn-box svg { flex: none; margin-top: 2px; color: var(--danger-text); }
+.dlg .warn-box strong { color: var(--text); font-weight: 600; }
+.btn-danger-solid { background: var(--danger); color: #1a0907; border: 0; }
+.btn-danger-solid::after { display: none; }
+.btn-danger-solid:hover { box-shadow: 0 0 0 4px rgba(255,122,107,.18); }
+.btn-danger-solid[disabled] { background: rgba(255,122,107,.25); color: rgba(255,255,255,.5); box-shadow: none; }
 </style>
 </head>
 <body>
@@ -489,6 +511,42 @@ dialog[open] { animation: pop .3s cubic-bezier(.2,.8,.2,1); }
   </form>
 </dialog>
 
+
+<dialog id="rename-dialog" aria-labelledby="rn-title">
+  <form class="dlg" id="rename-form" novalidate method="dialog">
+    <h2 id="rn-title">Rename</h2>
+    <div>
+      <label for="rn-name"><span>Name</span><span class="count" id="rn-name-count">0 / 120</span></label>
+      <input class="field-in" id="rn-name" type="text" autocomplete="off" aria-describedby="rn-name-err" required>
+      <p class="err" id="rn-name-err" role="alert"></p>
+    </div>
+    <div id="rn-desc-wrap" hidden>
+      <label for="rn-desc"><span>Description <span style="color:var(--muted);font-weight:400">(optional)</span></span><span class="count" id="rn-desc-count">0 / 500</span></label>
+      <textarea class="field-in" id="rn-desc" aria-describedby="rn-desc-err"></textarea>
+      <p class="err" id="rn-desc-err" role="alert"></p>
+    </div>
+    <div class="dlg-actions">
+      <button class="btn btn-ghost" type="button" id="rn-cancel">Cancel</button>
+      <button class="btn" type="submit">Save changes</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="delete-dialog" aria-labelledby="dl-title">
+  <form class="dlg" id="delete-form" method="dialog">
+    <h2 id="dl-title">Delete?</h2>
+    <div class="warn-box"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M10 2.8 L18 16.5 H2 Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M10 8 V11.6 M10 13.9 V14" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg><div id="dl-warn"></div></div>
+    <div>
+      <label for="dl-confirm"><span id="dl-confirm-label"></span></label>
+      <input class="field-in" id="dl-confirm" type="text" autocomplete="off" spellcheck="false">
+    </div>
+    <div class="dlg-actions">
+      <button class="btn btn-ghost" type="button" id="dl-cancel">Cancel</button>
+      <button class="btn btn-danger-solid" type="submit" id="dl-submit" disabled>Delete</button>
+    </div>
+  </form>
+</dialog>
+
 <div class="toasts" id="toasts" aria-live="polite"></div>
 
 <script>
@@ -566,11 +624,108 @@ dialog[open] { animation: pop .3s cubic-bezier(.2,.8,.2,1); }
     setTimeout(function () { t.classList.add('out'); setTimeout(function () { t.remove(); }, 320); }, 3200);
   }
 
+
+  var CFG = { kind: 'workspace', Kind: 'Workspace', hasDesc: false,
+    canRename: canManage, canDelete: ME_ROLE === 'OWNER',
+    cascade: 'All its projects, monitors and scan history are removed, and every member loses access.',
+    get: function () { return { name: WS.name }; },
+    set: function (n) { WS.name = n; $('crumb-name').textContent = n; var h = document.querySelector('.hero h1'); if (h) h.textContent = n; var m = document.querySelector('.hero .mark'); if (m) m.textContent = initials(n); document.title = n + ' · OntaPulse'; },
+    afterDelete: function (nm) { banner.hidden = true; $('crumb-name').textContent = 'Deleted'; stage.innerHTML = '<div class="panel">' + ART + '<h2>Workspace deleted</h2><p>“' + esc(nm) + '” and everything in it has been removed.</p><div class="btns"><a class="btn" href="#">Back to dashboard</a></div></div>'; }
+  };
+
+  /* ---------- rename / delete (PROTOTYPE: needs new API endpoints, see header note) ---------- */
+  var DOTS = '<svg width="22" height="22" viewBox="0 0 22 22" fill="currentColor" aria-hidden="true"><circle cx="5" cy="11" r="1.7"/><circle cx="11" cy="11" r="1.7"/><circle cx="17" cy="11" r="1.7"/></svg>';
+  var PEN = '<svg width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M3 17 L3.8 13.2 L13.6 3.4 a1.6 1.6 0 0 1 2.3 0 l.7.7 a1.6 1.6 0 0 1 0 2.3 L6.8 16.2 Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>';
+  var BIN = '<svg width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M3.5 5.5 H16.5 M8 5.5 V3.6 H12 V5.5 M5 5.5 L5.8 16.4 H14.2 L15 5.5 M8.4 9 V13 M11.6 9 V13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  function manageButton() {
+    if (!CFG.canRename && !CFG.canDelete) return '';
+    return '<button class="btn btn-ghost btn-icon" type="button" id="more-btn" aria-haspopup="menu" aria-expanded="false" aria-label="' + CFG.Kind + ' settings">' + DOTS + '</button>';
+  }
+  var mm = document.createElement('div'); mm.className = 'mmenu'; mm.id = 'more-menu'; mm.setAttribute('role', 'menu'); mm.hidden = true;
+  mm.innerHTML = (CFG.canRename ? '<button type="button" role="menuitem" data-act="rename">' + PEN + 'Rename ' + CFG.kind + '</button>' : '') +
+    (CFG.canRename && CFG.canDelete !== null ? '<div class="sep" role="separator"></div>' : '') +
+    '<button type="button" role="menuitem" class="danger" data-act="delete"' + (CFG.canDelete ? '' : ' disabled aria-describedby="mm-why"') + '>' + BIN + 'Delete ' + CFG.kind + '</button>' +
+    (CFG.canDelete ? '' : '<p class="why" id="mm-why">Only owners can delete a ' + CFG.kind + '.</p>');
+  document.body.appendChild(mm);
+  var moreBtn = null;
+  function closeMenu(focus) { mm.hidden = true; if (moreBtn) { moreBtn.setAttribute('aria-expanded', 'false'); if (focus) moreBtn.focus(); } }
+  function openMenu() {
+    var r = moreBtn.getBoundingClientRect();
+    mm.hidden = false;
+    var w = mm.offsetWidth, h = mm.offsetHeight;
+    var left = Math.max(12, Math.min(r.right - w, innerWidth - w - 12));
+    var top = r.bottom + 8; if (top + h > innerHeight - 12) top = Math.max(12, r.top - h - 8);
+    mm.style.left = left + 'px'; mm.style.top = top + 'px';
+    moreBtn.setAttribute('aria-expanded', 'true');
+    var f = mm.querySelector('button:not([disabled])'); if (f) f.focus();
+  }
+  function bindManage() {
+    moreBtn = $('more-btn'); if (!moreBtn) return;
+    moreBtn.addEventListener('click', function (e) { e.stopPropagation(); if (mm.hidden) openMenu(); else closeMenu(false); });
+  }
+  document.addEventListener('click', function (e) { if (!mm.hidden && !mm.contains(e.target)) closeMenu(false); });
+  addEventListener('resize', function () { if (!mm.hidden) closeMenu(false); });
+  mm.addEventListener('keydown', function (e) {
+    var items = Array.prototype.slice.call(mm.querySelectorAll('button:not([disabled])')), i = items.indexOf(document.activeElement);
+    if (e.key === 'Escape') { e.preventDefault(); closeMenu(true); }
+    else if (e.key === 'ArrowDown') { e.preventDefault(); items[(i + 1) % items.length].focus(); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); items[(i - 1 + items.length) % items.length].focus(); }
+    else if (e.key === 'Tab') closeMenu(false);
+  });
+
+  var rd = $('rename-dialog'), rnName = $('rn-name'), rnDesc = $('rn-desc');
+  function rnCounts() {
+    var a = $('rn-name-count'), b = $('rn-desc-count');
+    a.textContent = rnName.value.length + ' / 120'; a.classList.toggle('over', rnName.value.length > 120);
+    b.textContent = rnDesc.value.length + ' / 500'; b.classList.toggle('over', rnDesc.value.length > 500);
+  }
+  function openRename() {
+    $('rn-title').textContent = 'Rename ' + CFG.kind;
+    $('rn-desc-wrap').hidden = !CFG.hasDesc;
+    rnName.value = CFG.get().name; rnDesc.value = CFG.get().description || '';
+    [rnName, rnDesc].forEach(function (i) { i.removeAttribute('aria-invalid'); });
+    $('rn-name-err').textContent = ''; $('rn-desc-err').textContent = ''; rnCounts();
+    rd.showModal(); rnName.focus(); rnName.select();
+  }
+  rnName.addEventListener('input', rnCounts); rnDesc.addEventListener('input', rnCounts);
+  $('rn-cancel').addEventListener('click', function () { rd.close(); });
+  $('rename-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var n = rnName.value.trim(), d = rnDesc.value.trim(), bad = false;
+    rnName.removeAttribute('aria-invalid'); rnDesc.removeAttribute('aria-invalid'); $('rn-name-err').textContent = ''; $('rn-desc-err').textContent = '';
+    if (!n) { rnName.setAttribute('aria-invalid', 'true'); $('rn-name-err').textContent = CFG.Kind + ' name is required.'; bad = true; }
+    else if (n.length > 120) { rnName.setAttribute('aria-invalid', 'true'); $('rn-name-err').textContent = 'Use 120 characters or fewer.'; bad = true; }
+    if (CFG.hasDesc && d.length > 500) { rnDesc.setAttribute('aria-invalid', 'true'); $('rn-desc-err').textContent = 'Use 500 characters or fewer.'; bad = true; }
+    if (bad) { (rnName.getAttribute('aria-invalid') ? rnName : rnDesc).focus(); return; }
+    CFG.set(n, d); rd.close(); toast(CFG.Kind + ' renamed to “' + n + '”.');
+  });
+
+  var dd = $('delete-dialog'), dlInput = $('dl-confirm');
+  function openDelete() {
+    var nm = CFG.get().name;
+    $('dl-title').textContent = 'Delete ' + CFG.kind + '?';
+    $('dl-warn').innerHTML = '<strong>' + esc(nm) + '</strong> will be permanently deleted. ' + CFG.cascade + ' This cannot be undone.';
+    $('dl-confirm-label').textContent = 'Type the ' + CFG.kind + ' name to confirm';
+    $('dl-submit').textContent = 'Delete ' + CFG.kind; $('dl-submit').disabled = true; dlInput.value = ''; dlInput.placeholder = nm;
+    dd.showModal(); dlInput.focus();
+  }
+  dlInput.addEventListener('input', function () { $('dl-submit').disabled = dlInput.value.trim() !== CFG.get().name; });
+  $('dl-cancel').addEventListener('click', function () { dd.close(); });
+  $('delete-form').addEventListener('submit', function (e) {
+    e.preventDefault(); if (dlInput.value.trim() !== CFG.get().name) return;
+    var nm = CFG.get().name; dd.close(); CFG.afterDelete(nm); toast(CFG.Kind + ' “' + nm + '” was deleted.');
+  });
+  mm.addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-act]'); if (!b || b.disabled) return;
+    closeMenu(false); if (b.dataset.act === 'rename') openRename(); else openDelete();
+  });
+  [rd, dd].forEach(function (dlg) { dlg.addEventListener('click', function (e) { if (e.target === dlg) dlg.close(); }); });
+
   /* ---------- hero ---------- */
   function hero() {
     var d = wavePath(hash(WS.id + WS.name));
     var actions = canManage
-      ? '<button class="btn btn-ghost" type="button" id="go-members">' + 'Add member</button><button class="btn" type="button" id="open-project">' + PLUS + 'New project</button>'
+      ? '<button class="btn btn-ghost" type="button" id="go-members">' + 'Add member</button><button class="btn" type="button" id="open-project">' + PLUS + 'New project</button>' + manageButton()
       : '<div class="viewonly">' + LOCK + 'View-only access. Owners and admins manage projects and members.</div>';
     return '<header class="hero tone-' + ME_ROLE.toLowerCase() + ' rise" style="--i:1">' +
       '<div class="hero-cover" aria-hidden="true">' + roleBadge(ME_ROLE) +
@@ -712,6 +867,7 @@ dialog[open] { animation: pop .3s cubic-bezier(.2,.8,.2,1); }
         var next = b.dataset.tab === 'projects' ? 'members' : 'projects'; setTab(next); $('tab-' + next).focus();
       });
     });
+    bindManage();
     var op = $('open-project'); if (op) op.addEventListener('click', openProject);
     var gm = $('go-members'); if (gm) gm.addEventListener('click', function () { setTab('members'); var i = $('add-email'); if (i) i.focus(); });
   }

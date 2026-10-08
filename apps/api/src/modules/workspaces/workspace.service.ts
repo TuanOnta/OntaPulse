@@ -4,6 +4,7 @@ import { WorkspaceRepository } from "./workspace.repository.js";
 import type {
   AddWorkspaceMemberInput,
   CreateWorkspaceInput,
+  UpdateWorkspaceInput,
   UpdateWorkspaceMemberInput,
 } from "./workspace.schema.js";
 
@@ -26,6 +27,26 @@ export class WorkspaceService {
       role: membership.role,
       joinedAt: membership.joinedAt,
     }));
+  }
+
+  async update(workspaceId: string, actorId: string, input: UpdateWorkspaceInput) {
+    const membership = await this.workspaceAccessService.requireRole(workspaceId, actorId, [
+      "OWNER",
+      "ADMIN",
+    ]);
+    const workspace = await this.workspaceRepository.update(workspaceId, input);
+    const member = await this.workspaceRepository.findMember(workspaceId, actorId);
+
+    return {
+      ...workspace,
+      role: membership.role,
+      joinedAt: member?.joinedAt ?? workspace.createdAt,
+    };
+  }
+
+  async delete(workspaceId: string, actorId: string) {
+    await this.workspaceAccessService.requireRole(workspaceId, actorId, ["OWNER"]);
+    await this.workspaceRepository.delete(workspaceId);
   }
 
   async findMembers(workspaceId: string, userId: string) {

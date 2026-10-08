@@ -1,5 +1,5 @@
 import { prisma } from "../../infrastructure/database/prisma.js";
-import type { CreateWorkspaceInput } from "./workspace.schema.js";
+import type { CreateWorkspaceInput, UpdateWorkspaceInput } from "./workspace.schema.js";
 
 export class WorkspaceRepository {
   findUserByEmail(email: string) {
@@ -85,6 +85,19 @@ export class WorkspaceRepository {
       },
       orderBy: { joinedAt: "asc" },
     });
+  }
+
+  update(workspaceId: string, input: UpdateWorkspaceInput) {
+    return prisma.workspace.update({
+      where: { id: workspaceId },
+      data: { name: input.name },
+      select: { id: true, name: true, createdAt: true, updatedAt: true },
+    });
+  }
+
+  /** Removes the workspace; members, projects, monitors, scans and findings go with it (cascade). */
+  delete(workspaceId: string) {
+    return prisma.workspace.delete({ where: { id: workspaceId } });
   }
 
   createWithOwner(userId: string, input: CreateWorkspaceInput) {
