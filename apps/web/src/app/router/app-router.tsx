@@ -5,7 +5,7 @@ import { BrowserRouter } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/app/providers/auth-provider";
 import { Toaster } from "@/shared/ui/sonner";
 const DashboardPage = lazy(() =>
-  import("@/pages/dashboard-page").then(({ DashboardPage: Page }) => ({ default: Page })),
+  import("@/pages/dashboard/dashboard-page").then(({ DashboardPage: Page }) => ({ default: Page })),
 );
 const LandingPage = lazy(() =>
   import("@/pages/landing/landing-page").then(({ LandingPage: Page }) => ({ default: Page })),

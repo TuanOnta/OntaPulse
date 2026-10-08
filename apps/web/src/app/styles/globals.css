@@ -216,6 +216,83 @@
   }
 }
 
+/* Dashboard and app shell motion (ported from the dashboard prototype). */
+@theme {
+  --animate-dash-rise: dash-rise 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  --animate-dash-drift: dash-drift 14s ease-in-out infinite alternate;
+  --animate-dash-ping: dash-ping 2.4s ease-out infinite;
+  --animate-dash-travel: dash-travel 5.5s linear infinite;
+  --animate-dash-sheen: dash-sheen 1.5s ease-in-out infinite;
+  --animate-dash-drop: dash-drop 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  --animate-dash-orbit: dash-orbit 18s linear infinite;
+  --animate-dash-pulse-line: dash-pulse-line 3s ease-in-out infinite;
+  --animate-dash-wave: dash-wave 5s linear infinite;
+
+  @keyframes dash-rise {
+    from {
+      opacity: 0;
+      transform: translateY(14px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  @keyframes dash-drift {
+    to {
+      transform: translate3d(-80px, 40px, 0) scale(1.08);
+    }
+  }
+  @keyframes dash-ping {
+    0% {
+      box-shadow: 0 0 0 0 rgb(94 242 160 / 0.55);
+    }
+    70%,
+    100% {
+      box-shadow: 0 0 0 10px rgb(94 242 160 / 0);
+    }
+  }
+  @keyframes dash-travel {
+    to {
+      stroke-dashoffset: -1200;
+    }
+  }
+  @keyframes dash-sheen {
+    to {
+      transform: translateX(100%);
+    }
+  }
+  @keyframes dash-drop {
+    from {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  @keyframes dash-orbit {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+  @keyframes dash-wave {
+    to {
+      stroke-dashoffset: -1000;
+    }
+  }
+  @keyframes dash-pulse-line {
+    0% {
+      stroke-dashoffset: 140;
+    }
+    55%,
+    100% {
+      stroke-dashoffset: 0;
+    }
+  }
+}
+
 @layer base {
   :root {
     --background: oklch(0.145 0.024 164);
@@ -329,6 +406,54 @@
     .auth-panel::before {
       animation: none;
       background: linear-gradient(135deg, rgb(94 242 160 / 0.35), transparent 40%);
+    }
+  }
+}
+
+/* Workspace card border light (card v2): a conic gradient in the card tone orbits the border on hover. */
+@property --card-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@keyframes card-orbit {
+  to {
+    --card-angle: 360deg;
+  }
+}
+
+@layer components {
+  .workspace-card::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.35s;
+    background: conic-gradient(
+      from var(--card-angle),
+      transparent 0 62%,
+      color-mix(in srgb, var(--t) 95%, transparent) 80%,
+      transparent 96%
+    );
+    -webkit-mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask:
+      linear-gradient(#000 0 0) content-box exclude,
+      linear-gradient(#000 0 0);
+    animation: card-orbit 4s linear infinite;
+  }
+  .workspace-card:hover::after {
+    opacity: 1;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .workspace-card::after {
+      animation: none;
     }
   }
 }

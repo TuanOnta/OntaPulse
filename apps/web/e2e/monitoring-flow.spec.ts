@@ -103,7 +103,7 @@ test("registers, creates a monitor, triggers a scan, and views its result", asyn
 
   // The success view stays for a moment before the redirect.
   await expect(page).toHaveURL("/dashboard", { timeout: 10_000 });
-  await page.getByRole("link", { name: workspace.name, exact: true }).click();
+  await page.getByRole("link", { name: `Open workspace ${workspace.name}` }).click();
   await expect(page).toHaveURL(`/workspaces/${workspace.id}`);
 
   await page.getByLabel("Project name").fill(project.name);

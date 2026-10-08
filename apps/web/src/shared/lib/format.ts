@@ -13,3 +13,10 @@ export function formatInterval(seconds: number) {
       ? `${seconds / 60}m`
       : `${seconds}s`;
 }
+
+/** Calendar date in the user's locale and time zone, for example "Mar 4, 2026". */
+export function formatDay(value: string | null | undefined) {
+  return value
+    ? new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(new Date(value))
+    : "—";
+}
