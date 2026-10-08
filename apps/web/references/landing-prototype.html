@@ -1,0 +1,1068 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>OntaPulse — landing prototype</title>
+
+<!--
+=====================================================================
+ONTAPULSE LANDING PROTOTYPE (reference only, not production code)
+
+Purpose: visual + behavioral reference for the Phase 3 implementation.
+Concept (v2): "signal orb" - a dot-matrix sphere with GPU scan ripples, status
+beacons, and request packets traveling along arcs from the OntaPulse hub.
+Open this file in a browser (needs internet for the three.js CDN and fonts).
+
+URL flags for testing:
+  ?debug               show the HUD (fps, dpr, tier, scroll progress, draw calls)
+  ?quality=low|high    force the quality tier (default: auto)
+  ?motion=reduce       force reduced-motion behavior
+  ?webgl=off           force the no-WebGL fallback
+
+PORTING MAP (prototype -> repo, FSD layout in apps/web/src):
+  SCENE_CONFIG + createLandingScene()  -> widgets/landing-scene/model/scene-config.ts
+                                          widgets/landing-scene/model/create-scene.ts
+  React lifecycle (boot, listeners)    -> widgets/landing-scene/ui/landing-scene.tsx
+  #scene-fallback SVG                  -> widgets/landing-scene/ui/scene-fallback.tsx
+  lifecycleWeights(), computeF(), UI sync -> widgets/landing-scene/model/scroll-progress.ts
+  HTML sections + CSS                  -> pages/landing + widgets, using Phase 1 tokens
+  CSS variables in :root               -> Tailwind 4 @theme tokens (app/styles/globals.css)
+
+Rules the real implementation must keep (see AGENTS.md section 8):
+  - lazy-load the scene, never load three.js outside the landing route
+  - dispose everything on unmount, pause when hidden, cap DPR
+  - reduced-motion = static frame, no WebGL = SVG fallback
+  - canvas is decorative (aria-hidden), all content stays in normal DOM
+=====================================================================
+-->
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js" } }
+</script>
+
+<style>
+:root {
+  --bg: #0A0E0D;
+  --bg-2: #0D1311;
+  --surface: #111715;
+  --border: #22302B;
+  --border-strong: #2E4039;
+  --text: #E8F1EC;
+  --text-2: #B6C6BE;
+  --muted: #93A59C;
+  --accent: #5EF2A0;
+  --accent-ink: #04140C;
+  --info: #7CC4FF;
+  --warn: #FFB454;
+  --danger: #FF7A6B;
+  --font-display: 'Bricolage Grotesque', system-ui, sans-serif;
+  --font-body: 'Instrument Sans', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+body {
+  margin: 0; background: var(--bg); color: var(--text);
+  font-family: var(--font-body); font-size: 17px; line-height: 1.55;
+}
+a { color: var(--muted); text-decoration: none; }
+a:hover { color: var(--text); }
+a:focus-visible, button:focus-visible { outline: 2px solid var(--text); outline-offset: 3px; }
+h1, h2, h3 { font-family: var(--font-display); margin: 0; }
+p { margin: 0; }
+
+/* ---------- 3D layers ---------- */
+#scene-fallback {
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  display: flex; align-items: center; justify-content: flex-end; padding-right: 4vw;
+  transition: opacity .8s ease;
+}
+#scene-fallback svg { width: min(640px, 52vw); height: auto; }
+.scene-ready #scene-fallback { opacity: 0; }
+#scene { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; opacity: 0; }
+@media (max-width: 959px) {
+  #scene-fallback { justify-content: center; padding-right: 0; opacity: .35; }
+  #scene-fallback svg { width: min(520px, 90vw); }
+}
+main, header.site, 
+/* ---------- Layout primitives ---------- */
+.container { max-width: 1200px; margin: 0 auto; padding: 0 32px; }
+.eyebrow { font-family: var(--font-mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+.btn { min-height: 48px; display: inline-flex; align-items: center; padding: 0 26px; border-radius: 999px; font-weight: 600; font-size: 17px; }
+.btn-primary { background: var(--accent); color: var(--accent-ink); }
+.btn-primary:hover { color: var(--accent-ink); filter: brightness(1.08); }
+.btn-ghost { border: 1px solid var(--border-strong); color: var(--text); font-weight: 500; background: rgba(10,14,13,.6); }
+.h2 { font-weight: 700; font-size: clamp(32px, 4vw, 52px); line-height: 1.08; letter-spacing: -.02em; }
+.lead { color: var(--text-2); }
+
+header.site {
+  position: sticky; top: 0; z-index: 10;
+  background: rgba(10,14,13,.72); backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--border);
+}
+header.site .container { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 16px; padding-top: 14px; padding-bottom: 14px; }
+.logo { display: inline-flex; align-items: center; gap: 10px; color: var(--text); font-family: var(--font-display); font-weight: 700; font-size: 22px; min-height: 44px; }
+.logo:hover { color: var(--text); }
+nav.primary { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 24px; }
+nav.primary a { min-height: 44px; display: inline-flex; align-items: center; }
+nav.primary .btn { min-height: 44px; font-size: 16px; padding: 0 20px; }
+
+/* ---------- Hero ---------- */
+#hero { min-height: calc(100svh - 74px); display: flex; align-items: center; }
+#hero .container { padding-top: 64px; padding-bottom: 96px; width: 100%; }
+.hero-copy { max-width: 560px; display: flex; flex-direction: column; align-items: flex-start; gap: 26px; }
+.chip-eyebrow { display: inline-flex; align-items: center; gap: 10px; padding: 6px 14px; border: 1px solid var(--border); border-radius: 999px; background: rgba(10,14,13,.6); font-family: var(--font-mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.dot { width: 8px; height: 8px; border-radius: 999px; background: var(--accent); display: inline-block; }
+.hero-copy h1 { font-weight: 700; font-size: clamp(44px, 6.2vw, 80px); line-height: 1.02; letter-spacing: -.03em; }
+.hero-copy p.sub { font-size: 19px; color: var(--text-2); max-width: 520px; }
+.cta-row { display: flex; flex-wrap: wrap; gap: 14px; }
+.meta-line { font-family: var(--font-mono); font-size: 13px; color: var(--muted); }
+
+/* ---------- How it works (scroll-linked) ---------- */
+#how { min-height: 140vh; padding: 120px 0; }
+.how-copy { max-width: 480px; display: flex; flex-direction: column; gap: 16px; }
+.step {
+  margin-top: 20px; padding: 24px; background: rgba(17,23,21,.92);
+  border: 1px solid var(--border); border-radius: 18px;
+  display: flex; flex-direction: column; gap: 10px;
+  transition: border-color .3s, transform .3s;
+}
+.step[data-active="true"] { border-color: var(--accent); transform: translateX(6px); }
+.step .num { font-family: var(--font-mono); font-size: 14px; color: var(--accent); }
+.step h3 { font-size: 26px; font-weight: 700; }
+.step p { color: var(--text-2); }
+.lifecycle { margin-top: 28px; display: flex; flex-wrap: wrap; align-items: center; gap: 10px; font-family: var(--font-mono); font-size: 13px; }
+.lifecycle .arrow { color: var(--muted); }
+.pill { padding: 6px 14px; border: 1px solid var(--border-strong); border-radius: 999px; color: var(--text-2); background: rgba(10,14,13,.7); transition: background .3s, color .3s; }
+.pill[data-active="true"] { color: var(--accent-ink); }
+.pill.queued[data-active="true"] { background: var(--text-2); }
+.pill.running[data-active="true"] { background: var(--info); border-color: var(--info); }
+.pill.succeeded[data-active="true"] { background: var(--accent); border-color: var(--accent); }
+.pill.failed { color: #FF9A8D; border-color: #5A2B25; }
+
+/* ---------- Scan result ---------- */
+#result { padding: 120px 0; }
+.result-grid { display: flex; flex-wrap: wrap; align-items: center; gap: 56px; }
+.result-text { flex: 1 1 420px; min-width: 0; display: flex; flex-direction: column; gap: 20px; }
+.result-card { flex: 1 1 460px; min-width: 0; background: var(--surface); border: 1px solid var(--border); border-radius: 24px; padding: 28px; display: flex; flex-direction: column; gap: 24px; }
+.row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
+.mono { font-family: var(--font-mono); }
+.status { display: inline-flex; align-items: center; gap: 8px; padding: 5px 12px; border: 1px solid #1F5A3D; border-radius: 999px; font-family: var(--font-mono); font-size: 12px; color: #7FF0B0; }
+.stats { display: flex; flex-wrap: wrap; gap: 12px; }
+.stat { flex: 1 1 140px; padding: 16px; background: var(--bg-2); border-radius: 14px; display: flex; flex-direction: column; gap: 4px; }
+.stat small { font-size: 13px; color: var(--muted); }
+.stat b { font-family: var(--font-mono); font-size: 24px; font-weight: 500; }
+.finding { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; padding: 14px 16px; border-radius: 14px; border: 1px solid; }
+.finding.high { border-color: #3A2420; }
+.finding.medium { border-color: #3A2F1A; }
+.finding small { font-size: 14px; color: var(--muted); display: block; }
+.sev { padding: 4px 10px; border: 1px solid; border-radius: 999px; font-family: var(--font-mono); font-size: 12px; }
+.sev.high { border-color: #5A2B25; color: #FF9A8D; }
+.sev.medium { border-color: #5A4520; color: #FFC879; }
+
+/* ---------- Features ---------- */
+#features { padding: 112px 0; }
+.feature-grid { display: flex; flex-wrap: wrap; gap: 20px; margin-top: 48px; }
+.feature { flex: 1 1 340px; min-width: 0; padding: 28px; background: var(--surface); border: 1px solid var(--border); border-radius: 20px; display: flex; flex-direction: column; gap: 10px; }
+.feature h3 { font-size: 22px; font-weight: 700; }
+.feature p { color: var(--text-2); }
+.soon { margin-top: 36px; display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; }
+.soon span.label { font-family: var(--font-mono); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.soon span.tag { background: rgba(10,14,13,.85); padding: 6px 14px; border: 1px dashed var(--border-strong); border-radius: 999px; color: var(--text-2); font-size: 15px; }
+
+/* ---------- CTA ---------- */
+#cta { padding: 128px 0 300px; }
+#cta .container { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 28px; }
+#cta h2 { max-width: 780px; font-weight: 700; font-size: clamp(36px, 5vw, 64px); line-height: 1.05; letter-spacing: -.03em; }
+
+@media (max-width: 640px) {
+  nav.primary a:not(.btn):not([href="#cta"]) { display: none; }
+}
+#hud { position: fixed; left: 12px; bottom: 12px; z-index: 50; margin: 0; padding: 8px 10px; background: rgba(0,0,0,.75); color: #BFFFD9; font: 11px/1.5 var(--font-mono); border-radius: 8px; pointer-events: none; white-space: pre; }
+</style>
+</head>
+
+<body>
+
+<!-- Decorative 3D layers. Fallback SVG shows first, WebGL replaces it once the first frame is drawn. -->
+<div id="scene-fallback" aria-hidden="true">
+  <svg viewBox="0 0 600 600" fill="none">
+    <circle cx="300" cy="300" r="262" stroke="#5EF2A0" stroke-opacity=".10" stroke-width="10"/>
+    <circle cx="300" cy="300" r="250" stroke="#5EF2A0" stroke-opacity=".38" stroke-width="1.5"/>
+    <g stroke="#5EF2A0" stroke-opacity=".15" stroke-width="1">
+      <ellipse cx="300" cy="300" rx="250" ry="70"/><ellipse cx="300" cy="300" rx="250" ry="150"/><ellipse cx="300" cy="300" rx="250" ry="215"/>
+      <ellipse cx="300" cy="300" rx="70" ry="250"/><ellipse cx="300" cy="300" rx="150" ry="250"/><ellipse cx="300" cy="300" rx="215" ry="250"/>
+      <line x1="50" y1="300" x2="550" y2="300"/><line x1="300" y1="50" x2="300" y2="550"/>
+    </g>
+    <circle cx="350" cy="250" r="120" stroke="#5EF2A0" stroke-opacity=".45" stroke-width="2"/>
+    <circle cx="350" cy="250" r="190" stroke="#5EF2A0" stroke-opacity=".2" stroke-width="1.5"/>
+    <g stroke="#5EF2A0" stroke-opacity=".5" stroke-width="1.5">
+      <path d="M350 250 Q 450 200 440 330"/><path d="M350 250 Q 270 170 250 190"/>
+      <path d="M350 250 Q 440 150 430 175"/><path d="M350 250 Q 220 270 190 350"/><path d="M350 250 Q 360 360 330 420"/>
+    </g>
+    <circle cx="350" cy="250" r="22" fill="#5EF2A0" fill-opacity=".2"/><circle cx="350" cy="250" r="8" fill="#5EF2A0"/>
+    <circle cx="440" cy="330" r="7" fill="#FFB454"/><circle cx="250" cy="190" r="6" fill="#5EF2A0"/>
+    <circle cx="430" cy="175" r="6" fill="#5EF2A0"/><circle cx="190" cy="350" r="7" fill="#FF7A6B"/><circle cx="330" cy="420" r="6" fill="#5EF2A0"/>
+  </svg>
+</div>
+<canvas id="scene" aria-hidden="true"></canvas>
+
+<header class="site">
+  <div class="container">
+    <a class="logo" href="#top">
+      <svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true"><circle cx="15" cy="15" r="13" fill="none" stroke="#5EF2A0" stroke-width="1.5" stroke-opacity=".5"/><path d="M3 16 H10 L13 8 L17 23 L20 16 H27" fill="none" stroke="#5EF2A0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      OntaPulse
+    </a>
+    <nav class="primary" aria-label="Primary">
+      <a href="#how">How it works</a>
+      <a href="#result">Scan results</a>
+      <a href="#features">Features</a>
+      <a href="#cta" style="color: var(--text)">Sign in</a>
+      <a class="btn btn-primary" href="#cta">Get started</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top">
+
+  <section id="hero">
+    <div class="container">
+      <div class="hero-copy">
+        <div class="chip-eyebrow"><span class="dot"></span>HTTP monitoring for teams</div>
+        <h1>Know the moment your site breaks.</h1>
+        <p class="sub">OntaPulse checks your websites and APIs on a schedule, flags errors and slow responses, and keeps your whole team looking at the same results.</p>
+        <div class="cta-row">
+          <a class="btn btn-primary" href="#cta">Start monitoring</a>
+          <a class="btn btn-ghost" href="#how">See how it works</a>
+        </div>
+        <p class="meta-line">HTTP/HTTPS targets · checks every 1 min to 24 h · public URLs only</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="how">
+    <div class="container">
+      <div class="how-copy">
+        <span class="eyebrow">How it works</span>
+        <h2 class="h2">From request to result, without blocking.</h2>
+        <p class="lead">Triggering a scan never makes you wait on the target. The API queues the work and a separate worker does the check.</p>
+
+        <div class="step" data-step="queued"><span class="num">01</span><h3>Queue</h3><p>Trigger a scan or let the interval do it. The API records it as queued and answers right away.</p></div>
+        <div class="step" data-step="running"><span class="num">02</span><h3>Check</h3><p>A worker picks up the job, confirms the target is public, and sends an HTTP GET with strict timeouts.</p></div>
+        <div class="step" data-step="done"><span class="num">03</span><h3>Review</h3><p>Status and findings land in your workspace for everyone on the team to see.</p></div>
+
+        <div class="lifecycle" aria-label="Scan status lifecycle">
+          <span class="pill queued" data-pill="queued">QUEUED</span><span class="arrow">→</span>
+          <span class="pill running" data-pill="running">RUNNING</span><span class="arrow">→</span>
+          <span class="pill succeeded" data-pill="done">SUCCEEDED</span><span class="arrow">or</span>
+          <span class="pill failed">FAILED</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="result">
+    <div class="container result-grid">
+      <div class="result-text">
+        <span class="eyebrow">Scan results</span>
+        <h2 class="h2">Every scan tells you what happened.</h2>
+        <p class="lead">A target that answers with an error is still a result worth reading. OntaPulse keeps the scan, records the response time, and turns problems into findings with a severity.</p>
+        <p class="lead">Timeouts and DNS failures are recorded as failed scans, so you can tell an unhealthy page from an unreachable one.</p>
+      </div>
+      <div class="result-card">
+        <div class="row">
+          <span class="mono" style="font-size: 14px; overflow-wrap: anywhere">https://api.example.com/health</span>
+          <span class="status"><span class="dot"></span>SUCCEEDED</span>
+        </div>
+        <div class="stats">
+          <div class="stat"><small>HTTP status</small><b>503</b></div>
+          <div class="stat"><small>Response time</small><b>2,430 ms</b></div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 12px">
+          <small style="font-size: 13px; color: var(--muted)">Findings</small>
+          <div class="finding high">
+            <div><span class="mono" style="font-size: 14px">HTTP_SERVER_ERROR</span><small>The target answered with a 5xx status.</small></div>
+            <span class="sev high">HIGH</span>
+          </div>
+          <div class="finding medium">
+            <div><span class="mono" style="font-size: 14px">SLOW_RESPONSE</span><small>The response took 2,000 ms or more.</small></div>
+            <span class="sev medium">MEDIUM</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="features">
+    <div class="container">
+      <div style="max-width: 720px; display: flex; flex-direction: column; gap: 16px">
+        <span class="eyebrow">Features</span>
+        <h2 class="h2">Built for teams that share one source of truth.</h2>
+      </div>
+      <div class="feature-grid">
+        <div class="feature"><h3>Workspaces and roles</h3><p>Owner, Admin, and Member roles per workspace. Everyone sees the results; only the right people change things.</p></div>
+        <div class="feature"><h3>Projects and monitors</h3><p>Group HTTP and HTTPS targets into projects and set an interval from one minute up to a full day.</p></div>
+        <div class="feature"><h3>Findings that matter</h3><p>Client errors, server errors, and slow responses become structured findings, each with a severity.</p></div>
+        <div class="feature"><h3>Safe by design</h3><p>Targets must resolve to public addresses and redirects are not followed, so a check can't be steered into a private network.</p></div>
+        <div class="feature"><h3>Resilient checks</h3><p>When infrastructure hiccups, a job retries after 5, 30, and 120 seconds before it is set aside for review instead of vanishing.</p></div>
+        <div class="feature"><h3>Made for teams</h3><p>Add registered teammates, adjust their roles, and review every scan together in one place.</p></div>
+      </div>
+      <div class="soon">
+        <span class="label">Coming soon</span>
+        <span class="tag">Notifications</span><span class="tag">Uptime trends</span><span class="tag">Incident history</span>
+      </div>
+    </div>
+  </section>
+
+  <section id="cta">
+    <div class="container">
+      <h2>Watch your first target in minutes.</h2>
+      <p class="lead" style="max-width: 520px">Create a workspace, add a project, and point a monitor at a public URL.</p>
+      <div class="cta-row" style="justify-content: center">
+        <a class="btn btn-primary" href="#cta">Create your workspace</a>
+        <a class="btn btn-ghost" href="#cta">Sign in</a>
+      </div>
+    </div>
+  </section>
+
+</main>
+<script type="module">
+import * as THREE from 'three';
+
+/* =====================================================================
+   1. CONFIG  (-> scene-config.ts)
+   Concept: "signal orb". A dot-matrix sphere. The OntaPulse hub sends
+   scan pulses across its surface (GPU ripples) and request packets along
+   arcs to status beacons. A beacon lights up in its result color when the
+   packet arrives (green ok / amber slow / red failed).
+   Everything tunable lives here. Colors come from the CSS tokens.
+   ===================================================================== */
+const SCENE_CONFIG = {
+  seed: 20260,
+  camZ: 11,
+  tiers: {
+    high: { dots: 14000, dotSize: 0.0125, targets: 14, dust: 260, dprMax: 2,   parallax: true,  fov: 40 },
+    low:  { dots: 5200,  dotSize: 0.0200, targets: 8,  dust: 90,  dprMax: 1.5, parallax: false, fov: 46 },
+  },
+  colors: { dot: '#3F6B5B', core: '#040807', neutral: '#4A5A54' },
+  hub: [0.30, 0.22, 0.93],                 // hub direction on the unit sphere
+  light: [-0.5, 0.6, 0.65],                // fake key light (world space)
+  hubPulse: { interval: [2.8, 1.3], duration: 4.6, maxAngle: 2.9 },  // interval: [DONE, RUNNING] seconds
+  arrival: { duration: 1.9, maxAngle: 0.8 },
+  packet: { travel: 2.2, period: [5.2, 8.2] },
+  narrowBelow: 960,                        // px: below this the orb centers and dims
+  idleThrottleFrom: 3.0,                   // scroll progress f above which we render at 30 fps
+  // Scroll keyframes. f = sectionIndex + 0.5 (hero, how, result, features, cta).
+  // From the result section onward the orb holds the same horizon pose (no more movement).
+  // x/y = orb position, s = orb radius in world units (N = narrow layout). rotX tilts the orb.
+  keyframes: [
+    { f: 0.5, x: 3.1, y: 0,    s: 2.55, rotX: 0.28,  opacity: 1,    xN: 0, yN: -2.3, sN: 1.7,  opacityN: 0.42 },
+    { f: 1.5, x: 3.0, y: 0,    s: 2.65, rotX: 0.20,  opacity: 1,    xN: 0, yN: -2.0, sN: 1.8,  opacityN: 0.38 },
+    { f: 2.5, x: 0,   y: -6.7, s: 5.2,  rotX: -0.85, opacity: 0.85,  xN: 0, yN: -4.5, sN: 2.9,  opacityN: 0.35 },
+    { f: 3.5, x: 0,   y: -6.7, s: 5.2,  rotX: -0.85, opacity: 0.85, xN: 0, yN: -4.5, sN: 2.9,  opacityN: 0.35 },
+    { f: 4.5, x: 0,   y: -6.7, s: 5.2,  rotX: -0.85, opacity: 0.85, xN: 0, yN: -4.5, sN: 2.9,  opacityN: 0.35 },
+  ],
+};
+
+/* =====================================================================
+   2. SCROLL PROGRESS HELPERS  (-> scroll-progress.ts)
+   f = which section the viewport center is in, plus how far through it.
+   lifecycleWeights maps f to the QUEUED / RUNNING / DONE look of the orb
+   while the user scrolls through "How it works" (f from 1.0 to 2.0).
+   ===================================================================== */
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+const lerp = (a, b, t) => a + (b - a) * t;
+const smooth = (t) => { t = clamp(t, 0, 1); return t * t * (3 - 2 * t); };
+
+function lifecycleWeights(f) {
+  if (f <= 0.85 || f >= 2.0) return { q: 0, r: 0, d: 1 };
+  if (f < 1.0) { const q = smooth((f - 0.85) / 0.15); return { q, r: 0, d: 1 - q }; }
+  const L = f - 1;
+  const a = smooth((L - 0.25) / 0.12);
+  const b = smooth((L - 0.62) / 0.12);
+  return { q: 1 - a, r: a * (1 - b), d: a * b };
+}
+
+function sampleKeyframes(kfs, f) {
+  if (f <= kfs[0].f) return kfs[0];
+  const last = kfs[kfs.length - 1];
+  if (f >= last.f) return last;
+  let i = 0;
+  while (f > kfs[i + 1].f) i++;
+  const a = kfs[i], b = kfs[i + 1];
+  const t = smooth((f - a.f) / (b.f - a.f));
+  const out = {};
+  for (const k in a) out[k] = k === 'f' ? f : lerp(a[k], b[k], t);
+  return out;
+}
+
+function mulberry32(seed) {
+  return () => {
+    seed |= 0; seed = (seed + 0x6D2B79F5) | 0;
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+/* =====================================================================
+   3. SCENE  (-> create-scene.ts)
+   Framework-free. Returns null when WebGL is unavailable.
+   API: { start, stop, setScroll(f), setReduced(bool), resize, dispose }
+   Draw calls: core, atmosphere, dots, pillars, rings, glows, arcs,
+   packets, 2 rings + ticks, dust (about 12).
+   ===================================================================== */
+const GOLDEN = 2.399963229728653;
+const Y_AXIS = new THREE.Vector3(0, 1, 0);
+const Z_AXIS = new THREE.Vector3(0, 0, 1);
+const MAX_ARCS = 16, MAX_PULSES = 6, TRAIL = 8;
+
+const DOT_VERT = /* glsl */`
+  uniform float uIntro, uSize, uScalePx, uBright;
+  uniform vec3 uAccent, uBase, uLight;
+  uniform vec4 uPulseA[${MAX_PULSES}];   // xyz = origin dir, w = progress k (-1 = off)
+  uniform vec4 uPulseB[${MAX_PULSES}];   // rgb = color, w = max angle (> 2.0 = hub pulse)
+  attribute float aRand;
+  varying vec3 vColor; varying float vAlpha;
+  void main() {
+    vec3 n = normalize(position);
+    float intensity = 0.0; vec3 tint = vec3(0.0);
+    for (int i = 0; i < ${MAX_PULSES}; i++) {
+      vec4 A = uPulseA[i]; vec4 B = uPulseB[i];
+      if (A.w < 0.0) continue;
+      float k = A.w;
+      float front = (1.0 - pow(1.0 - k, 2.0)) * B.w;
+      float width = B.w > 2.0 ? 0.10 : 0.07;
+      float th = acos(clamp(dot(n, A.xyz), -1.0, 1.0));
+      float d = (th - front) / width;
+      float it = exp(-d * d) * pow(1.0 - k, 1.3);
+      intensity += it; tint += B.rgb * it;
+    }
+    intensity = min(intensity, 1.6);
+    vec3 p = n * (1.0 + 0.035 * intensity);
+    p *= 1.0 + (1.0 - uIntro) * (aRand * 1.6 - 0.2);
+
+    vec4 mv = modelViewMatrix * vec4(p, 1.0);
+    vec3 vV = normalize(-mv.xyz);
+    vec3 vN = normalize(normalMatrix * n);
+    float facing = dot(vN, vV);
+    float rim = pow(1.0 - clamp(facing, 0.0, 1.0), 2.5);
+    float light = max(dot(normalize(mat3(modelMatrix) * n), uLight), 0.0);
+
+    vec3 col = uBase * (0.40 + 0.85 * light) + uAccent * 0.40 * rim * (0.4 + light);
+    col += tint * 1.9 + vec3(0.22) * intensity;
+    vColor = col * uBright;
+    vAlpha = uIntro * (0.6 + 0.4 * light + 0.5 * rim);
+
+    float s = length(modelMatrix[0].xyz);
+    float size = uSize * (1.0 + 2.4 * intensity) * (0.7 + 0.3 * aRand);
+    gl_PointSize = facing < -0.04 ? 0.0 : size * s * uScalePx / -mv.z;
+    gl_Position = projectionMatrix * mv;
+  }`;
+
+const DOT_FRAG = /* glsl */`
+  varying vec3 vColor; varying float vAlpha;
+  void main() {
+    float d = length(gl_PointCoord - 0.5);
+    float a = smoothstep(0.5, 0.18, d);
+    gl_FragColor = vec4(vColor, a * vAlpha);
+    #include <colorspace_fragment>
+  }`;
+
+const SPRITE_VERT = /* glsl */`
+  attribute float aSize; attribute vec3 aColor;
+  uniform float uScalePx; varying vec3 vC;
+  void main() {
+    vec4 mv = modelViewMatrix * vec4(position, 1.0);
+    gl_Position = projectionMatrix * mv;
+    gl_PointSize = aSize * length(modelMatrix[0].xyz) * uScalePx / -mv.z;
+    vC = aColor;
+  }`;
+
+const SPRITE_FRAG = /* glsl */`
+  uniform float uAlpha; varying vec3 vC;
+  void main() {
+    float d = length(gl_PointCoord - 0.5) * 2.0;
+    float a = exp(-d * d * 3.5) * (1.0 - smoothstep(0.85, 1.0, d));
+    gl_FragColor = vec4(vC, a * uAlpha);
+    #include <colorspace_fragment>
+  }`;
+
+const ARC_VERT = /* glsl */`
+  attribute float aT; attribute float aIdx;
+  uniform float uProg[${MAX_ARCS}]; uniform vec3 uArcCol[${MAX_ARCS}];
+  uniform float uVis; uniform vec3 uLineCol;
+  varying vec3 vC; varying float vA;
+  void main() {
+    int i = int(aIdx + 0.5);
+    float p = uProg[i];
+    float d = p - aT;
+    float on = p >= 0.0 ? 1.0 : 0.0;
+    float trail = (d > 0.0 ? exp(-d * 7.0) : 0.0) * on;
+    float head = exp(-(d * d) / 0.0008) * on;
+    float glow = clamp(trail * 0.6 + head, 0.0, 1.0);
+    vA = (0.15 + glow * 0.9) * uVis;
+    vC = mix(uLineCol, uArcCol[i], glow);
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+  }`;
+
+const ARC_FRAG = /* glsl */`
+  varying vec3 vC; varying float vA;
+  void main() {
+    gl_FragColor = vec4(vC, vA);
+    #include <colorspace_fragment>
+  }`;
+
+function createLandingScene(canvas, { tier, reduced, hud, onFirstFrame, onContextLost }) {
+  const cfg = SCENE_CONFIG.tiers[tier];
+  const css = getComputedStyle(document.documentElement);
+  const token = (name) => new THREE.Color(css.getPropertyValue(name).trim());
+  const C = {
+    accent: token('--accent'), info: token('--info'), warn: token('--warn'), danger: token('--danger'),
+    muted: token('--muted'), dot: new THREE.Color(SCENE_CONFIG.colors.dot),
+    core: new THREE.Color(SCENE_CONFIG.colors.core), neutral: new THREE.Color(SCENE_CONFIG.colors.neutral),
+    white: new THREE.Color(1, 1, 1),
+  };
+
+  let renderer;
+  try {
+    renderer = new THREE.WebGLRenderer({ canvas, antialias: tier === 'high', alpha: true, powerPreference: 'high-performance' });
+  } catch (err) {
+    return null;
+  }
+  renderer.setClearColor(0x000000, 0);
+
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(cfg.fov, 1, 0.1, 100);
+  camera.position.set(0, 0, SCENE_CONFIG.camZ);
+  const orb = new THREE.Group();
+  scene.add(orb);
+
+  const state = {
+    running: false, reduced, time: 0, f: 0.5, fTarget: 0.5, narrow: false,
+    dprScale: 1, ema: 1 / 60, slow: 0, introT: reduced ? 1 : 0, firstFrame: false,
+    hubClock: SCENE_CONFIG.hubPulse.interval[0] - 0.5,
+    mouse: new THREE.Vector2(), mouseS: new THREE.Vector2(),
+  };
+  const disposables = [];
+  const track = (o) => { disposables.push(o); return o; };
+  const rand = mulberry32(SCENE_CONFIG.seed);
+  const uScalePx = { value: 1 };
+  const lightDir = new THREE.Vector3(...SCENE_CONFIG.light).normalize();
+
+  /* ---------- core (occludes the far side) ---------- */
+  const core = new THREE.Mesh(
+    track(new THREE.SphereGeometry(0.985, 48, 32)),
+    track(new THREE.ShaderMaterial({
+      uniforms: { uBase: { value: C.core }, uAccent: { value: C.accent }, uLight: { value: lightDir } },
+      vertexShader: `
+        varying vec3 vN; varying vec3 vV; varying vec3 vW;
+        void main() {
+          vec4 mv = modelViewMatrix * vec4(position, 1.0);
+          vN = normalize(normalMatrix * normal); vV = normalize(-mv.xyz);
+          vW = normalize(mat3(modelMatrix) * normal);
+          gl_Position = projectionMatrix * mv;
+        }`,
+      fragmentShader: `
+        uniform vec3 uBase, uAccent, uLight; varying vec3 vN; varying vec3 vV; varying vec3 vW;
+        void main() {
+          float facing = clamp(dot(normalize(vN), normalize(vV)), 0.0, 1.0);
+          float rim = pow(1.0 - facing, 3.0);
+          float light = max(dot(normalize(vW), uLight), 0.0);
+          gl_FragColor = vec4(uBase * (0.7 + 1.4 * light) + uAccent * rim * 0.13, 1.0);
+          #include <colorspace_fragment>
+        }`,
+    }))
+  );
+  orb.add(core);
+
+  /* ---------- atmosphere (inner glow halo) ---------- */
+  const atmoMat = track(new THREE.ShaderMaterial({
+    transparent: true, depthWrite: false, side: THREE.BackSide, blending: THREE.AdditiveBlending,
+    uniforms: { uColor: { value: C.accent }, uStrength: { value: 0.2 } },
+    vertexShader: `varying vec3 vN; void main() { vN = normalize(normalMatrix * normal); gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
+    fragmentShader: `
+      uniform vec3 uColor; uniform float uStrength; varying vec3 vN;
+      void main() {
+        float i = pow(max(0.62 - dot(vN, vec3(0.0, 0.0, 1.0)), 0.0), 2.6) * uStrength;
+        gl_FragColor = vec4(uColor, clamp(i, 0.0, 1.0));
+        #include <colorspace_fragment>
+      }`,
+  }));
+  const atmosphere = new THREE.Mesh(track(new THREE.SphereGeometry(1.2, 48, 32)), atmoMat);
+  orb.add(atmosphere);
+
+  /* ---------- dots (GPU ripples live in DOT_VERT) ---------- */
+  const dotPos = new Float32Array(cfg.dots * 3), dotRand = new Float32Array(cfg.dots);
+  for (let i = 0; i < cfg.dots; i++) {
+    const y = 1 - 2 * (i + 0.5) / cfg.dots, r = Math.sqrt(1 - y * y), th = i * GOLDEN;
+    dotPos.set([Math.cos(th) * r, y, Math.sin(th) * r], i * 3);
+    dotRand[i] = rand();
+  }
+  const dotGeo = track(new THREE.BufferGeometry());
+  dotGeo.setAttribute('position', new THREE.BufferAttribute(dotPos, 3));
+  dotGeo.setAttribute('aRand', new THREE.BufferAttribute(dotRand, 1));
+  const pulseA = Array.from({ length: MAX_PULSES }, () => new THREE.Vector4(0, 0, 1, -1));
+  const pulseB = Array.from({ length: MAX_PULSES }, () => new THREE.Vector4(0, 0, 0, 0));
+  const dotMat = track(new THREE.ShaderMaterial({
+    transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+    uniforms: {
+      uIntro: { value: reduced ? 1 : 0 }, uSize: { value: cfg.dotSize }, uScalePx, uBright: { value: 1 },
+      uAccent: { value: C.accent }, uBase: { value: C.dot }, uLight: { value: lightDir },
+      uPulseA: { value: pulseA }, uPulseB: { value: pulseB },
+    },
+    vertexShader: DOT_VERT, fragmentShader: DOT_FRAG,
+  }));
+  const dots = new THREE.Points(dotGeo, dotMat);
+  dots.frustumCulled = false;
+  orb.add(dots);
+
+  /* ---------- beacons: hub + status targets ---------- */
+  const hubDir = new THREE.Vector3(...SCENE_CONFIG.hub).normalize();
+  const resultOf = (kind) => (kind === 'warn' ? C.warn : kind === 'danger' ? C.danger : C.accent);
+  const beacons = [{
+    hub: true, kind: 'hub', dir: hubDir.clone(), ang: 0, flash: 0, touch: 0, h: 0.2, phase: 0, result: C.accent.clone(),
+  }];
+  for (let guard = 0; beacons.length < cfg.targets + 1 && guard < 5000; guard++) {
+    const u = rand() * 2 - 1, a = rand() * Math.PI * 2, s = Math.sqrt(1 - u * u);
+    const d = new THREE.Vector3(s * Math.cos(a), u, s * Math.sin(a));
+    const ang = Math.acos(clamp(d.dot(hubDir), -1, 1));
+    if (ang < 0.5 || ang > 1.7) continue;
+    if (beacons.some((b) => Math.acos(clamp(b.dir.dot(d), -1, 1)) < 0.34)) continue;
+    const idx = beacons.length - 1;
+    const kind = idx % 6 === 2 ? 'warn' : idx % 7 === 5 ? 'danger' : 'ok';
+    beacons.push({ hub: false, kind, dir: d, ang, flash: 0, touch: 0, h: 0.07 + rand() * 0.07, phase: rand() * 6.28, result: resultOf(kind).clone() });
+  }
+  const B = beacons.length, T = B - 1;
+  beacons.forEach((b) => {
+    b.qY = new THREE.Quaternion().setFromUnitVectors(Y_AXIS, b.dir);
+    b.qZ = new THREE.Quaternion().setFromUnitVectors(Z_AXIS, b.dir);
+  });
+
+  const pillars = new THREE.InstancedMesh(
+    track(new THREE.CylinderGeometry(0.008, 0.008, 1, 6, 1, true)),
+    track(new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.95, blending: THREE.AdditiveBlending, depthWrite: false })), B);
+  const rings = new THREE.InstancedMesh(
+    track(new THREE.RingGeometry(0.02, 0.027, 40)),
+    track(new THREE.MeshBasicMaterial({ transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide })), B);
+  [pillars, rings].forEach((m) => {
+    m.instanceMatrix.setUsage(THREE.DynamicDrawUsage); m.frustumCulled = false;
+    for (let i = 0; i < B; i++) m.setColorAt(i, C.accent);
+    orb.add(m);
+  });
+
+  const spriteMat = (alpha) => track(new THREE.ShaderMaterial({
+    transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+    uniforms: { uScalePx, uAlpha: { value: alpha } }, vertexShader: SPRITE_VERT, fragmentShader: SPRITE_FRAG,
+  }));
+  function makeSprites(count, alpha) {
+    const geo = track(new THREE.BufferGeometry());
+    const pos = new Float32Array(count * 3), col = new Float32Array(count * 3), size = new Float32Array(count);
+    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3).setUsage(THREE.DynamicDrawUsage));
+    geo.setAttribute('aColor', new THREE.BufferAttribute(col, 3).setUsage(THREE.DynamicDrawUsage));
+    geo.setAttribute('aSize', new THREE.BufferAttribute(size, 1).setUsage(THREE.DynamicDrawUsage));
+    const pts = new THREE.Points(geo, spriteMat(alpha));
+    pts.frustumCulled = false;
+    orb.add(pts);
+    return { pts, pos, col, size, geo };
+  }
+  const glow = makeSprites(B, 0.9);       // beacon glow
+  const packets = makeSprites(MAX_ARCS * TRAIL, 1);  // request packets in flight (head + trail)
+
+  /* ---------- arcs: hub -> target, lifted off the surface ---------- */
+  const SEG = 40;
+  function arcPoint(b, u, out) {
+    const omega = Math.acos(clamp(hubDir.dot(b.dir), -1, 1)), so = Math.sin(omega);
+    const a = Math.sin((1 - u) * omega) / so, c = Math.sin(u * omega) / so;
+    const lift = 0.05 + 0.12 * omega;
+    return out.set(hubDir.x * a + b.dir.x * c, hubDir.y * a + b.dir.y * c, hubDir.z * a + b.dir.z * c)
+      .multiplyScalar(1 + lift * Math.sin(Math.PI * u));
+  }
+  const arcPos = [], arcT = [], arcIdx = [];
+  const tmpV = new THREE.Vector3();
+  for (let i = 1; i < B; i++) {
+    for (let s = 0; s < SEG; s++) {
+      const u0 = s / SEG, u1 = (s + 1) / SEG;
+      arcPoint(beacons[i], u0, tmpV); arcPos.push(tmpV.x, tmpV.y, tmpV.z);
+      arcPoint(beacons[i], u1, tmpV); arcPos.push(tmpV.x, tmpV.y, tmpV.z);
+      arcT.push(u0, u1); arcIdx.push(i - 1, i - 1);
+    }
+  }
+  const arcGeo = track(new THREE.BufferGeometry());
+  arcGeo.setAttribute('position', new THREE.Float32BufferAttribute(arcPos, 3));
+  arcGeo.setAttribute('aT', new THREE.Float32BufferAttribute(arcT, 1));
+  arcGeo.setAttribute('aIdx', new THREE.Float32BufferAttribute(arcIdx, 1));
+  const uProg = { value: new Array(MAX_ARCS).fill(-1) };
+  const uArcCol = { value: Array.from({ length: MAX_ARCS }, () => new THREE.Vector3(1, 1, 1)) };
+  const uVis = { value: 1 };
+  const arcs = new THREE.LineSegments(arcGeo, track(new THREE.ShaderMaterial({
+    transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+    uniforms: { uProg, uArcCol, uVis, uLineCol: { value: C.muted.clone().lerp(C.accent, 0.5) } },
+    vertexShader: ARC_VERT, fragmentShader: ARC_FRAG,
+  })));
+  arcs.frustumCulled = false;
+  orb.add(arcs);
+  const packetState = [];
+  for (let i = 0; i < T; i++) {
+    const P = lerp(SCENE_CONFIG.packet.period[0], SCENE_CONFIG.packet.period[1], rand());
+    packetState.push({ period: P, offset: rand() * P, lastCyc: 0 });
+  }
+
+  /* ---------- orbit rings + ticks (HUD feel) ---------- */
+  const ringsGroup = new THREE.Group();
+  ringsGroup.rotation.set(1.15, 0, 0.35);
+  orb.add(ringsGroup);
+  function ringLine(radius, dashed, opacity) {
+    const pts = [];
+    for (let i = 0; i <= 160; i++) { const a = (i / 160) * Math.PI * 2; pts.push(new THREE.Vector3(Math.cos(a) * radius, Math.sin(a) * radius, 0)); }
+    const geo = track(new THREE.BufferGeometry().setFromPoints(pts));
+    const mat = track(dashed
+      ? new THREE.LineDashedMaterial({ color: C.accent, transparent: true, opacity, dashSize: 0.05, gapSize: 0.05, depthWrite: false })
+      : new THREE.LineBasicMaterial({ color: C.accent, transparent: true, opacity, depthWrite: false }));
+    const line = new THREE.Line(geo, mat);
+    if (dashed) line.computeLineDistances();
+    line.frustumCulled = false;
+    ringsGroup.add(line);
+    return line;
+  }
+  const ringA = ringLine(1.42, true, 0.22);
+  const ringB = ringLine(1.66, false, 0.10);
+  const ticks = makeSprites(3, 1);
+  orb.remove(ticks.pts); ringsGroup.add(ticks.pts);
+
+  /* ---------- dust ---------- */
+  const dustPos = new Float32Array(cfg.dust * 3);
+  for (let i = 0; i < cfg.dust; i++) {
+    const r = 9 + rand() * 9, u = rand() * 2 - 1, a = rand() * 6.283, s = Math.sqrt(1 - u * u);
+    dustPos.set([r * s * Math.cos(a), r * u * 0.6, r * s * Math.sin(a) - 4], i * 3);
+  }
+  const dustGeo = track(new THREE.BufferGeometry());
+  dustGeo.setAttribute('position', new THREE.BufferAttribute(dustPos, 3));
+  const dc = document.createElement('canvas'); dc.width = dc.height = 32;
+  const dctx = dc.getContext('2d');
+  const dg = dctx.createRadialGradient(16, 16, 0, 16, 16, 16);
+  dg.addColorStop(0, 'rgba(255,255,255,1)'); dg.addColorStop(1, 'rgba(255,255,255,0)');
+  dctx.fillStyle = dg; dctx.fillRect(0, 0, 32, 32);
+  const dustTex = track(new THREE.CanvasTexture(dc));
+  const dust = new THREE.Points(dustGeo, track(new THREE.PointsMaterial({ map: dustTex, color: C.muted, size: 0.09, transparent: true, opacity: 0.5, depthWrite: false, alphaTest: 0.02 })));
+  dust.frustumCulled = false;
+  scene.add(dust);
+
+  /* ---------- pulse slots (0-1 hub, 2-5 arrival ripples) ---------- */
+  const slots = Array.from({ length: MAX_PULSES }, (_, i) => ({
+    active: false, k: 0, dur: 1, dir: new THREE.Vector3(0, 0, 1), color: new THREE.Color(), maxA: 1, prevFront: 0, hub: i < 2,
+  }));
+  function spawn(slot, dir, color, dur, maxA) {
+    slot.active = true; slot.k = 0; slot.dur = dur; slot.dir.copy(dir); slot.color.copy(color); slot.maxA = maxA; slot.prevFront = 0;
+  }
+  const freeSlot = (from, to) => { for (let i = from; i <= to; i++) if (!slots[i].active) return slots[i]; return null; };
+
+  /* ---------- per-frame simulation ---------- */
+  const dummy = new THREE.Object3D();
+  const tmpA = new THREE.Color(), tmpB = new THREE.Color(), travelColor = new THREE.Color();
+  const pt = new THREE.Vector3();
+
+  function simulate(dt, w) {
+    const t = state.time;
+    // hub pulses
+    if (!state.reduced && w.q < 0.5) {
+      state.hubClock += dt;
+      const interval = lerp(SCENE_CONFIG.hubPulse.interval[0], SCENE_CONFIG.hubPulse.interval[1], w.r);
+      if (state.hubClock >= interval) {
+        state.hubClock = 0;
+        const s = freeSlot(0, 1);
+        if (s) { tmpA.copy(C.accent).lerp(C.info, w.r); spawn(s, hubDir, tmpA, SCENE_CONFIG.hubPulse.duration, SCENE_CONFIG.hubPulse.maxAngle); beacons[0].flash = 1; }
+      }
+    }
+    for (const s of slots) {
+      if (!s.active) continue;
+      if (!state.reduced) s.k += dt / s.dur;
+      if (s.k >= 1) { s.active = false; continue; }
+      const front = (1 - Math.pow(1 - s.k, 2)) * s.maxA;
+      if (s.hub && !state.reduced) for (const b of beacons) if (!b.hub && s.prevFront < b.ang && b.ang <= front) b.touch = 1;
+      s.prevFront = front;
+    }
+
+    // request packets
+    travelColor.copy(C.info).lerp(C.accent, w.d);
+    const { travel } = SCENE_CONFIG.packet;
+    for (let i = 0; i < T; i++) {
+      const ps = packetState[i], b = beacons[i + 1];
+      let prog = -1;
+      if (!state.reduced && w.q < 0.7) {
+        const cyc = (t + ps.offset) % ps.period;
+        if (cyc < travel) prog = smooth(cyc / travel);
+        if (ps.lastCyc < travel && cyc >= travel) {
+          b.flash = 1;
+          if (w.d > 0.5) { const s = freeSlot(2, MAX_PULSES - 1); if (s) spawn(s, b.dir, resultOf(b.kind), SCENE_CONFIG.arrival.duration, SCENE_CONFIG.arrival.maxAngle); }
+        }
+        ps.lastCyc = cyc;
+      }
+      uProg.value[i] = prog;
+      uArcCol.value[i].set(travelColor.r, travelColor.g, travelColor.b);
+      for (let j = 0; j < TRAIL; j++) {
+        const idx = i * TRAIL + j, u = prog - j * 0.035;
+        if (prog < 0 || u < 0) { packets.size[idx] = 0; continue; }
+        arcPoint(b, u, pt);
+        const fade = 1 - j / TRAIL;
+        packets.pos.set([pt.x, pt.y, pt.z], idx * 3);
+        packets.col.set([travelColor.r * 1.5 * fade, travelColor.g * 1.5 * fade, travelColor.b * 1.5 * fade], idx * 3);
+        packets.size[idx] = 0.085 * (1 - j * 0.09);
+      }
+    }
+    packets.geo.attributes.position.needsUpdate = packets.geo.attributes.aColor.needsUpdate = packets.geo.attributes.aSize.needsUpdate = true;
+
+    // beacons
+    for (let j = 0; j < B; j++) {
+      const b = beacons[j];
+      b.flash = Math.max(0, b.flash - dt * 1.4);
+      b.touch = Math.max(0, b.touch - dt * 2.2);
+      if (b.hub) tmpA.copy(C.accent).lerp(C.white, 0.35);
+      else {
+        tmpA.copy(C.neutral).multiplyScalar(w.q);
+        tmpB.copy(C.info).multiplyScalar(w.r); tmpA.add(tmpB);
+        tmpB.copy(b.result).multiplyScalar(w.d); tmpA.add(tmpB);
+        tmpA.lerp(C.white, b.flash * 0.6 * w.d);
+      }
+      const height = b.h * (b.hub ? 1 : 0.6 + 0.4 * (1 - w.q)) * (1 + b.flash * 0.7);
+      pillars.setColorAt(j, tmpA);
+      dummy.position.copy(b.dir).multiplyScalar(1 + height / 2);
+      dummy.quaternion.copy(b.qY); dummy.scale.set(1, height, 1); dummy.updateMatrix();
+      pillars.setMatrixAt(j, dummy.matrix);
+
+      const pulse = b.hub ? 0.5 + 0.5 * Math.sin(t * 2) : 0;
+      const rs = 1 + b.touch * 2.2 + b.flash * 3 + (b.hub ? 1 + 0.6 * pulse : 0);
+      const br = 0.3 + 0.7 * Math.max(b.touch, b.flash) + (b.hub ? 0.4 : 0);
+      tmpB.copy(tmpA).multiplyScalar(br); rings.setColorAt(j, tmpB);
+      dummy.position.copy(b.dir).multiplyScalar(1.004);
+      dummy.quaternion.copy(b.qZ); dummy.scale.setScalar(rs); dummy.updateMatrix();
+      rings.setMatrixAt(j, dummy.matrix);
+
+      pt.copy(b.dir).multiplyScalar(1 + height);
+      glow.pos.set([pt.x, pt.y, pt.z], j * 3);
+      const gi = 0.9 + b.flash * 0.9;
+      glow.col.set([tmpA.r * gi, tmpA.g * gi, tmpA.b * gi], j * 3);
+      glow.size[j] = (b.hub ? 0.2 + 0.05 * pulse : 0.1) + b.flash * 0.24 + b.touch * 0.05;
+    }
+    pillars.instanceMatrix.needsUpdate = rings.instanceMatrix.needsUpdate = true;
+    pillars.instanceColor.needsUpdate = rings.instanceColor.needsUpdate = true;
+    glow.geo.attributes.position.needsUpdate = glow.geo.attributes.aColor.needsUpdate = glow.geo.attributes.aSize.needsUpdate = true;
+
+    // ticks orbiting ring A
+    for (let k = 0; k < 3; k++) {
+      const a = t * 0.35 + k * 2.094;
+      ticks.pos.set([Math.cos(a) * 1.42, Math.sin(a) * 1.42, 0], k * 3);
+      ticks.col.set([C.accent.r, C.accent.g, C.accent.b], k * 3);
+      ticks.size[k] = 0.07;
+    }
+    ticks.geo.attributes.position.needsUpdate = ticks.geo.attributes.aColor.needsUpdate = ticks.geo.attributes.aSize.needsUpdate = true;
+    ringsGroup.rotation.z = 0.35 + t * 0.03;
+
+    // upload pulse uniforms
+    slots.forEach((s, i) => {
+      pulseA[i].set(s.dir.x, s.dir.y, s.dir.z, s.active ? s.k : -1);
+      pulseB[i].set(s.color.r, s.color.g, s.color.b, s.maxA);
+    });
+    uVis.value = 0.35 + 0.65 * (1 - w.q);
+    dotMat.uniforms.uBright.value = 0.6 + 0.4 * (1 - w.q);
+    atmoMat.uniforms.uStrength.value = 0.12 + 0.13 * (1 - w.q);
+  }
+
+  function placeOrb(dt, kf) {
+    state.mouseS.lerp(state.mouse, 1 - Math.exp(-dt * 3));
+    orb.position.set(state.narrow ? kf.xN : kf.x, state.narrow ? kf.yN : kf.y, 0);
+    orb.scale.setScalar(state.narrow ? kf.sN : kf.s);
+    orb.rotation.set(kf.rotX + state.mouseS.y * 0.12, 0.35 * Math.sin(state.time * 0.12) + Math.min(state.f, 2.5) * 0.3 + state.mouseS.x * 0.25, 0);
+    dust.rotation.y = state.time * 0.01;
+  }
+
+  function tick(dt) {
+    if (state.reduced) state.f = state.fTarget = 0.5;
+    else state.f += (state.fTarget - state.f) * (1 - Math.exp(-dt * 5));
+    const kf = sampleKeyframes(SCENE_CONFIG.keyframes, state.f);
+    const w = state.reduced ? { q: 0, r: 0, d: 1 } : lifecycleWeights(state.f);
+
+    state.introT = Math.min(1, state.introT + dt / 2.4);
+    const e = 1 - Math.pow(1 - state.introT, 3);
+    dotMat.uniforms.uIntro.value = e;
+
+    simulate(dt, w);
+    placeOrb(dt, kf);
+    canvas.style.opacity = String((state.narrow ? kf.opacityN : kf.opacity) * smooth(state.introT * 2.5));
+    renderer.render(scene, camera);
+
+    if (!state.firstFrame) { state.firstFrame = true; onFirstFrame && onFirstFrame(); }
+  }
+
+  /* ---------- sizing, DPR cap, adaptive resolution ---------- */
+  function dpr() { return Math.max(1, Math.min(window.devicePixelRatio || 1, cfg.dprMax) * state.dprScale); }
+  function resize() {
+    const w = window.innerWidth, h = window.innerHeight;
+    state.narrow = w < SCENE_CONFIG.narrowBelow;
+    renderer.setPixelRatio(dpr());
+    renderer.setSize(w, h, false);
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+    uScalePx.value = renderer.domElement.height / (2 * Math.tan(THREE.MathUtils.degToRad(cfg.fov / 2)));
+    if (!state.running) renderOnce();
+  }
+
+  /* ---------- loop ---------- */
+  let raf = 0, lastNow = 0, acc = 0, hudTick = 0;
+  function loop(now) {
+    raf = requestAnimationFrame(loop);
+    acc += Math.min((now - lastNow) / 1000, 0.1);
+    lastNow = now;
+    const throttled = state.f > SCENE_CONFIG.idleThrottleFrom;
+    if (throttled && acc < 1 / 30) return;
+    const dt = acc; acc = 0;
+    state.time += dt;
+    tick(dt);
+
+    if (!throttled) {
+      state.ema = lerp(state.ema, dt, 0.05);
+      state.slow = state.ema > 0.026 ? state.slow + 1 : Math.max(0, state.slow - 1);
+      if (state.slow > 90 && state.dprScale > 0.5) { state.dprScale -= 0.25; state.slow = 0; resize(); }
+    }
+    if (hud && ++hudTick % 10 === 0) {
+      const w = lifecycleWeights(state.f);
+      hud.textContent =
+        `tier ${tier}   dpr ${renderer.getPixelRatio().toFixed(2)}   ${(1 / state.ema).toFixed(0)} fps\n` +
+        `f ${state.f.toFixed(2)}   q ${w.q.toFixed(2)} r ${w.r.toFixed(2)} d ${w.d.toFixed(2)}\n` +
+        `calls ${renderer.info.render.calls}   tris ${renderer.info.render.triangles}   pts ${renderer.info.render.points}   beacons ${B}${throttled ? '   (30fps idle)' : ''}`;
+    }
+  }
+
+  function renderOnce() {
+    if (state.reduced) {
+      slots.forEach((s, i) => { s.active = i === 0; if (i === 0) { spawn(s, hubDir, C.accent, SCENE_CONFIG.hubPulse.duration, SCENE_CONFIG.hubPulse.maxAngle); s.k = 0.38; } });
+    }
+    tick(0.0001);
+  }
+
+  function onPointer(e) {
+    state.mouse.set((e.clientX / window.innerWidth) * 2 - 1, (e.clientY / window.innerHeight) * 2 - 1);
+  }
+  const useParallax = cfg.parallax && !reduced && window.matchMedia('(pointer: fine)').matches;
+  if (useParallax) window.addEventListener('pointermove', onPointer, { passive: true });
+
+  function lostHandler(e) { e.preventDefault(); stop(); onContextLost && onContextLost(); }
+  canvas.addEventListener('webglcontextlost', lostHandler);
+
+  function start() {
+    if (state.running || state.reduced) return;
+    state.running = true; lastNow = performance.now(); acc = 0;
+    raf = requestAnimationFrame(loop);
+  }
+  function stop() { state.running = false; cancelAnimationFrame(raf); }
+
+  function setReduced(v) {
+    state.reduced = v;
+    if (v) { stop(); renderOnce(); } else { state.introT = 1; start(); }
+  }
+
+  function dispose() {
+    stop();
+    window.removeEventListener('pointermove', onPointer);
+    canvas.removeEventListener('webglcontextlost', lostHandler);
+    pillars.dispose(); rings.dispose();
+    disposables.forEach((o) => o.dispose && o.dispose());
+    renderer.dispose();
+    renderer.forceContextLoss();
+  }
+
+  resize();
+  return {
+    start, stop, resize, dispose, setReduced,
+    setScroll(f) { state.fTarget = f; if (!state.running) renderOnce(); },
+  };
+}
+
+/* =====================================================================
+   4. PAGE GLUE  (-> landing-scene.tsx + landing page)
+   ===================================================================== */
+const params = new URLSearchParams(location.search);
+const root = document.documentElement;
+const canvas = document.getElementById('scene');
+
+let hud = null;
+if (params.has('debug')) { hud = document.createElement('pre'); hud.id = 'hud'; document.body.appendChild(hud); }
+
+const reducedQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+const isReduced = () => reducedQuery.matches || params.get('motion') === 'reduce';
+const autoTier = window.matchMedia('(max-width: 767px), (pointer: coarse)').matches ? 'low' : 'high';
+const tier = params.get('quality') === 'low' || params.get('quality') === 'high' ? params.get('quality') : autoTier;
+
+/* --- scroll progress --- */
+const sectionEls = ['hero', 'how', 'result', 'features', 'cta'].map((id) => document.getElementById(id));
+let tops = [], heights = [];
+function measure() {
+  tops = sectionEls.map((el) => el.getBoundingClientRect().top + window.scrollY);
+  heights = sectionEls.map((el) => el.offsetHeight);
+}
+function computeF() {
+  const center = window.scrollY + window.innerHeight * 0.5;
+  let i = 0;
+  for (let k = 0; k < tops.length; k++) if (center >= tops[k]) i = k;
+  if (center < tops[0]) return 0;
+  return i + clamp((center - tops[i]) / heights[i], 0, 1);
+}
+
+/* --- sync the HTML (step cards + status pills) with the 3D lifecycle --- */
+const stepEls = [...document.querySelectorAll('[data-step]')];
+const pillEls = [...document.querySelectorAll('[data-pill]')];
+let activeKey = '';
+function syncLifecycleUI(f) {
+  let key = '';
+  if (f >= 0.95 && f <= 2.1) {
+    const w = lifecycleWeights(f);
+    key = w.q >= w.r && w.q >= w.d ? 'queued' : w.r >= w.d ? 'running' : 'done';
+  }
+  if (key === activeKey) return;
+  activeKey = key;
+  stepEls.forEach((el) => el.dataset.active = String(el.dataset.step === key));
+  pillEls.forEach((el) => el.dataset.active = String(el.dataset.pill === key));
+}
+
+let scene = null;
+function onScroll() {
+  const f = computeF();
+  syncLifecycleUI(f);
+  if (scene) scene.setScroll(f);
+}
+
+/* --- boot --- */
+function boot() {
+  measure();
+  if (params.get('webgl') === 'off') return;         // fallback SVG stays visible
+
+  scene = createLandingScene(canvas, {
+    tier, reduced: isReduced(), hud,
+    onFirstFrame: () => root.classList.add('scene-ready'),
+    onContextLost: () => root.classList.remove('scene-ready'),
+  });
+  if (!scene) return;                                // no WebGL: fallback SVG stays
+
+  window.addEventListener('scroll', onScroll, { passive: true });
+  window.addEventListener('resize', () => { measure(); scene.resize(); onScroll(); });
+  new ResizeObserver(() => { measure(); onScroll(); }).observe(document.body);
+  document.fonts && document.fonts.ready.then(() => { measure(); onScroll(); });
+  document.addEventListener('visibilitychange', () => document.hidden ? scene.stop() : scene.start());
+  reducedQuery.addEventListener('change', () => scene.setReduced(isReduced()));
+  window.addEventListener('pagehide', () => scene.dispose());   // in React: call from the effect cleanup
+
+  onScroll();
+  scene.start();
+  if (isReduced()) scene.setReduced(true);
+}
+boot();
+</script>
+</body>
+</html>
