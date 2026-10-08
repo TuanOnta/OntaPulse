@@ -1,0 +1,1321 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>OntaPulse — sign in / create account (prototype)</title>
+
+<!--
+=====================================================================
+ONTAPULSE AUTH PROTOTYPE (reference only, not production code)
+
+Purpose: visual + behavioral reference for the login / register screen.
+Per README the `/` route hosts the landing page, login, and registration,
+so this panel is what the "Sign in", "Get started", and "Start monitoring"
+buttons of the landing page open. Open the file in a browser (needs
+internet for the three.js CDN and fonts).
+
+URL flags for testing:
+  ?tab=register              open the "Create account" tab
+  ?state=error               show the form-level error banner
+  ?state=loading             freeze the submit button in its loading state
+  ?state=success             show the signed-in state
+  ?debug                     show the HUD (fps, dpr, draw calls)
+  ?quality=low|high          force the 3D quality tier
+  ?motion=reduce             force reduced-motion behavior (3D scene and card motion)
+  ?webgl=off                 force the no-WebGL fallback
+
+Demo behavior (prototype only, NOT real auth):
+  - any valid input "signs in" after about 1.4 s
+  - sign in with the password  fail            -> error banner (invalid credentials)
+  - register with the email    taken@example.com -> error banner (email in use)
+
+SHARED WITH reference/landing-prototype.html:
+  - the :root tokens, fonts, and the whole 3D scene module. Only
+    SCENE_CONFIG.keyframes differ: here every keyframe is the same single
+    pose (orb large on the left, dimmed behind the panel on narrow screens).
+  - the lifecycle look is reused as feedback: while the form is submitting
+    the orb switches to RUNNING (blue, packets in flight); it returns to the
+    result colors when the request ends.
+
+PORTING MAP (prototype -> repo, FSD layout in apps/web/src):
+  panel markup + styles            -> widgets/auth-panel (tabs, header, banner)
+  login / register forms           -> features/auth/ui/login-form.tsx, register-form.tsx
+  field + password toggle          -> shared/ui (input, password-input) if not present
+  validation rules                 -> features/auth/model/validation.ts (mirror the API rules)
+  submit + error handling          -> features/auth/model via shared/api/client.ts (ApiError)
+  scene + scroll glue              -> widgets/landing-scene (same module as the landing page)
+
+Validation mirrors the API contract in README.md:
+  name 2-80 chars after trimming, email valid and at most 320 chars,
+  password 12-128 chars on register. Login only requires both fields.
+  Register creates the user, an initial workspace, the OWNER membership,
+  and a session; login creates a session (httpOnly cookie, 7 days).
+
+CARD MOTION (all CSS except the small helpers in section 5; every item is off under
+prefers-reduced-motion, and the final state is always the visible state):
+  - panel entrance (rise + fade) and a staggered rise of header, fields, button, link
+  - a light that travels around the border, and a soft breathing glow
+  - a heartbeat trace at the top with a bright beam running along it
+  - a pointer spotlight inside the card
+  - a sliding thumb behind the active tab, and a rise-in when the view changes
+  - field icons that light up on focus, plus a growing line under the focused field
+  - password meter bar that fills to 12 characters
+  - button shine on hover, an indeterminate progress bar while submitting
+  - error: the card shakes once, the banner drops in, an invalid field nudges
+  - success: the check draws itself, rings pulse outward, a short progress bar fills
+
+Deliberately NOT designed (not implemented in the product): forgot-password,
+social sign-in, email verification, terms or marketing copy. Do not add them.
+=====================================================================
+-->
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Instrument+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<script type="importmap">
+{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js" } }
+</script>
+
+<style>
+:root {
+  --bg: #0A0E0D;
+  --bg-2: #0D1311;
+  --surface: #111715;
+  --surface-2: #17201C;
+  --border: #22302B;
+  --border-strong: #2E4039;
+  --text: #E8F1EC;
+  --text-2: #B6C6BE;
+  --muted: #93A59C;
+  --accent: #5EF2A0;
+  --accent-ink: #04140C;
+  --info: #7CC4FF;
+  --warn: #FFB454;
+  --danger: #FF7A6B;
+  --danger-text: #FF9A8D;
+  --font-display: 'Bricolage Grotesque', system-ui, sans-serif;
+  --font-body: 'Instrument Sans', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--bg); color: var(--text);
+  font-family: var(--font-body); font-size: 17px; line-height: 1.5;
+}
+a { color: var(--muted); text-decoration: none; }
+a:hover { color: var(--text); }
+a:focus-visible, button:focus-visible, input:focus-visible { outline: 2px solid var(--text); outline-offset: 3px; }
+h1 { font-family: var(--font-display); margin: 0; }
+p { margin: 0; }
+[hidden] { display: none !important; }
+
+/* ---------- 3D layers (same behavior as the landing page) ---------- */
+#scene-fallback {
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  display: flex; align-items: center; justify-content: flex-start; padding-left: 3vw;
+  transition: opacity .8s ease;
+}
+#scene-fallback svg { width: min(700px, 56vw); height: auto; }
+.scene-ready #scene-fallback { opacity: 0; }
+#scene { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; opacity: 0; }
+@media (max-width: 959px) {
+  #scene-fallback { justify-content: center; padding-left: 0; opacity: .3; }
+  #scene-fallback svg { width: min(520px, 90vw); }
+}
+
+/* ---------- Page ---------- */
+.shell { position: relative; z-index: 1; min-height: 100svh; display: flex; flex-direction: column; }
+.topbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 16px; padding: 18px 32px; }
+.logo { display: inline-flex; align-items: center; gap: 10px; color: var(--text); font-family: var(--font-display); font-weight: 700; font-size: 22px; min-height: 44px; }
+.logo:hover { color: var(--text); }
+.back { min-height: 44px; display: inline-flex; align-items: center; gap: 8px; padding: 0 4px; font-size: 16px; }
+
+.stage { flex: 1; display: flex; align-items: center; justify-content: flex-end; padding: 16px clamp(24px, 8vw, 120px) 56px; }
+@media (max-width: 959px) { .stage { justify-content: center; padding: 8px 20px 40px; } }
+
+.side-note { position: absolute; left: 32px; bottom: 28px; font-family: var(--font-mono); font-size: 13px; color: var(--muted); max-width: 360px; }
+@media (max-width: 959px) { .side-note { display: none; } }
+
+/* ---------- Panel ---------- */
+.panel {
+  width: 100%; max-width: 460px; padding: 32px;
+  background: rgba(17,23,21,.94); border: 1px solid var(--border); border-radius: 28px;
+  box-shadow: 0 30px 80px rgba(0,0,0,.45);
+  display: flex; flex-direction: column; gap: 24px;
+}
+@media (max-width: 480px) { .panel { padding: 24px 20px; border-radius: 22px; } }
+
+.tabs { position: relative; display: flex; padding: 4px; gap: 4px; background: var(--bg); border: 1px solid var(--border); border-radius: 999px; }
+.tab {
+  flex: 1; min-height: 44px; padding: 0 10px; border: 0; border-radius: 999px; cursor: pointer; white-space: nowrap;
+  background: transparent; color: var(--muted); font: 500 16px var(--font-body);
+  transition: background .2s, color .2s;
+}
+.tab:hover { color: var(--text); }
+.tab[aria-selected="true"] { color: var(--text); }
+
+.head { display: flex; flex-direction: column; gap: 8px; }
+.head h1 { font-weight: 700; font-size: 34px; line-height: 1.1; letter-spacing: -.02em; }
+.head p { color: var(--text-2); font-size: 16px; }
+
+.banner {
+  display: flex; gap: 12px; align-items: flex-start; padding: 14px 16px;
+  border: 1px solid #5A2B25; background: rgba(255,122,107,.08); border-radius: 14px;
+}
+.banner .ico { flex: none; width: 22px; height: 22px; border-radius: 999px; border: 1.5px solid var(--danger-text); color: var(--danger-text); display: inline-flex; align-items: center; justify-content: center; font: 600 13px var(--font-mono); margin-top: 1px; }
+.banner strong { display: block; font-weight: 600; font-size: 16px; color: #FFC1B8; }
+.banner small { display: block; margin-top: 2px; font: 12px var(--font-mono); color: var(--muted); }
+
+form { display: flex; flex-direction: column; gap: 18px; }
+.field { display: flex; flex-direction: column; gap: 8px; }
+.field label { font-weight: 500; font-size: 15px; color: var(--text); }
+.input {
+  width: 100%; min-height: 52px; padding: 0 16px; border-radius: 14px;
+  background: var(--bg-2); border: 1px solid var(--border-strong); color: var(--text);
+  font: 17px var(--font-body); transition: border-color .2s, box-shadow .2s;
+}
+.input::placeholder { color: #5F7168; }
+.input:hover { border-color: #3B5148; }
+.input:focus-visible { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(94,242,160,.22); }
+.input[aria-invalid="true"] { border-color: var(--danger); }
+.input[aria-invalid="true"]:focus-visible { box-shadow: 0 0 0 3px rgba(255,122,107,.22); }
+.pw .input { padding-right: 76px; }
+.pw-toggle {
+  position: absolute; right: 6px; top: 6px; z-index: 2; min-height: 40px; padding: 0 12px; border: 0; border-radius: 10px;
+  background: transparent; color: var(--muted); font: 500 14px var(--font-body); cursor: pointer;
+}
+.pw-toggle:hover { color: var(--text); background: var(--surface-2); }
+.err { display: flex; gap: 8px; align-items: center; font-size: 14px; color: var(--danger-text); }
+.err::before { content: "!"; flex: none; width: 16px; height: 16px; border-radius: 999px; border: 1.5px solid var(--danger-text); display: inline-flex; align-items: center; justify-content: center; font: 600 10px var(--font-mono); }
+.hint { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; font: 12px var(--font-mono); color: var(--muted); }
+.hint .ok { color: #7FF0B0; }
+
+.submit {
+  min-height: 52px; border: 0; border-radius: 999px; cursor: pointer;
+  background: var(--accent); color: var(--accent-ink); font: 600 17px var(--font-body);
+  display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+  transition: filter .2s;
+}
+.submit:hover { filter: brightness(1.08); }
+.submit[disabled] { cursor: progress; filter: none; opacity: .85; }
+.spinner { width: 18px; height: 18px; border-radius: 999px; border: 2px solid rgba(4,20,12,.3); border-top-color: var(--accent-ink); animation: spin .8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.fineprint { font-size: 13px; color: var(--muted); text-align: center; }
+
+.done { display: flex; flex-direction: column; align-items: flex-start; gap: 16px; padding: 8px 0 4px; }
+.done .check { width: 56px; height: 56px; border-radius: 999px; border: 1.5px solid var(--accent); background: rgba(94,242,160,.1); display: inline-flex; align-items: center; justify-content: center; }
+.done .path { font: 13px var(--font-mono); color: var(--muted); }
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner { animation-duration: 2.4s; }
+  * { transition: none !important; }
+}
+
+
+/* ---------- Card motion ---------- */
+@property --angle { syntax: '<angle>'; initial-value: 0deg; inherits: false; }
+
+.panel {
+  position: relative; isolation: isolate;
+  animation: panel-in .7s cubic-bezier(.2,.8,.2,1) both, breathe 6s ease-in-out 1s infinite;
+}
+.panel > * { position: relative; z-index: 1; }
+/* light that travels around the border */
+.panel::before {
+  content: ""; position: absolute; inset: -1px; z-index: 0; border-radius: inherit; padding: 1px; pointer-events: none;
+  background: conic-gradient(from var(--angle), transparent 0 62%, rgba(94,242,160,.85) 80%, rgba(124,196,255,.6) 88%, transparent 100%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor; mask-composite: exclude;
+  animation: orbit 7s linear infinite;
+}
+/* pointer spotlight */
+.panel::after {
+  content: ""; position: absolute; inset: 0; z-index: 0; border-radius: inherit; pointer-events: none;
+  background: radial-gradient(360px circle at var(--mx, 50%) var(--my, 0%), rgba(94,242,160,.08), transparent 65%);
+}
+@keyframes panel-in { from { opacity: 0; transform: translateY(28px) scale(.98); } to { opacity: 1; transform: none; } }
+@keyframes breathe {
+  0%, 100% { box-shadow: 0 30px 80px rgba(0,0,0,.45), 0 0 40px rgba(94,242,160,.04); }
+  50%      { box-shadow: 0 30px 80px rgba(0,0,0,.45), 0 0 70px rgba(94,242,160,.14); }
+}
+@keyframes orbit { to { --angle: 360deg; } }
+.panel.shake { animation: panel-in .01s both, shake .45s cubic-bezier(.36,.07,.19,.97), breathe 6s ease-in-out 1s infinite; }
+@keyframes shake { 10%, 90% { transform: translateX(-2px); } 20%, 80% { transform: translateX(4px); } 30%, 50%, 70% { transform: translateX(-7px); } 40%, 60% { transform: translateX(7px); } }
+
+/* heartbeat trace */
+.trace { height: 36px; margin: -6px -6px -8px; pointer-events: none;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 14%, #000 86%, transparent); mask-image: linear-gradient(90deg, transparent, #000 14%, #000 86%, transparent); }
+.trace svg { width: 100%; height: 100%; display: block; overflow: visible; }
+.trace path { fill: none; stroke: var(--accent); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+.trace .base { opacity: .16; }
+.trace .beam { stroke-dasharray: .26 1; stroke-dashoffset: .26; filter: drop-shadow(0 0 5px rgba(94,242,160,.9)); animation: beam 3.6s linear infinite; }
+@keyframes beam { to { stroke-dashoffset: -1; } }
+
+/* tabs: sliding thumb */
+.tab-thumb {
+  position: absolute; z-index: 0; top: 4px; bottom: 4px; left: 4px; width: calc((100% - 12px) / 2);
+  border-radius: 999px; background: var(--surface-2); box-shadow: inset 0 0 0 1px var(--border-strong), 0 6px 18px rgba(0,0,0,.35);
+  transition: transform .4s cubic-bezier(.2,.8,.2,1);
+}
+.panel[data-tab="register"] .tab-thumb { transform: translateX(calc(100% + 4px)); }
+.tab { position: relative; z-index: 1; }
+
+/* view change: staggered rise */
+.view-in .head, .view-in .field, .view-in .submit { animation: rise .55s cubic-bezier(.2,.8,.2,1) both; animation-delay: calc(var(--i, 0) * 55ms); }
+@keyframes rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+
+/* fields: icon, focus line, nudge on error */
+.ctl { position: relative; }
+.ctl .lead { position: absolute; left: 16px; top: 26px; width: 20px; height: 20px; margin-top: -10px; color: var(--muted); pointer-events: none; transition: color .2s, transform .3s cubic-bezier(.2,.8,.2,1); }
+.ctl:focus-within .lead { color: var(--accent); transform: scale(1.12); }
+.ctl .input { padding-left: 46px; }
+.ctl::after { content: ""; position: absolute; left: 16px; right: 16px; bottom: 0; height: 2px; border-radius: 2px; background: linear-gradient(90deg, transparent, var(--accent), transparent); transform: scaleX(0); transition: transform .4s cubic-bezier(.2,.8,.2,1); pointer-events: none; }
+.ctl:focus-within::after { transform: scaleX(1); }
+.input[aria-invalid="true"] { animation: nudge .38s; }
+@keyframes nudge { 20% { transform: translateX(-5px); } 45% { transform: translateX(5px); } 70% { transform: translateX(-3px); } 100% { transform: none; } }
+.err:not([hidden]) { animation: fade-up .28s ease-out; }
+@keyframes fade-up { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+.banner:not([hidden]) { animation: drop .4s cubic-bezier(.2,.8,.2,1); }
+@keyframes drop { from { opacity: 0; transform: translateY(-12px) scale(.98); } to { opacity: 1; transform: none; } }
+
+/* password meter */
+.meter { height: 3px; border-radius: 3px; background: var(--border); overflow: hidden; }
+.meter span { display: block; height: 100%; width: 100%; border-radius: 3px; background: var(--muted); transform-origin: left; transform: scaleX(var(--p, 0)); transition: transform .35s cubic-bezier(.2,.8,.2,1), background .3s; }
+.meter.ok span { background: var(--accent); box-shadow: 0 0 10px rgba(94,242,160,.6); }
+.meter.over span { background: var(--danger); }
+
+/* submit button: shine + progress */
+.submit { position: relative; overflow: hidden; transition: filter .2s, transform .15s; }
+.submit:active:not([disabled]) { transform: scale(.985); }
+.submit::after { content: ""; position: absolute; inset: 0; background: linear-gradient(110deg, transparent 30%, rgba(255,255,255,.5) 50%, transparent 70%); transform: translateX(-130%); pointer-events: none; }
+.submit:hover:not([disabled])::after { transform: translateX(130%); transition: transform .8s ease; }
+.submit[aria-busy="true"]::before { content: ""; position: absolute; left: 0; bottom: 0; height: 3px; width: 40%; background: rgba(4,20,12,.55); border-radius: 3px; animation: indet 1.15s ease-in-out infinite; }
+@keyframes indet { 0% { transform: translateX(-100%); } 100% { transform: translateX(260%); } }
+
+/* success */
+.done .check { position: relative; animation: pop .55s cubic-bezier(.2,1.4,.4,1) both; }
+.done .ring { position: absolute; inset: -1px; border-radius: 999px; border: 1.5px solid var(--accent); opacity: 0; animation: ring 2.2s ease-out infinite; }
+.done .ring.r2 { animation-delay: 1.1s; }
+@keyframes ring { 0% { transform: scale(1); opacity: .6; } 100% { transform: scale(2.6); opacity: 0; } }
+@keyframes pop { from { transform: scale(.4); opacity: 0; } to { transform: none; opacity: 1; } }
+.done .tick { stroke-dasharray: 1; stroke-dashoffset: 1; animation: draw .6s .2s ease-out forwards; }
+@keyframes draw { to { stroke-dashoffset: 0; } }
+.done .head { animation: rise .6s .25s cubic-bezier(.2,.8,.2,1) both; }
+.done .redirect { width: 100%; height: 3px; border-radius: 3px; background: var(--border); overflow: hidden; }
+.done .redirect span { display: block; height: 100%; width: 100%; background: var(--accent); transform-origin: left; animation: fill 2.2s .4s linear both; }
+@keyframes fill { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+
+/* reduced motion: no movement, final states stay visible */
+@media (prefers-reduced-motion: reduce) {
+  .panel, .panel *, .panel::before, .panel::after { animation: none !important; transition: none !important; }
+  .trace .beam { display: none; }
+  .panel::before { background: linear-gradient(135deg, rgba(94,242,160,.35), transparent 40%); }
+  .done .tick { stroke-dashoffset: 0; }
+  .done .ring { display: none; }
+  .done .redirect span { transform: none; }
+}
+html.reduce-motion .panel, html.reduce-motion .panel *, html.reduce-motion .panel::before, html.reduce-motion .panel::after { animation: none !important; transition: none !important; }
+html.reduce-motion .trace .beam, html.reduce-motion .done .ring { display: none; }
+html.reduce-motion .panel::before { background: linear-gradient(135deg, rgba(94,242,160,.35), transparent 40%); }
+html.reduce-motion .done .tick { stroke-dashoffset: 0; }
+html.reduce-motion .done .redirect span { transform: none; }
+
+#hud { position: fixed; left: 12px; bottom: 12px; z-index: 50; margin: 0; padding: 8px 10px; background: rgba(0,0,0,.75); color: #BFFFD9; font: 11px/1.5 var(--font-mono); border-radius: 8px; pointer-events: none; white-space: pre; }
+</style>
+</head>
+
+<body>
+
+<!-- Decorative 3D layers. Fallback SVG shows first, WebGL replaces it once the first frame is drawn. -->
+<div id="scene-fallback" aria-hidden="true">
+  <svg viewBox="0 0 600 600" fill="none">
+    <circle cx="300" cy="300" r="262" stroke="#5EF2A0" stroke-opacity=".10" stroke-width="10"/>
+    <circle cx="300" cy="300" r="250" stroke="#5EF2A0" stroke-opacity=".38" stroke-width="1.5"/>
+    <g stroke="#5EF2A0" stroke-opacity=".15" stroke-width="1">
+      <ellipse cx="300" cy="300" rx="250" ry="70"/><ellipse cx="300" cy="300" rx="250" ry="150"/><ellipse cx="300" cy="300" rx="250" ry="215"/>
+      <ellipse cx="300" cy="300" rx="70" ry="250"/><ellipse cx="300" cy="300" rx="150" ry="250"/><ellipse cx="300" cy="300" rx="215" ry="250"/>
+      <line x1="50" y1="300" x2="550" y2="300"/><line x1="300" y1="50" x2="300" y2="550"/>
+    </g>
+    <circle cx="350" cy="250" r="120" stroke="#5EF2A0" stroke-opacity=".45" stroke-width="2"/>
+    <circle cx="350" cy="250" r="190" stroke="#5EF2A0" stroke-opacity=".2" stroke-width="1.5"/>
+    <g stroke="#5EF2A0" stroke-opacity=".5" stroke-width="1.5">
+      <path d="M350 250 Q 450 200 440 330"/><path d="M350 250 Q 270 170 250 190"/>
+      <path d="M350 250 Q 440 150 430 175"/><path d="M350 250 Q 220 270 190 350"/><path d="M350 250 Q 360 360 330 420"/>
+    </g>
+    <circle cx="350" cy="250" r="22" fill="#5EF2A0" fill-opacity=".2"/><circle cx="350" cy="250" r="8" fill="#5EF2A0"/>
+    <circle cx="440" cy="330" r="7" fill="#FFB454"/><circle cx="250" cy="190" r="6" fill="#5EF2A0"/>
+    <circle cx="430" cy="175" r="6" fill="#5EF2A0"/><circle cx="190" cy="350" r="7" fill="#FF7A6B"/><circle cx="330" cy="420" r="6" fill="#5EF2A0"/>
+  </svg>
+</div>
+<canvas id="scene" aria-hidden="true"></canvas>
+
+<div class="shell">
+  <header class="topbar">
+    <a class="logo" href="#">
+      <svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true"><circle cx="15" cy="15" r="13" fill="none" stroke="#5EF2A0" stroke-width="1.5" stroke-opacity=".5"/><path d="M3 16 H10 L13 8 L17 23 L20 16 H27" fill="none" stroke="#5EF2A0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      OntaPulse
+    </a>
+    <a class="back" href="#"><span aria-hidden="true">←</span> Back to home</a>
+  </header>
+
+  <main class="stage">
+    <p class="side-note">HTTP/HTTPS targets · checks every 1 min to 24 h · public URLs only</p>
+
+    <section class="panel" id="panel" aria-label="Account" data-tab="login">
+      <div class="trace" aria-hidden="true">
+        <svg viewBox="0 0 400 36" preserveAspectRatio="none">
+          <path class="base" pathLength="1" d="M0 18 H120 L134 18 L144 5 L156 31 L168 12 L178 18 H400"/>
+          <path class="beam" pathLength="1" d="M0 18 H120 L134 18 L144 5 L156 31 L168 12 L178 18 H400"/>
+        </svg>
+      </div>
+
+      <div class="tabs" role="tablist" aria-label="Account">
+        <span class="tab-thumb" aria-hidden="true"></span>
+        <button class="tab" role="tab" id="tab-login" aria-controls="view-login" aria-selected="true" tabindex="0" type="button">Sign in</button>
+        <button class="tab" role="tab" id="tab-register" aria-controls="view-register" aria-selected="false" tabindex="-1" type="button">Create account</button>
+      </div>
+
+      <div class="banner" id="banner" role="alert" hidden>
+        <span class="ico" aria-hidden="true">!</span>
+        <div><strong id="banner-msg"></strong><small id="banner-id"></small></div>
+      </div>
+
+      <!-- SIGN IN -->
+      <div role="tabpanel" id="view-login" aria-labelledby="tab-login" style="display: flex; flex-direction: column; gap: 24px">
+        <div class="head">
+          <h1>Welcome back</h1>
+          <p>Sign in to see your workspaces and scans.</p>
+        </div>
+        <form id="form-login" novalidate>
+          <div class="field">
+            <label for="login-email">Email</label>
+            <div class="ctl"><svg class="lead" viewBox="0 0 20 20" fill="none" aria-hidden="true"><rect x="2.5" y="4.5" width="15" height="11" rx="2.5" stroke="currentColor" stroke-width="1.5"/><path d="M3.5 6 L10 11 L16.5 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><input class="input" id="login-email" name="email" type="email" autocomplete="email" inputmode="email" spellcheck="false" placeholder="you@company.com" aria-describedby="login-email-err" required></div>
+            <p class="err" id="login-email-err" hidden></p>
+          </div>
+          <div class="field">
+            <label for="login-password">Password</label>
+            <div class="ctl pw"><svg class="lead" viewBox="0 0 20 20" fill="none" aria-hidden="true"><rect x="3.5" y="8.5" width="13" height="9" rx="2.5" stroke="currentColor" stroke-width="1.5"/><path d="M6.5 8.5 V6.5 a3.5 3.5 0 0 1 7 0 V8.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><input class="input" id="login-password" name="password" type="password" autocomplete="current-password" placeholder="Your password" aria-describedby="login-password-err" required><button class="pw-toggle" type="button" aria-controls="login-password" aria-pressed="false">Show</button></div>
+            <p class="err" id="login-password-err" hidden></p>
+          </div>
+          <button class="submit" type="submit"><span class="label">Sign in</span></button>
+        </form>
+      </div>
+
+      <!-- CREATE ACCOUNT -->
+      <div role="tabpanel" id="view-register" aria-labelledby="tab-register" hidden style="flex-direction: column; gap: 24px">
+        <div class="head">
+          <h1>Create your account</h1>
+          <p>We'll set up your first workspace for you.</p>
+        </div>
+        <form id="form-register" novalidate>
+          <div class="field">
+            <label for="reg-name">Name</label>
+            <div class="ctl"><svg class="lead" viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="10" cy="7" r="3.2" stroke="currentColor" stroke-width="1.5"/><path d="M3.8 16.5 c.9-3 3.2-4.5 6.2-4.5 s5.3 1.5 6.2 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><input class="input" id="reg-name" name="name" type="text" autocomplete="name" placeholder="Your name" aria-describedby="reg-name-err" required></div>
+            <p class="err" id="reg-name-err" hidden></p>
+          </div>
+          <div class="field">
+            <label for="reg-email">Email</label>
+            <div class="ctl"><svg class="lead" viewBox="0 0 20 20" fill="none" aria-hidden="true"><rect x="2.5" y="4.5" width="15" height="11" rx="2.5" stroke="currentColor" stroke-width="1.5"/><path d="M3.5 6 L10 11 L16.5 6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg><input class="input" id="reg-email" name="email" type="email" autocomplete="email" inputmode="email" spellcheck="false" placeholder="you@company.com" aria-describedby="reg-email-err" required></div>
+            <p class="err" id="reg-email-err" hidden></p>
+          </div>
+          <div class="field">
+            <label for="reg-password">Password</label>
+            <div class="ctl pw"><svg class="lead" viewBox="0 0 20 20" fill="none" aria-hidden="true"><rect x="3.5" y="8.5" width="13" height="9" rx="2.5" stroke="currentColor" stroke-width="1.5"/><path d="M6.5 8.5 V6.5 a3.5 3.5 0 0 1 7 0 V8.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg><input class="input" id="reg-password" name="password" type="password" autocomplete="new-password" placeholder="Create a password" aria-describedby="reg-password-hint reg-password-err" required><button class="pw-toggle" type="button" aria-controls="reg-password" aria-pressed="false">Show</button></div>
+            <div class="meter" id="reg-meter" aria-hidden="true"><span></span></div>
+            <p class="hint" id="reg-password-hint"><span id="reg-rule">At least 12 characters</span><span><span id="reg-count">0</span> / 128</span></p>
+            <p class="err" id="reg-password-err" hidden></p>
+          </div>
+          <button class="submit" type="submit"><span class="label">Create account</span></button>
+        </form>
+      </div>
+
+      <!-- SIGNED IN -->
+      <div class="done" id="view-done" role="status" hidden>
+        <span class="check" aria-hidden="true"><i class="ring"></i><i class="ring r2"></i><svg width="26" height="26" viewBox="0 0 26 26" fill="none"><path class="tick" pathLength="1" d="M5 13.5 L10.5 19 L21 7.5" stroke="#5EF2A0" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+        <div class="head"><h1 id="done-title">You're in.</h1><p>Taking you to your dashboard…</p></div>
+        <div class="redirect" aria-hidden="true"><span></span></div>
+        <span class="path">/dashboard</span>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script type="module">
+import * as THREE from 'three';
+
+/* =====================================================================
+   1. CONFIG  (-> scene-config.ts)
+   Concept: "signal orb". A dot-matrix sphere. The OntaPulse hub sends
+   scan pulses across its surface (GPU ripples) and request packets along
+   arcs to status beacons. A beacon lights up in its result color when the
+   packet arrives (green ok / amber slow / red failed).
+   Everything tunable lives here. Colors come from the CSS tokens.
+   ===================================================================== */
+const SCENE_CONFIG = {
+  seed: 20260,
+  camZ: 11,
+  tiers: {
+    high: { dots: 14000, dotSize: 0.0125, targets: 14, dust: 260, dprMax: 2,   parallax: true,  fov: 40 },
+    low:  { dots: 5200,  dotSize: 0.0200, targets: 8,  dust: 90,  dprMax: 1.5, parallax: false, fov: 46 },
+  },
+  colors: { dot: '#3F6B5B', core: '#040807', neutral: '#4A5A54' },
+  hub: [0.30, 0.22, 0.93],                 // hub direction on the unit sphere
+  light: [-0.5, 0.6, 0.65],                // fake key light (world space)
+  hubPulse: { interval: [2.8, 1.3], duration: 4.6, maxAngle: 2.9 },  // interval: [DONE, RUNNING] seconds
+  arrival: { duration: 1.9, maxAngle: 0.8 },
+  packet: { travel: 2.2, period: [5.2, 8.2] },
+  narrowBelow: 960,                        // px: below this the orb centers and dims
+  idleThrottleFrom: 3.0,                   // scroll progress f above which we render at 30 fps
+  // Auth screen: every keyframe is the same single pose (orb large on the left, centered and dimmed
+  // behind the panel on narrow screens). Only the lifecycle weights change, driven by setScroll():
+  // f = 0.5 shows the finished look, f = 1.5 shows RUNNING (used while a request is in flight).
+  keyframes: [
+    { f: 0.5, x: -3.3, y: 0,   s: 2.9, rotX: 0.25, opacity: 1, xN: 0, yN: 0.2, sN: 2.3, opacityN: 0.55 },
+    { f: 1.5, x: -3.3, y: 0,   s: 2.9, rotX: 0.25, opacity: 1, xN: 0, yN: 0.2, sN: 2.3, opacityN: 0.55 },
+    { f: 2.5, x: -3.3, y: 0,   s: 2.9, rotX: 0.25, opacity: 1, xN: 0, yN: 0.2, sN: 2.3, opacityN: 0.55 },
+    { f: 3.5, x: -3.3, y: 0,   s: 2.9, rotX: 0.25, opacity: 1, xN: 0, yN: 0.2, sN: 2.3, opacityN: 0.55 },
+    { f: 4.5, x: -3.3, y: 0,   s: 2.9, rotX: 0.25, opacity: 1, xN: 0, yN: 0.2, sN: 2.3, opacityN: 0.55 },
+  ],
+};
+
+/* =====================================================================
+   2. SCROLL PROGRESS HELPERS  (-> scroll-progress.ts)
+   f = which section the viewport center is in, plus how far through it.
+   lifecycleWeights maps f to the QUEUED / RUNNING / DONE look of the orb
+   while the user scrolls through "How it works" (f from 1.0 to 2.0).
+   ===================================================================== */
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+const lerp = (a, b, t) => a + (b - a) * t;
+const smooth = (t) => { t = clamp(t, 0, 1); return t * t * (3 - 2 * t); };
+
+function lifecycleWeights(f) {
+  if (f <= 0.85 || f >= 2.0) return { q: 0, r: 0, d: 1 };
+  if (f < 1.0) { const q = smooth((f - 0.85) / 0.15); return { q, r: 0, d: 1 - q }; }
+  const L = f - 1;
+  const a = smooth((L - 0.25) / 0.12);
+  const b = smooth((L - 0.62) / 0.12);
+  return { q: 1 - a, r: a * (1 - b), d: a * b };
+}
+
+function sampleKeyframes(kfs, f) {
+  if (f <= kfs[0].f) return kfs[0];
+  const last = kfs[kfs.length - 1];
+  if (f >= last.f) return last;
+  let i = 0;
+  while (f > kfs[i + 1].f) i++;
+  const a = kfs[i], b = kfs[i + 1];
+  const t = smooth((f - a.f) / (b.f - a.f));
+  const out = {};
+  for (const k in a) out[k] = k === 'f' ? f : lerp(a[k], b[k], t);
+  return out;
+}
+
+function mulberry32(seed) {
+  return () => {
+    seed |= 0; seed = (seed + 0x6D2B79F5) | 0;
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+/* =====================================================================
+   3. SCENE  (-> create-scene.ts)
+   Framework-free. Returns null when WebGL is unavailable.
+   API: { start, stop, setScroll(f), setReduced(bool), resize, dispose }
+   Draw calls: core, atmosphere, dots, pillars, rings, glows, arcs,
+   packets, 2 rings + ticks, dust (about 12).
+   ===================================================================== */
+const GOLDEN = 2.399963229728653;
+const Y_AXIS = new THREE.Vector3(0, 1, 0);
+const Z_AXIS = new THREE.Vector3(0, 0, 1);
+const MAX_ARCS = 16, MAX_PULSES = 6, TRAIL = 8;
+
+const DOT_VERT = /* glsl */`
+  uniform float uIntro, uSize, uScalePx, uBright;
+  uniform vec3 uAccent, uBase, uLight;
+  uniform vec4 uPulseA[${MAX_PULSES}];   // xyz = origin dir, w = progress k (-1 = off)
+  uniform vec4 uPulseB[${MAX_PULSES}];   // rgb = color, w = max angle (> 2.0 = hub pulse)
+  attribute float aRand;
+  varying vec3 vColor; varying float vAlpha;
+  void main() {
+    vec3 n = normalize(position);
+    float intensity = 0.0; vec3 tint = vec3(0.0);
+    for (int i = 0; i < ${MAX_PULSES}; i++) {
+      vec4 A = uPulseA[i]; vec4 B = uPulseB[i];
+      if (A.w < 0.0) continue;
+      float k = A.w;
+      float front = (1.0 - pow(1.0 - k, 2.0)) * B.w;
+      float width = B.w > 2.0 ? 0.10 : 0.07;
+      float th = acos(clamp(dot(n, A.xyz), -1.0, 1.0));
+      float d = (th - front) / width;
+      float it = exp(-d * d) * pow(1.0 - k, 1.3);
+      intensity += it; tint += B.rgb * it;
+    }
+    intensity = min(intensity, 1.6);
+    vec3 p = n * (1.0 + 0.035 * intensity);
+    p *= 1.0 + (1.0 - uIntro) * (aRand * 1.6 - 0.2);
+
+    vec4 mv = modelViewMatrix * vec4(p, 1.0);
+    vec3 vV = normalize(-mv.xyz);
+    vec3 vN = normalize(normalMatrix * n);
+    float facing = dot(vN, vV);
+    float rim = pow(1.0 - clamp(facing, 0.0, 1.0), 2.5);
+    float light = max(dot(normalize(mat3(modelMatrix) * n), uLight), 0.0);
+
+    vec3 col = uBase * (0.40 + 0.85 * light) + uAccent * 0.40 * rim * (0.4 + light);
+    col += tint * 1.9 + vec3(0.22) * intensity;
+    vColor = col * uBright;
+    vAlpha = uIntro * (0.6 + 0.4 * light + 0.5 * rim);
+
+    float s = length(modelMatrix[0].xyz);
+    float size = uSize * (1.0 + 2.4 * intensity) * (0.7 + 0.3 * aRand);
+    gl_PointSize = facing < -0.04 ? 0.0 : size * s * uScalePx / -mv.z;
+    gl_Position = projectionMatrix * mv;
+  }`;
+
+const DOT_FRAG = /* glsl */`
+  varying vec3 vColor; varying float vAlpha;
+  void main() {
+    float d = length(gl_PointCoord - 0.5);
+    float a = smoothstep(0.5, 0.18, d);
+    gl_FragColor = vec4(vColor, a * vAlpha);
+    #include <colorspace_fragment>
+  }`;
+
+const SPRITE_VERT = /* glsl */`
+  attribute float aSize; attribute vec3 aColor;
+  uniform float uScalePx; varying vec3 vC;
+  void main() {
+    vec4 mv = modelViewMatrix * vec4(position, 1.0);
+    gl_Position = projectionMatrix * mv;
+    gl_PointSize = aSize * length(modelMatrix[0].xyz) * uScalePx / -mv.z;
+    vC = aColor;
+  }`;
+
+const SPRITE_FRAG = /* glsl */`
+  uniform float uAlpha; varying vec3 vC;
+  void main() {
+    float d = length(gl_PointCoord - 0.5) * 2.0;
+    float a = exp(-d * d * 3.5) * (1.0 - smoothstep(0.85, 1.0, d));
+    gl_FragColor = vec4(vC, a * uAlpha);
+    #include <colorspace_fragment>
+  }`;
+
+const ARC_VERT = /* glsl */`
+  attribute float aT; attribute float aIdx;
+  uniform float uProg[${MAX_ARCS}]; uniform vec3 uArcCol[${MAX_ARCS}];
+  uniform float uVis; uniform vec3 uLineCol;
+  varying vec3 vC; varying float vA;
+  void main() {
+    int i = int(aIdx + 0.5);
+    float p = uProg[i];
+    float d = p - aT;
+    float on = p >= 0.0 ? 1.0 : 0.0;
+    float trail = (d > 0.0 ? exp(-d * 7.0) : 0.0) * on;
+    float head = exp(-(d * d) / 0.0008) * on;
+    float glow = clamp(trail * 0.6 + head, 0.0, 1.0);
+    vA = (0.15 + glow * 0.9) * uVis;
+    vC = mix(uLineCol, uArcCol[i], glow);
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+  }`;
+
+const ARC_FRAG = /* glsl */`
+  varying vec3 vC; varying float vA;
+  void main() {
+    gl_FragColor = vec4(vC, vA);
+    #include <colorspace_fragment>
+  }`;
+
+function createLandingScene(canvas, { tier, reduced, hud, onFirstFrame, onContextLost }) {
+  const cfg = SCENE_CONFIG.tiers[tier];
+  const css = getComputedStyle(document.documentElement);
+  const token = (name) => new THREE.Color(css.getPropertyValue(name).trim());
+  const C = {
+    accent: token('--accent'), info: token('--info'), warn: token('--warn'), danger: token('--danger'),
+    muted: token('--muted'), dot: new THREE.Color(SCENE_CONFIG.colors.dot),
+    core: new THREE.Color(SCENE_CONFIG.colors.core), neutral: new THREE.Color(SCENE_CONFIG.colors.neutral),
+    white: new THREE.Color(1, 1, 1),
+  };
+
+  let renderer;
+  try {
+    renderer = new THREE.WebGLRenderer({ canvas, antialias: tier === 'high', alpha: true, powerPreference: 'high-performance' });
+  } catch (err) {
+    return null;
+  }
+  renderer.setClearColor(0x000000, 0);
+
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(cfg.fov, 1, 0.1, 100);
+  camera.position.set(0, 0, SCENE_CONFIG.camZ);
+  const orb = new THREE.Group();
+  scene.add(orb);
+
+  const state = {
+    running: false, reduced, time: 0, f: 0.5, fTarget: 0.5, narrow: false,
+    dprScale: 1, ema: 1 / 60, slow: 0, introT: reduced ? 1 : 0, firstFrame: false,
+    hubClock: SCENE_CONFIG.hubPulse.interval[0] - 0.5,
+    mouse: new THREE.Vector2(), mouseS: new THREE.Vector2(),
+  };
+  const disposables = [];
+  const track = (o) => { disposables.push(o); return o; };
+  const rand = mulberry32(SCENE_CONFIG.seed);
+  const uScalePx = { value: 1 };
+  const lightDir = new THREE.Vector3(...SCENE_CONFIG.light).normalize();
+
+  /* ---------- core (occludes the far side) ---------- */
+  const core = new THREE.Mesh(
+    track(new THREE.SphereGeometry(0.985, 48, 32)),
+    track(new THREE.ShaderMaterial({
+      uniforms: { uBase: { value: C.core }, uAccent: { value: C.accent }, uLight: { value: lightDir } },
+      vertexShader: `
+        varying vec3 vN; varying vec3 vV; varying vec3 vW;
+        void main() {
+          vec4 mv = modelViewMatrix * vec4(position, 1.0);
+          vN = normalize(normalMatrix * normal); vV = normalize(-mv.xyz);
+          vW = normalize(mat3(modelMatrix) * normal);
+          gl_Position = projectionMatrix * mv;
+        }`,
+      fragmentShader: `
+        uniform vec3 uBase, uAccent, uLight; varying vec3 vN; varying vec3 vV; varying vec3 vW;
+        void main() {
+          float facing = clamp(dot(normalize(vN), normalize(vV)), 0.0, 1.0);
+          float rim = pow(1.0 - facing, 3.0);
+          float light = max(dot(normalize(vW), uLight), 0.0);
+          gl_FragColor = vec4(uBase * (0.7 + 1.4 * light) + uAccent * rim * 0.13, 1.0);
+          #include <colorspace_fragment>
+        }`,
+    }))
+  );
+  orb.add(core);
+
+  /* ---------- atmosphere (inner glow halo) ---------- */
+  const atmoMat = track(new THREE.ShaderMaterial({
+    transparent: true, depthWrite: false, side: THREE.BackSide, blending: THREE.AdditiveBlending,
+    uniforms: { uColor: { value: C.accent }, uStrength: { value: 0.2 } },
+    vertexShader: `varying vec3 vN; void main() { vN = normalize(normalMatrix * normal); gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`,
+    fragmentShader: `
+      uniform vec3 uColor; uniform float uStrength; varying vec3 vN;
+      void main() {
+        float i = pow(max(0.62 - dot(vN, vec3(0.0, 0.0, 1.0)), 0.0), 2.6) * uStrength;
+        gl_FragColor = vec4(uColor, clamp(i, 0.0, 1.0));
+        #include <colorspace_fragment>
+      }`,
+  }));
+  const atmosphere = new THREE.Mesh(track(new THREE.SphereGeometry(1.2, 48, 32)), atmoMat);
+  orb.add(atmosphere);
+
+  /* ---------- dots (GPU ripples live in DOT_VERT) ---------- */
+  const dotPos = new Float32Array(cfg.dots * 3), dotRand = new Float32Array(cfg.dots);
+  for (let i = 0; i < cfg.dots; i++) {
+    const y = 1 - 2 * (i + 0.5) / cfg.dots, r = Math.sqrt(1 - y * y), th = i * GOLDEN;
+    dotPos.set([Math.cos(th) * r, y, Math.sin(th) * r], i * 3);
+    dotRand[i] = rand();
+  }
+  const dotGeo = track(new THREE.BufferGeometry());
+  dotGeo.setAttribute('position', new THREE.BufferAttribute(dotPos, 3));
+  dotGeo.setAttribute('aRand', new THREE.BufferAttribute(dotRand, 1));
+  const pulseA = Array.from({ length: MAX_PULSES }, () => new THREE.Vector4(0, 0, 1, -1));
+  const pulseB = Array.from({ length: MAX_PULSES }, () => new THREE.Vector4(0, 0, 0, 0));
+  const dotMat = track(new THREE.ShaderMaterial({
+    transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+    uniforms: {
+      uIntro: { value: reduced ? 1 : 0 }, uSize: { value: cfg.dotSize }, uScalePx, uBright: { value: 1 },
+      uAccent: { value: C.accent }, uBase: { value: C.dot }, uLight: { value: lightDir },
+      uPulseA: { value: pulseA }, uPulseB: { value: pulseB },
+    },
+    vertexShader: DOT_VERT, fragmentShader: DOT_FRAG,
+  }));
+  const dots = new THREE.Points(dotGeo, dotMat);
+  dots.frustumCulled = false;
+  orb.add(dots);
+
+  /* ---------- beacons: hub + status targets ---------- */
+  const hubDir = new THREE.Vector3(...SCENE_CONFIG.hub).normalize();
+  const resultOf = (kind) => (kind === 'warn' ? C.warn : kind === 'danger' ? C.danger : C.accent);
+  const beacons = [{
+    hub: true, kind: 'hub', dir: hubDir.clone(), ang: 0, flash: 0, touch: 0, h: 0.2, phase: 0, result: C.accent.clone(),
+  }];
+  for (let guard = 0; beacons.length < cfg.targets + 1 && guard < 5000; guard++) {
+    const u = rand() * 2 - 1, a = rand() * Math.PI * 2, s = Math.sqrt(1 - u * u);
+    const d = new THREE.Vector3(s * Math.cos(a), u, s * Math.sin(a));
+    const ang = Math.acos(clamp(d.dot(hubDir), -1, 1));
+    if (ang < 0.5 || ang > 1.7) continue;
+    if (beacons.some((b) => Math.acos(clamp(b.dir.dot(d), -1, 1)) < 0.34)) continue;
+    const idx = beacons.length - 1;
+    const kind = idx % 6 === 2 ? 'warn' : idx % 7 === 5 ? 'danger' : 'ok';
+    beacons.push({ hub: false, kind, dir: d, ang, flash: 0, touch: 0, h: 0.07 + rand() * 0.07, phase: rand() * 6.28, result: resultOf(kind).clone() });
+  }
+  const B = beacons.length, T = B - 1;
+  beacons.forEach((b) => {
+    b.qY = new THREE.Quaternion().setFromUnitVectors(Y_AXIS, b.dir);
+    b.qZ = new THREE.Quaternion().setFromUnitVectors(Z_AXIS, b.dir);
+  });
+
+  const pillars = new THREE.InstancedMesh(
+    track(new THREE.CylinderGeometry(0.008, 0.008, 1, 6, 1, true)),
+    track(new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.95, blending: THREE.AdditiveBlending, depthWrite: false })), B);
+  const rings = new THREE.InstancedMesh(
+    track(new THREE.RingGeometry(0.02, 0.027, 40)),
+    track(new THREE.MeshBasicMaterial({ transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide })), B);
+  [pillars, rings].forEach((m) => {
+    m.instanceMatrix.setUsage(THREE.DynamicDrawUsage); m.frustumCulled = false;
+    for (let i = 0; i < B; i++) m.setColorAt(i, C.accent);
+    orb.add(m);
+  });
+
+  const spriteMat = (alpha) => track(new THREE.ShaderMaterial({
+    transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+    uniforms: { uScalePx, uAlpha: { value: alpha } }, vertexShader: SPRITE_VERT, fragmentShader: SPRITE_FRAG,
+  }));
+  function makeSprites(count, alpha) {
+    const geo = track(new THREE.BufferGeometry());
+    const pos = new Float32Array(count * 3), col = new Float32Array(count * 3), size = new Float32Array(count);
+    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3).setUsage(THREE.DynamicDrawUsage));
+    geo.setAttribute('aColor', new THREE.BufferAttribute(col, 3).setUsage(THREE.DynamicDrawUsage));
+    geo.setAttribute('aSize', new THREE.BufferAttribute(size, 1).setUsage(THREE.DynamicDrawUsage));
+    const pts = new THREE.Points(geo, spriteMat(alpha));
+    pts.frustumCulled = false;
+    orb.add(pts);
+    return { pts, pos, col, size, geo };
+  }
+  const glow = makeSprites(B, 0.9);       // beacon glow
+  const packets = makeSprites(MAX_ARCS * TRAIL, 1);  // request packets in flight (head + trail)
+
+  /* ---------- arcs: hub -> target, lifted off the surface ---------- */
+  const SEG = 40;
+  function arcPoint(b, u, out) {
+    const omega = Math.acos(clamp(hubDir.dot(b.dir), -1, 1)), so = Math.sin(omega);
+    const a = Math.sin((1 - u) * omega) / so, c = Math.sin(u * omega) / so;
+    const lift = 0.05 + 0.12 * omega;
+    return out.set(hubDir.x * a + b.dir.x * c, hubDir.y * a + b.dir.y * c, hubDir.z * a + b.dir.z * c)
+      .multiplyScalar(1 + lift * Math.sin(Math.PI * u));
+  }
+  const arcPos = [], arcT = [], arcIdx = [];
+  const tmpV = new THREE.Vector3();
+  for (let i = 1; i < B; i++) {
+    for (let s = 0; s < SEG; s++) {
+      const u0 = s / SEG, u1 = (s + 1) / SEG;
+      arcPoint(beacons[i], u0, tmpV); arcPos.push(tmpV.x, tmpV.y, tmpV.z);
+      arcPoint(beacons[i], u1, tmpV); arcPos.push(tmpV.x, tmpV.y, tmpV.z);
+      arcT.push(u0, u1); arcIdx.push(i - 1, i - 1);
+    }
+  }
+  const arcGeo = track(new THREE.BufferGeometry());
+  arcGeo.setAttribute('position', new THREE.Float32BufferAttribute(arcPos, 3));
+  arcGeo.setAttribute('aT', new THREE.Float32BufferAttribute(arcT, 1));
+  arcGeo.setAttribute('aIdx', new THREE.Float32BufferAttribute(arcIdx, 1));
+  const uProg = { value: new Array(MAX_ARCS).fill(-1) };
+  const uArcCol = { value: Array.from({ length: MAX_ARCS }, () => new THREE.Vector3(1, 1, 1)) };
+  const uVis = { value: 1 };
+  const arcs = new THREE.LineSegments(arcGeo, track(new THREE.ShaderMaterial({
+    transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+    uniforms: { uProg, uArcCol, uVis, uLineCol: { value: C.muted.clone().lerp(C.accent, 0.5) } },
+    vertexShader: ARC_VERT, fragmentShader: ARC_FRAG,
+  })));
+  arcs.frustumCulled = false;
+  orb.add(arcs);
+  const packetState = [];
+  for (let i = 0; i < T; i++) {
+    const P = lerp(SCENE_CONFIG.packet.period[0], SCENE_CONFIG.packet.period[1], rand());
+    packetState.push({ period: P, offset: rand() * P, lastCyc: 0 });
+  }
+
+  /* ---------- orbit rings + ticks (HUD feel) ---------- */
+  const ringsGroup = new THREE.Group();
+  ringsGroup.rotation.set(1.15, 0, 0.35);
+  orb.add(ringsGroup);
+  function ringLine(radius, dashed, opacity) {
+    const pts = [];
+    for (let i = 0; i <= 160; i++) { const a = (i / 160) * Math.PI * 2; pts.push(new THREE.Vector3(Math.cos(a) * radius, Math.sin(a) * radius, 0)); }
+    const geo = track(new THREE.BufferGeometry().setFromPoints(pts));
+    const mat = track(dashed
+      ? new THREE.LineDashedMaterial({ color: C.accent, transparent: true, opacity, dashSize: 0.05, gapSize: 0.05, depthWrite: false })
+      : new THREE.LineBasicMaterial({ color: C.accent, transparent: true, opacity, depthWrite: false }));
+    const line = new THREE.Line(geo, mat);
+    if (dashed) line.computeLineDistances();
+    line.frustumCulled = false;
+    ringsGroup.add(line);
+    return line;
+  }
+  const ringA = ringLine(1.42, true, 0.22);
+  const ringB = ringLine(1.66, false, 0.10);
+  const ticks = makeSprites(3, 1);
+  orb.remove(ticks.pts); ringsGroup.add(ticks.pts);
+
+  /* ---------- dust ---------- */
+  const dustPos = new Float32Array(cfg.dust * 3);
+  for (let i = 0; i < cfg.dust; i++) {
+    const r = 9 + rand() * 9, u = rand() * 2 - 1, a = rand() * 6.283, s = Math.sqrt(1 - u * u);
+    dustPos.set([r * s * Math.cos(a), r * u * 0.6, r * s * Math.sin(a) - 4], i * 3);
+  }
+  const dustGeo = track(new THREE.BufferGeometry());
+  dustGeo.setAttribute('position', new THREE.BufferAttribute(dustPos, 3));
+  const dc = document.createElement('canvas'); dc.width = dc.height = 32;
+  const dctx = dc.getContext('2d');
+  const dg = dctx.createRadialGradient(16, 16, 0, 16, 16, 16);
+  dg.addColorStop(0, 'rgba(255,255,255,1)'); dg.addColorStop(1, 'rgba(255,255,255,0)');
+  dctx.fillStyle = dg; dctx.fillRect(0, 0, 32, 32);
+  const dustTex = track(new THREE.CanvasTexture(dc));
+  const dust = new THREE.Points(dustGeo, track(new THREE.PointsMaterial({ map: dustTex, color: C.muted, size: 0.09, transparent: true, opacity: 0.5, depthWrite: false, alphaTest: 0.02 })));
+  dust.frustumCulled = false;
+  scene.add(dust);
+
+  /* ---------- pulse slots (0-1 hub, 2-5 arrival ripples) ---------- */
+  const slots = Array.from({ length: MAX_PULSES }, (_, i) => ({
+    active: false, k: 0, dur: 1, dir: new THREE.Vector3(0, 0, 1), color: new THREE.Color(), maxA: 1, prevFront: 0, hub: i < 2,
+  }));
+  function spawn(slot, dir, color, dur, maxA) {
+    slot.active = true; slot.k = 0; slot.dur = dur; slot.dir.copy(dir); slot.color.copy(color); slot.maxA = maxA; slot.prevFront = 0;
+  }
+  const freeSlot = (from, to) => { for (let i = from; i <= to; i++) if (!slots[i].active) return slots[i]; return null; };
+
+  /* ---------- per-frame simulation ---------- */
+  const dummy = new THREE.Object3D();
+  const tmpA = new THREE.Color(), tmpB = new THREE.Color(), travelColor = new THREE.Color();
+  const pt = new THREE.Vector3();
+
+  function simulate(dt, w) {
+    const t = state.time;
+    // hub pulses
+    if (!state.reduced && w.q < 0.5) {
+      state.hubClock += dt;
+      const interval = lerp(SCENE_CONFIG.hubPulse.interval[0], SCENE_CONFIG.hubPulse.interval[1], w.r);
+      if (state.hubClock >= interval) {
+        state.hubClock = 0;
+        const s = freeSlot(0, 1);
+        if (s) { tmpA.copy(C.accent).lerp(C.info, w.r); spawn(s, hubDir, tmpA, SCENE_CONFIG.hubPulse.duration, SCENE_CONFIG.hubPulse.maxAngle); beacons[0].flash = 1; }
+      }
+    }
+    for (const s of slots) {
+      if (!s.active) continue;
+      if (!state.reduced) s.k += dt / s.dur;
+      if (s.k >= 1) { s.active = false; continue; }
+      const front = (1 - Math.pow(1 - s.k, 2)) * s.maxA;
+      if (s.hub && !state.reduced) for (const b of beacons) if (!b.hub && s.prevFront < b.ang && b.ang <= front) b.touch = 1;
+      s.prevFront = front;
+    }
+
+    // request packets
+    travelColor.copy(C.info).lerp(C.accent, w.d);
+    const { travel } = SCENE_CONFIG.packet;
+    for (let i = 0; i < T; i++) {
+      const ps = packetState[i], b = beacons[i + 1];
+      let prog = -1;
+      if (!state.reduced && w.q < 0.7) {
+        const cyc = (t + ps.offset) % ps.period;
+        if (cyc < travel) prog = smooth(cyc / travel);
+        if (ps.lastCyc < travel && cyc >= travel) {
+          b.flash = 1;
+          if (w.d > 0.5) { const s = freeSlot(2, MAX_PULSES - 1); if (s) spawn(s, b.dir, resultOf(b.kind), SCENE_CONFIG.arrival.duration, SCENE_CONFIG.arrival.maxAngle); }
+        }
+        ps.lastCyc = cyc;
+      }
+      uProg.value[i] = prog;
+      uArcCol.value[i].set(travelColor.r, travelColor.g, travelColor.b);
+      for (let j = 0; j < TRAIL; j++) {
+        const idx = i * TRAIL + j, u = prog - j * 0.035;
+        if (prog < 0 || u < 0) { packets.size[idx] = 0; continue; }
+        arcPoint(b, u, pt);
+        const fade = 1 - j / TRAIL;
+        packets.pos.set([pt.x, pt.y, pt.z], idx * 3);
+        packets.col.set([travelColor.r * 1.5 * fade, travelColor.g * 1.5 * fade, travelColor.b * 1.5 * fade], idx * 3);
+        packets.size[idx] = 0.085 * (1 - j * 0.09);
+      }
+    }
+    packets.geo.attributes.position.needsUpdate = packets.geo.attributes.aColor.needsUpdate = packets.geo.attributes.aSize.needsUpdate = true;
+
+    // beacons
+    for (let j = 0; j < B; j++) {
+      const b = beacons[j];
+      b.flash = Math.max(0, b.flash - dt * 1.4);
+      b.touch = Math.max(0, b.touch - dt * 2.2);
+      if (b.hub) tmpA.copy(C.accent).lerp(C.white, 0.35);
+      else {
+        tmpA.copy(C.neutral).multiplyScalar(w.q);
+        tmpB.copy(C.info).multiplyScalar(w.r); tmpA.add(tmpB);
+        tmpB.copy(b.result).multiplyScalar(w.d); tmpA.add(tmpB);
+        tmpA.lerp(C.white, b.flash * 0.6 * w.d);
+      }
+      const height = b.h * (b.hub ? 1 : 0.6 + 0.4 * (1 - w.q)) * (1 + b.flash * 0.7);
+      pillars.setColorAt(j, tmpA);
+      dummy.position.copy(b.dir).multiplyScalar(1 + height / 2);
+      dummy.quaternion.copy(b.qY); dummy.scale.set(1, height, 1); dummy.updateMatrix();
+      pillars.setMatrixAt(j, dummy.matrix);
+
+      const pulse = b.hub ? 0.5 + 0.5 * Math.sin(t * 2) : 0;
+      const rs = 1 + b.touch * 2.2 + b.flash * 3 + (b.hub ? 1 + 0.6 * pulse : 0);
+      const br = 0.3 + 0.7 * Math.max(b.touch, b.flash) + (b.hub ? 0.4 : 0);
+      tmpB.copy(tmpA).multiplyScalar(br); rings.setColorAt(j, tmpB);
+      dummy.position.copy(b.dir).multiplyScalar(1.004);
+      dummy.quaternion.copy(b.qZ); dummy.scale.setScalar(rs); dummy.updateMatrix();
+      rings.setMatrixAt(j, dummy.matrix);
+
+      pt.copy(b.dir).multiplyScalar(1 + height);
+      glow.pos.set([pt.x, pt.y, pt.z], j * 3);
+      const gi = 0.9 + b.flash * 0.9;
+      glow.col.set([tmpA.r * gi, tmpA.g * gi, tmpA.b * gi], j * 3);
+      glow.size[j] = (b.hub ? 0.2 + 0.05 * pulse : 0.1) + b.flash * 0.24 + b.touch * 0.05;
+    }
+    pillars.instanceMatrix.needsUpdate = rings.instanceMatrix.needsUpdate = true;
+    pillars.instanceColor.needsUpdate = rings.instanceColor.needsUpdate = true;
+    glow.geo.attributes.position.needsUpdate = glow.geo.attributes.aColor.needsUpdate = glow.geo.attributes.aSize.needsUpdate = true;
+
+    // ticks orbiting ring A
+    for (let k = 0; k < 3; k++) {
+      const a = t * 0.35 + k * 2.094;
+      ticks.pos.set([Math.cos(a) * 1.42, Math.sin(a) * 1.42, 0], k * 3);
+      ticks.col.set([C.accent.r, C.accent.g, C.accent.b], k * 3);
+      ticks.size[k] = 0.07;
+    }
+    ticks.geo.attributes.position.needsUpdate = ticks.geo.attributes.aColor.needsUpdate = ticks.geo.attributes.aSize.needsUpdate = true;
+    ringsGroup.rotation.z = 0.35 + t * 0.03;
+
+    // upload pulse uniforms
+    slots.forEach((s, i) => {
+      pulseA[i].set(s.dir.x, s.dir.y, s.dir.z, s.active ? s.k : -1);
+      pulseB[i].set(s.color.r, s.color.g, s.color.b, s.maxA);
+    });
+    uVis.value = 0.35 + 0.65 * (1 - w.q);
+    dotMat.uniforms.uBright.value = 0.6 + 0.4 * (1 - w.q);
+    atmoMat.uniforms.uStrength.value = 0.12 + 0.13 * (1 - w.q);
+  }
+
+  function placeOrb(dt, kf) {
+    state.mouseS.lerp(state.mouse, 1 - Math.exp(-dt * 3));
+    orb.position.set(state.narrow ? kf.xN : kf.x, state.narrow ? kf.yN : kf.y, 0);
+    orb.scale.setScalar(state.narrow ? kf.sN : kf.s);
+    orb.rotation.set(kf.rotX + state.mouseS.y * 0.12, 0.35 * Math.sin(state.time * 0.12) + Math.min(state.f, 2.5) * 0.3 + state.mouseS.x * 0.25, 0);
+    dust.rotation.y = state.time * 0.01;
+  }
+
+  function tick(dt) {
+    if (state.reduced) state.f = state.fTarget = 0.5;
+    else state.f += (state.fTarget - state.f) * (1 - Math.exp(-dt * 5));
+    const kf = sampleKeyframes(SCENE_CONFIG.keyframes, state.f);
+    const w = state.reduced ? { q: 0, r: 0, d: 1 } : lifecycleWeights(state.f);
+
+    state.introT = Math.min(1, state.introT + dt / 2.4);
+    const e = 1 - Math.pow(1 - state.introT, 3);
+    dotMat.uniforms.uIntro.value = e;
+
+    simulate(dt, w);
+    placeOrb(dt, kf);
+    canvas.style.opacity = String((state.narrow ? kf.opacityN : kf.opacity) * smooth(state.introT * 2.5));
+    renderer.render(scene, camera);
+
+    if (!state.firstFrame) { state.firstFrame = true; onFirstFrame && onFirstFrame(); }
+  }
+
+  /* ---------- sizing, DPR cap, adaptive resolution ---------- */
+  function dpr() { return Math.max(1, Math.min(window.devicePixelRatio || 1, cfg.dprMax) * state.dprScale); }
+  function resize() {
+    const w = window.innerWidth, h = window.innerHeight;
+    state.narrow = w < SCENE_CONFIG.narrowBelow;
+    renderer.setPixelRatio(dpr());
+    renderer.setSize(w, h, false);
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+    uScalePx.value = renderer.domElement.height / (2 * Math.tan(THREE.MathUtils.degToRad(cfg.fov / 2)));
+    if (!state.running) renderOnce();
+  }
+
+  /* ---------- loop ---------- */
+  let raf = 0, lastNow = 0, acc = 0, hudTick = 0;
+  function loop(now) {
+    raf = requestAnimationFrame(loop);
+    acc += Math.min((now - lastNow) / 1000, 0.1);
+    lastNow = now;
+    const throttled = state.f > SCENE_CONFIG.idleThrottleFrom;
+    if (throttled && acc < 1 / 30) return;
+    const dt = acc; acc = 0;
+    state.time += dt;
+    tick(dt);
+
+    if (!throttled) {
+      state.ema = lerp(state.ema, dt, 0.05);
+      state.slow = state.ema > 0.026 ? state.slow + 1 : Math.max(0, state.slow - 1);
+      if (state.slow > 90 && state.dprScale > 0.5) { state.dprScale -= 0.25; state.slow = 0; resize(); }
+    }
+    if (hud && ++hudTick % 10 === 0) {
+      const w = lifecycleWeights(state.f);
+      hud.textContent =
+        `tier ${tier}   dpr ${renderer.getPixelRatio().toFixed(2)}   ${(1 / state.ema).toFixed(0)} fps\n` +
+        `f ${state.f.toFixed(2)}   q ${w.q.toFixed(2)} r ${w.r.toFixed(2)} d ${w.d.toFixed(2)}\n` +
+        `calls ${renderer.info.render.calls}   tris ${renderer.info.render.triangles}   pts ${renderer.info.render.points}   beacons ${B}${throttled ? '   (30fps idle)' : ''}`;
+    }
+  }
+
+  function renderOnce() {
+    if (state.reduced) {
+      slots.forEach((s, i) => { s.active = i === 0; if (i === 0) { spawn(s, hubDir, C.accent, SCENE_CONFIG.hubPulse.duration, SCENE_CONFIG.hubPulse.maxAngle); s.k = 0.38; } });
+    }
+    tick(0.0001);
+  }
+
+  function onPointer(e) {
+    state.mouse.set((e.clientX / window.innerWidth) * 2 - 1, (e.clientY / window.innerHeight) * 2 - 1);
+  }
+  const useParallax = cfg.parallax && !reduced && window.matchMedia('(pointer: fine)').matches;
+  if (useParallax) window.addEventListener('pointermove', onPointer, { passive: true });
+
+  function lostHandler(e) { e.preventDefault(); stop(); onContextLost && onContextLost(); }
+  canvas.addEventListener('webglcontextlost', lostHandler);
+
+  function start() {
+    if (state.running || state.reduced) return;
+    state.running = true; lastNow = performance.now(); acc = 0;
+    raf = requestAnimationFrame(loop);
+  }
+  function stop() { state.running = false; cancelAnimationFrame(raf); }
+
+  function setReduced(v) {
+    state.reduced = v;
+    if (v) { stop(); renderOnce(); } else { state.introT = 1; start(); }
+  }
+
+  function dispose() {
+    stop();
+    window.removeEventListener('pointermove', onPointer);
+    canvas.removeEventListener('webglcontextlost', lostHandler);
+    pillars.dispose(); rings.dispose();
+    disposables.forEach((o) => o.dispose && o.dispose());
+    renderer.dispose();
+    renderer.forceContextLoss();
+  }
+
+  resize();
+  return {
+    start, stop, resize, dispose, setReduced,
+    setScroll(f) { state.fTarget = f; if (!state.running) renderOnce(); },
+  };
+}
+
+
+/* =====================================================================
+   4. SCENE GLUE  (-> landing-scene.tsx, shared with the landing page)
+   ===================================================================== */
+const params = new URLSearchParams(location.search);
+const root = document.documentElement;
+const canvas = document.getElementById('scene');
+
+let hud = null;
+if (params.has('debug')) { hud = document.createElement('pre'); hud.id = 'hud'; document.body.appendChild(hud); }
+
+const reducedQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+const isReduced = () => reducedQuery.matches || params.get('motion') === 'reduce';
+const autoTier = window.matchMedia('(max-width: 767px), (pointer: coarse)').matches ? 'low' : 'high';
+const tier = params.get('quality') === 'low' || params.get('quality') === 'high' ? params.get('quality') : autoTier;
+
+let scene = null;
+const SCENE_IDLE = 0.5;     // f that shows the finished look (result colors)
+const SCENE_BUSY = 1.5;     // f that shows RUNNING (blue, packets in flight)
+function setSceneBusy(busy) { if (scene) scene.setScroll(busy ? SCENE_BUSY : SCENE_IDLE); }
+
+function boot() {
+  if (params.get('webgl') === 'off') return;        // fallback SVG stays visible
+  scene = createLandingScene(canvas, {
+    tier, reduced: isReduced(), hud,
+    onFirstFrame: () => root.classList.add('scene-ready'),
+    onContextLost: () => root.classList.remove('scene-ready'),
+  });
+  if (!scene) return;                               // no WebGL: fallback SVG stays
+  window.addEventListener('resize', () => scene.resize());
+  document.addEventListener('visibilitychange', () => document.hidden ? scene.stop() : scene.start());
+  reducedQuery.addEventListener('change', () => scene.setReduced(isReduced()));
+  window.addEventListener('pagehide', () => scene.dispose());   // in React: call from the effect cleanup
+  scene.setScroll(SCENE_IDLE);
+  scene.start();
+  if (isReduced()) scene.setReduced(true);
+}
+boot();
+
+/* =====================================================================
+   5. FORM LOGIC + CARD MOTION (-> features/auth). Prototype only: the submit is faked.
+   Motion is CSS; the helpers below only toggle classes and set two CSS variables.
+   ===================================================================== */
+const $ = (id) => document.getElementById(id);
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const RULES = {
+  name:  { min: 2, max: 80 },
+  email: { max: 320 },
+  password: { min: 12, max: 128 },
+};
+if (params.get('motion') === 'reduce') root.classList.add('reduce-motion');
+const motionOK = () => !(reducedQuery.matches || params.get('motion') === 'reduce');
+
+const panel = $('panel');
+const views = { login: $('view-login'), register: $('view-register') };
+const tabs = { login: $('tab-login'), register: $('tab-register') };
+const banner = $('banner');
+let busy = false;
+
+/* staggered rise whenever a view is shown */
+function stagger(el) {
+  if (!motionOK()) return;
+  let i = 0;
+  el.querySelectorAll('.head, .field, .submit').forEach((n) => n.style.setProperty('--i', String(i++)));
+  el.classList.remove('view-in');
+  void el.offsetWidth;
+  el.classList.add('view-in');
+}
+/* one shake of the card (restarts if it is already running) */
+function shake() {
+  if (!motionOK()) return;
+  panel.classList.remove('shake');
+  void panel.offsetWidth;
+  panel.classList.add('shake');
+}
+panel.addEventListener('animationend', (e) => { if (e.animationName === 'shake') panel.classList.remove('shake'); });
+
+/* pointer spotlight inside the card */
+if (motionOK()) {
+  panel.addEventListener('pointermove', (e) => {
+    const r = panel.getBoundingClientRect();
+    panel.style.setProperty('--mx', `${e.clientX - r.left}px`);
+    panel.style.setProperty('--my', `${e.clientY - r.top}px`);
+  }, { passive: true });
+}
+
+function showBanner(message, requestId) {
+  $('banner-msg').textContent = message;
+  $('banner-id').textContent = requestId ? `Request ID: ${requestId}` : '';
+  banner.hidden = false;
+  shake();
+}
+function hideBanner() { banner.hidden = true; }
+
+function setTab(name, { focus = false } = {}) {
+  for (const key of Object.keys(views)) {
+    const on = key === name;
+    views[key].hidden = !on;
+    views[key].style.display = on ? 'flex' : 'none';
+    tabs[key].setAttribute('aria-selected', String(on));
+    tabs[key].tabIndex = on ? 0 : -1;
+  }
+  panel.dataset.tab = name;
+  hideBanner();
+  stagger(views[name]);
+  if (focus) tabs[name].focus();
+}
+Object.entries(tabs).forEach(([name, el]) => {
+  el.addEventListener('click', () => setTab(name));
+  el.addEventListener('keydown', (e) => {
+    const order = ['login', 'register'];
+    let i = order.indexOf(name);
+    if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') i = (i + 1) % 2;
+    else if (e.key === 'Home') i = 0;
+    else if (e.key === 'End') i = 1;
+    else return;
+    e.preventDefault();
+    setTab(order[i], { focus: true });
+  });
+});
+
+/* --- password show / hide --- */
+document.querySelectorAll('.pw-toggle').forEach((btn) => {
+  btn.addEventListener('click', () => {
+    const input = $(btn.getAttribute('aria-controls'));
+    const show = input.type === 'password';
+    input.type = show ? 'text' : 'password';
+    btn.textContent = show ? 'Hide' : 'Show';
+    btn.setAttribute('aria-pressed', String(show));
+  });
+});
+
+/* --- validation --- */
+function fieldError(inputId, message) {
+  const input = $(inputId), err = $(`${inputId}-err`);
+  if (message) { err.textContent = message; err.hidden = false; input.setAttribute('aria-invalid', 'true'); }
+  else { err.hidden = true; err.textContent = ''; input.removeAttribute('aria-invalid'); }
+  return !message;
+}
+const validators = {
+  'login-email': (v) => (EMAIL_RE.test(v.trim()) && v.trim().length <= RULES.email.max ? '' : 'Enter a valid email address.'),
+  'login-password': (v) => (v ? '' : 'Enter your password.'),
+  'reg-name': (v) => { const n = v.trim().length; return n >= RULES.name.min && n <= RULES.name.max ? '' : 'Enter your name (2 to 80 characters).'; },
+  'reg-email': (v) => (EMAIL_RE.test(v.trim()) && v.trim().length <= RULES.email.max ? '' : 'Enter a valid email address.'),
+  'reg-password': (v) => (v.length < RULES.password.min ? 'Use at least 12 characters.' : v.length > RULES.password.max ? 'Use 128 characters or fewer.' : ''),
+};
+Object.keys(validators).forEach((id) => {
+  const input = $(id);
+  input.addEventListener('blur', () => { if (input.value !== '' || input.hasAttribute('aria-invalid')) fieldError(id, validators[id](input.value)); });
+  input.addEventListener('input', () => { if (input.hasAttribute('aria-invalid')) fieldError(id, validators[id](input.value)); });
+});
+
+/* --- live password rule + meter (text and bar, never color alone) --- */
+const regPw = $('reg-password'), regRule = $('reg-rule'), regCount = $('reg-count'), regMeter = $('reg-meter');
+regPw.addEventListener('input', () => {
+  const n = regPw.value.length;
+  regCount.textContent = String(n);
+  const ok = n >= RULES.password.min && n <= RULES.password.max;
+  const over = n > RULES.password.max;
+  regRule.textContent = over ? 'Too long (128 max)' : ok ? '✓ Long enough' : 'At least 12 characters';
+  regRule.className = ok ? 'ok' : '';
+  regMeter.style.setProperty('--p', String(Math.min(n / RULES.password.min, 1)));
+  regMeter.classList.toggle('ok', ok);
+  regMeter.classList.toggle('over', over);
+});
+
+/* --- submit (fake) --- */
+function setBusy(form, on) {
+  busy = on;
+  const btn = form.querySelector('.submit');
+  btn.disabled = on;
+  btn.setAttribute('aria-busy', String(on));
+  const isLogin = form.id === 'form-login';
+  btn.innerHTML = on
+    ? `<span class="spinner" aria-hidden="true"></span><span class="label">${isLogin ? 'Signing in…' : 'Creating account…'}</span>`
+    : `<span class="label">${isLogin ? 'Sign in' : 'Create account'}</span>`;
+  setSceneBusy(on);
+}
+function showDone(title) {
+  Object.values(views).forEach((v) => { v.hidden = true; v.style.display = 'none'; });
+  document.querySelector('.tabs').hidden = true;
+  hideBanner();
+  $('done-title').textContent = title;
+  $('view-done').hidden = false;
+}
+
+function handleSubmit(form, ids, fake) {
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    if (busy) return;
+    hideBanner();
+    let firstBad = null;
+    for (const id of ids) {
+      const ok = fieldError(id, validators[id]($(id).value));
+      if (!ok && !firstBad) firstBad = $(id);
+    }
+    if (firstBad) { firstBad.focus(); shake(); return; }
+    setBusy(form, true);
+    setTimeout(() => {
+      const result = fake();
+      setBusy(form, false);
+      if (result.error) showBanner(result.error, 'req-demo-7f3a');
+      else showDone(result.title);
+    }, 1400);
+  });
+}
+handleSubmit($('form-login'), ['login-email', 'login-password'], () =>
+  $('login-password').value === 'fail' ? { error: 'Invalid email or password.' } : { title: "You're in." });
+handleSubmit($('form-register'), ['reg-name', 'reg-email', 'reg-password'], () =>
+  $('reg-email').value.trim().toLowerCase() === 'taken@example.com' ? { error: 'An account with this email already exists.' } : { title: 'Your workspace is ready.' });
+
+/* --- preview flags --- */
+setTab(params.get('tab') === 'register' ? 'register' : 'login');
+const preview = params.get('state');
+if (preview === 'error') showBanner(params.get('tab') === 'register' ? 'An account with this email already exists.' : 'Invalid email or password.', 'req-demo-7f3a');
+if (preview === 'loading') {
+  const form = $(params.get('tab') === 'register' ? 'form-register' : 'form-login');
+  setBusy(form, true);
+}
+if (preview === 'success') showDone(params.get('tab') === 'register' ? 'Your workspace is ready.' : "You're in.");
+</script>
+</body>
+</html>
