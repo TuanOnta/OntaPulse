@@ -14,7 +14,7 @@ const AuthPage = lazy(() =>
   import("@/pages/auth/auth-page").then(({ AuthPage: Page }) => ({ default: Page })),
 );
 const MonitorPage = lazy(() =>
-  import("@/pages/monitor-page").then(({ MonitorPage: Page }) => ({ default: Page })),
+  import("@/pages/monitor/monitor-page").then(({ MonitorPage: Page }) => ({ default: Page })),
 );
 const ProjectPage = lazy(() =>
   import("@/pages/project/project-page").then(({ ProjectPage: Page }) => ({ default: Page })),
