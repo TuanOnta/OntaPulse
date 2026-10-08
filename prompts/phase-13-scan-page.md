@@ -71,3 +71,34 @@ Typecheck, unit tests, coverage, Prettier, build, `git diff --check`; e2e update
 Screenshots against the prototype scenarios (ok, findings, failed, running, queued) at 1440 / 1024 / 768 /
 360 px. Manual: open a scan from the monitor page; run again and watch queued, running, result; failed target;
 MEMBER; the direct `/scans/:id` URL; reduced motion.
+
+## Result
+
+Implemented on `refactor/scan-page` (stacked on `refactor/monitor-page`, PR #6).
+
+- `entities/scan`: `scan-view.ts` (outcome, HTTP text and colour, meter, severity order and counts, durations,
+  timeline steps, finding copy with the API fallback) and `ScanOrb`. `features/scans`: `useScanDetail` (404
+  detection, 2 s polling, one result toast when the transition is seen here, restarts when the id changes) and
+  `useRunAgain`. `widgets/scan-detail` and `pages/scan` replace `pages/scan-page.tsx`; the nested and the direct
+  route share one widget, the direct route renders without a context.
+- Shared: `copyToClipboard` (also used by the monitor tiles now), `formatClockSeconds`, `formatFull`.
+- Decisions applied as written in section 3. The API's `recommendation` is not shown (the prototype has no
+  place for it); this is the one piece of information the old page had that the new one drops, to be decided in
+  the design chat. The prototype's `error.code` chip is omitted: the API has no code.
+- Prototype bug not copied: the timeline sits outside `.shero`, so its `--c` colour variable is undefined there
+  and the done steps and connector lines lose the result colour. The port sets the tone on a wrapper, so the
+  timeline follows the result colour (green, amber, red, blue), which is what the CSS was written to do.
+- `e2e/monitoring-flow.spec.ts`: the final assertions now look for the hero title and `HTTP 200 in 120 ms, no
+findings.`; not run, as agreed.
+
+Checks (`moon` not installed, Node 22.22.0): typecheck pass; 37 files / 221 tests pass (209 before; new tests for
+the view model, the polling hook and the page in both routes); coverage thresholds, build, Prettier and
+`git diff --check` pass (see the final run). Parity in headless Chromium with a mocked API and the prototype's
+five scenarios (reduced motion): share of pixels differing by more than 40/255 is 4.1 / 4.0 / 4.7 / 7.3 % for
+findings at 1440 / 1024 / 768 / 360 px, 3.9 % ok, 4.3 / 6.9 % failed (1440 / 360), 3.3 % running and 3.2 %
+queued. Differences seen: fonts (the prototype could not load Google Fonts offline), the timeline colours above,
+the prototype's orb caught mid-draw, and the rendered clock seconds. No horizontal scroll at 360 px.
+
+Not verified: a real scan lifecycle against the API and worker (queued, running, result on this page and "Run
+scan again"), the copy buttons in a real browser, the direct `/scans/:id` route in a browser (unit tests only),
+the MEMBER and ADMIN views in a browser, the meter and orb animation frames, real devices, `moon`, Node 24, e2e.
