@@ -3,6 +3,7 @@ import { useState } from "react";
 import { splitUrl, type MonitorsError } from "@/entities/monitor";
 import { canManageWorkspace, workspaceLook } from "@/entities/workspace";
 import { CreateMonitorDialog } from "@/features/monitors/create-monitor-dialog";
+import { ManageProject } from "@/features/projects/manage-project";
 import { useScanRuns } from "@/features/monitors/model/use-scan-runs";
 import type { Monitor, Project, Workspace } from "@/shared/types/domain";
 
@@ -13,6 +14,8 @@ import { ProjectHeader } from "./ui/project-header";
 export type ProjectDetailProps = {
   workspace: Workspace;
   project: Project;
+  onProjectRenamed: (project: Project) => void;
+  onProjectDeleted: (name: string) => void;
   monitors: {
     status: "loading" | "ready" | "error";
     monitors: Monitor[];
@@ -22,7 +25,13 @@ export type ProjectDetailProps = {
 };
 
 /** Project screen body: breadcrumb, header, monitor list with scan runs, and the add-monitor dialog. */
-export function ProjectDetail({ workspace, project, monitors }: ProjectDetailProps) {
+export function ProjectDetail({
+  workspace,
+  project,
+  onProjectRenamed,
+  onProjectDeleted,
+  monitors,
+}: ProjectDetailProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const { runs, start } = useScanRuns();
   const manage = canManageWorkspace(workspace.role);
@@ -39,6 +48,14 @@ export function ProjectDetail({ workspace, project, monitors }: ProjectDetailPro
         canManage={manage}
         createdAt={project.createdAt}
         description={project.description}
+        manage={
+          <ManageProject
+            onDeleted={onProjectDeleted}
+            onRenamed={onProjectRenamed}
+            project={project}
+            role={workspace.role}
+          />
+        }
         monitorCount={monitors.status === "ready" ? monitors.monitors.length : null}
         name={project.name}
         onAddMonitor={() => setDialogOpen(true)}

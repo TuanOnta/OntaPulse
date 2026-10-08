@@ -77,3 +77,41 @@ unit tests, coverage, Prettier, build, `git diff --check`. e2e is skipped until 
 the user asked. Manual: infra, API, worker, web; as OWNER rename and delete a project then a workspace; as
 ADMIN rename a workspace, see Delete disabled, delete a project; as MEMBER no menu; wrong typed name keeps the
 button disabled; API stopped gives an error toast.
+
+## Result
+
+Implemented on `refactor/rename-delete` (API in `78205cd`, web in the following commit).
+
+API: `PATCH` / `DELETE /api/workspaces/:workspaceId` (rename OWNER and ADMIN, delete OWNER only) and
+`PATCH` / `DELETE /api/projects/:projectId` (OWNER and ADMIN; an empty description clears it). No Prisma
+change: the existing `onDelete: Cascade` relations remove members, projects, monitors, scans, findings and
+outbox rows. `OperationsAuditLog` has no foreign key, so its rows stay. README endpoint tables, capability
+table and limitations were updated. New file `apps/api/test/manage-resources.test.ts` (12 tests: rename ok for
+OWNER / ADMIN, validation, 403 MEMBER, 404 stranger and unknown id, 401, delete with cascade counts, OWNER-only
+workspace delete, project delete only removes that project).
+
+Web: `ManageMenu` (Radix `DropdownMenu`, `modal={false}` so the dialogs can open from it), `RenameDialog` and
+`DeleteDialog` in `shared/ui`, `ManageWorkspace` / `ManageProject` features, `DeletedPanel`, a `dangerSolid`
+pill variant with a new `--color-landing-danger-ink` token, `renameWorkspace` / `deleteWorkspace` /
+`updateProject` / `deleteProject` in the client, `replaceWorkspace` / `removeWorkspace` / `replaceProject`
+in the hooks so a rename updates the page and the sidebar without a loading flash. The menu is shown to OWNER
+and ADMIN (workspace: Delete disabled with the reason for ADMIN) and hidden from MEMBER.
+
+Checks (`moon` not installed, Node 22.22.0, a throwaway local PostgreSQL 16 on port 5444 for the API tests):
+API typecheck pass, 12 files / 144 tests pass (132 before); the API coverage thresholds fail with and without
+this change (70.8 % lines before, 73 % after) because Redis, RabbitMQ and scheduler code is not exercised
+here; web typecheck pass, 31 files / 173 tests pass, Prettier pass for everything touched, build pass,
+`git diff --check` clean. e2e was not run, as agreed (it runs once at the end of the whole effort).
+
+Viewed in headless Chromium with a mocked API: the OWNER menu on the workspace and project pages (1440 and
+360 px), the rename dialog, the delete dialog with the disabled button, the "Workspace deleted" panel, the
+ADMIN menu with the disabled item and its reason, and that a rename changes the title, the breadcrumb and the
+sidebar. Not compared pixel by pixel against the prototype dialogs this time.
+
+Worker note (no change made): a scan job that was already queued, or a scan that was running, when its
+project or workspace is deleted is rejected by the worker ("scan and monitor do not match" / state conflict)
+and ends in the dead-letter queue. No data is affected; the queue just gets a few dead letters.
+
+Not verified: the API routes against the real stack (API with Redis and RabbitMQ, worker) and the web UI against
+the real API; real devices; `moon`, Node 24. The `window.matchMedia is not a function` message that appears in
+the web unit test output comes from the landing 3D scene test and also appears without these changes.

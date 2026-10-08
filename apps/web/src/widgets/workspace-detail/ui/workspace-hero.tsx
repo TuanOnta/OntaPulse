@@ -27,6 +27,8 @@ export type WorkspaceHeroProps = {
   canManage: boolean;
   onNewProject: () => void;
   onAddMember: () => void;
+  /** The "..." menu; only passed for roles that can manage the workspace. */
+  manage?: ReactNode;
 };
 
 /** Cover with the workspace waveform, avatar mark, name, meta line and the primary actions. */
@@ -41,6 +43,7 @@ export function WorkspaceHero({
   canManage,
   onNewProject,
   onAddMember,
+  manage,
 }: WorkspaceHeroProps) {
   const meta: ReactNode[] = [`Created ${formatDay(createdAt)}`];
   if (memberCount !== null) meta.push(pluralize(memberCount, "member"));
@@ -120,6 +123,7 @@ export function WorkspaceHero({
               <PlusIcon />
               New project
             </ActionButton>
+            {manage}
           </div>
         ) : (
           <div className="flex items-center gap-2.5 rounded-[14px] border border-landing-border bg-landing-bg/50 px-3.5 py-2.5 text-[15px] text-landing-muted">

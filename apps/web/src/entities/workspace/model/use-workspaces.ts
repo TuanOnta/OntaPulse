@@ -48,5 +48,27 @@ export function useWorkspaces() {
     setAttempt((value) => value + 1);
   }, []);
 
-  return { ...state, reload };
+  /** Swaps in a renamed workspace without showing the loading state again. */
+  const replaceWorkspace = useCallback((workspace: Workspace) => {
+    setState((current) =>
+      current.status === "ready"
+        ? {
+            ...current,
+            workspaces: current.workspaces.map((item) =>
+              item.id === workspace.id ? { ...item, ...workspace } : item,
+            ),
+          }
+        : current,
+    );
+  }, []);
+
+  const removeWorkspace = useCallback((workspaceId: string) => {
+    setState((current) =>
+      current.status === "ready"
+        ? { ...current, workspaces: current.workspaces.filter((item) => item.id !== workspaceId) }
+        : current,
+    );
+  }, []);
+
+  return { ...state, reload, replaceWorkspace, removeWorkspace };
 }

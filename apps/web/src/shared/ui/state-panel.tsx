@@ -1,4 +1,5 @@
-import { ActionButton } from "@/shared/ui/pill-button";
+import { ActionButton, ButtonLink } from "@/shared/ui/pill-button";
+import { StateArt } from "@/shared/ui/state-art";
 
 /** Dashed panel for empty, not-found and no-result states. */
 export const PANEL =
@@ -57,6 +58,30 @@ export function LoadErrorBanner({
       >
         Try again
       </ActionButton>
+    </div>
+  );
+}
+
+/** Shown in place of a page after its workspace or project was deleted. */
+export function DeletedPanel({
+  title,
+  text,
+  to,
+  label,
+}: {
+  title: string;
+  text: string;
+  to: string;
+  label: string;
+}) {
+  return (
+    <div className={PANEL}>
+      <StateArt />
+      <h2 className={PANEL_TITLE}>{title}</h2>
+      <p className={PANEL_TEXT}>{text}</p>
+      <div className="mt-2.5 flex flex-wrap justify-center gap-3">
+        <ButtonLink to={to}>{label}</ButtonLink>
+      </div>
     </div>
   );
 }

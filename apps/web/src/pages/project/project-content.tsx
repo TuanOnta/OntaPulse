@@ -1,8 +1,10 @@
+import { useState } from "react";
 import { useParams } from "react-router-dom";
 
 import { useMonitors } from "@/entities/monitor";
 import { useProjects } from "@/entities/project";
 import { useWorkspacesContext } from "@/entities/workspace";
+import { DeletedPanel } from "@/shared/ui/state-panel";
 import {
   LoadErrorBanner,
   ProjectDetail,
@@ -16,6 +18,18 @@ export function ProjectContent() {
   const workspaceList = useWorkspacesContext();
   const projects = useProjects(workspaceId);
   const monitors = useMonitors(projectId);
+  const [deletedName, setDeletedName] = useState<string | null>(null);
+
+  if (deletedName !== null) {
+    return (
+      <DeletedPanel
+        label="Back to workspace"
+        text={`“${deletedName}” and its monitors have been removed.`}
+        title="Project deleted"
+        to={`/workspaces/${workspaceId}`}
+      />
+    );
+  }
 
   if (workspaceList.status === "error" || projects.status === "error") {
     const failure = workspaceList.status === "error" ? workspaceList.error : projects.error;
@@ -46,6 +60,8 @@ export function ProjectContent() {
   return (
     <ProjectDetail
       monitors={{ ...monitors, status: monitors.status }}
+      onProjectDeleted={setDeletedName}
+      onProjectRenamed={projects.replaceProject}
       project={project}
       workspace={workspace}
     />

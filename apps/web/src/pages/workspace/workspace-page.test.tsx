@@ -171,4 +171,81 @@ describe("WorkspacePage", () => {
     await waitFor(() => expect(createProject).toHaveBeenCalledWith("w1", "New one", ""));
     await waitFor(() => expect(mocks.projects).toHaveBeenCalledTimes(2));
   });
+
+  describe("rename and delete", () => {
+    async function openMenu(user: ReturnType<typeof userEvent.setup>) {
+      const trigger = await main().findByRole("button", { name: "Workspace settings" });
+      trigger.focus();
+      await user.keyboard("{Enter}");
+    }
+
+    it("is available to OWNER with both items enabled", async () => {
+      const user = userEvent.setup();
+      renderPage();
+      await openMenu(user);
+      expect(await screen.findByRole("menuitem", { name: "Rename workspace" })).toBeVisible();
+      expect(screen.getByRole("menuitem", { name: "Delete workspace" })).not.toHaveAttribute(
+        "data-disabled",
+      );
+    });
+
+    it("shows Delete disabled with the reason for an ADMIN", async () => {
+      const user = userEvent.setup();
+      mocks.workspaces.mockResolvedValue([workspace("ADMIN")]);
+      renderPage();
+      await openMenu(user);
+      expect(await screen.findByRole("menuitem", { name: "Delete workspace" })).toHaveAttribute(
+        "data-disabled",
+      );
+      expect(screen.getByText("Only owners can delete a workspace.")).toBeVisible();
+    });
+
+    it("has no menu for a MEMBER", async () => {
+      mocks.workspaces.mockResolvedValue([workspace("MEMBER")]);
+      renderPage();
+      await main().findByText(/View-only access/);
+      expect(main().queryByRole("button", { name: "Workspace settings" })).not.toBeInTheDocument();
+    });
+
+    it("renames the workspace and updates the title", async () => {
+      const user = userEvent.setup();
+      const renameWorkspace = vi.fn().mockResolvedValue({ ...workspace("OWNER"), name: "Renamed" });
+      const { api } = await import("@/shared/api/client");
+      Object.assign(api, { renameWorkspace });
+      renderPage();
+      await openMenu(user);
+      await user.click(await screen.findByRole("menuitem", { name: "Rename workspace" }));
+      const dialog = await screen.findByRole("dialog");
+      await user.clear(within(dialog).getByLabelText("Name"));
+      await user.type(within(dialog).getByLabelText("Name"), "Renamed");
+      await user.click(within(dialog).getByRole("button", { name: "Save changes" }));
+      await waitFor(() => expect(renameWorkspace).toHaveBeenCalledWith("w1", "Renamed"));
+      expect(await main().findByRole("heading", { level: 1, name: "Renamed" })).toBeVisible();
+      expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    });
+
+    it("deletes after the name is typed and shows the deleted panel", async () => {
+      const user = userEvent.setup();
+      const deleteWorkspace = vi.fn().mockResolvedValue(undefined);
+      const { api } = await import("@/shared/api/client");
+      Object.assign(api, { deleteWorkspace });
+      renderPage();
+      await openMenu(user);
+      await user.click(await screen.findByRole("menuitem", { name: "Delete workspace" }));
+      const dialog = await screen.findByRole("dialog");
+      const confirm = within(dialog).getByRole("button", { name: "Delete workspace" });
+      expect(confirm).toBeDisabled();
+      await user.type(
+        within(dialog).getByLabelText(/Type the workspace name/),
+        "MrScraper Platform",
+      );
+      await user.click(confirm);
+      await waitFor(() => expect(deleteWorkspace).toHaveBeenCalledWith("w1"));
+      expect(await main().findByText("Workspace deleted")).toBeVisible();
+      expect(main().getByRole("link", { name: "Back to dashboard" })).toHaveAttribute(
+        "href",
+        "/dashboard",
+      );
+    });
+  });
 });

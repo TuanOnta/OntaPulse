@@ -1,3 +1,5 @@
+import type { ReactNode } from "react";
+
 import { TONE_VAR, type WorkspaceTone } from "@/entities/workspace";
 import { formatDay } from "@/shared/lib/format";
 import { riseStyle } from "@/shared/lib/rise";
@@ -24,6 +26,7 @@ export function ProjectHeader({
   monitorCount,
   canManage,
   onAddMonitor,
+  manage,
 }: {
   name: string;
   description?: string | null;
@@ -33,6 +36,8 @@ export function ProjectHeader({
   monitorCount: number | null;
   canManage: boolean;
   onAddMonitor: () => void;
+  /** The "..." menu; only passed for roles that can manage the project. */
+  manage?: ReactNode;
 }) {
   return (
     <header
@@ -65,13 +70,16 @@ export function ProjectHeader({
       </div>
       <div className="relative flex flex-wrap gap-2.5 max-[520px]:w-full">
         {canManage ? (
-          <ActionButton
-            className="max-[520px]:flex-[1_1_140px] max-[520px]:px-4 max-[520px]:whitespace-nowrap"
-            onClick={onAddMonitor}
-          >
-            <PlusIcon />
-            Add monitor
-          </ActionButton>
+          <>
+            <ActionButton
+              className="max-[520px]:flex-[1_1_140px] max-[520px]:px-4 max-[520px]:whitespace-nowrap"
+              onClick={onAddMonitor}
+            >
+              <PlusIcon />
+              Add monitor
+            </ActionButton>
+            {manage}
+          </>
         ) : (
           <div className="flex items-center gap-2.5 rounded-[14px] border border-landing-border bg-landing-bg/50 px-3.5 py-2.5 text-[15px] text-landing-muted">
             <LockIcon />

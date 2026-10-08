@@ -1,8 +1,10 @@
+import { useState } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 
 import { useAuth } from "@/app/providers/auth-provider";
 import { useProjects } from "@/entities/project";
 import { useWorkspaceMembers, useWorkspacesContext } from "@/entities/workspace";
+import { DeletedPanel } from "@/shared/ui/state-panel";
 import {
   LoadErrorBanner,
   WorkspaceDetail,
@@ -21,6 +23,7 @@ export function WorkspaceContent() {
   const projects = useProjects(workspaceId);
   const members = useWorkspaceMembers(workspaceId);
   const [params, setParams] = useSearchParams();
+  const [deletedName, setDeletedName] = useState<string | null>(null);
   const tab: WorkspaceTab = params.get(TAB_PARAM) === "members" ? "members" : "projects";
 
   function changeTab(next: WorkspaceTab) {
@@ -32,6 +35,17 @@ export function WorkspaceContent() {
         return updated;
       },
       { replace: true },
+    );
+  }
+
+  if (deletedName !== null) {
+    return (
+      <DeletedPanel
+        label="Back to dashboard"
+        text={`“${deletedName}” and everything in it has been removed.`}
+        title="Workspace deleted"
+        to="/dashboard"
+      />
     );
   }
 
@@ -59,6 +73,11 @@ export function WorkspaceContent() {
       currentUserId={user?.id}
       members={members}
       onTabChange={changeTab}
+      onWorkspaceDeleted={(name) => {
+        setDeletedName(name);
+        workspaceList.removeWorkspace(workspaceId);
+      }}
+      onWorkspaceRenamed={workspaceList.replaceWorkspace}
       projects={{ ...projects, status: projects.status }}
       tab={tab}
       workspace={workspace}

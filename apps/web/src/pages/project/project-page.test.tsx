@@ -190,4 +190,71 @@ describe("ProjectPage", () => {
     await waitFor(() => expect(createMonitor).toHaveBeenCalled());
     await waitFor(() => expect(mocks.monitors).toHaveBeenCalledTimes(2));
   });
+
+  describe("rename and delete", () => {
+    it("shows the menu to OWNER and ADMIN with Delete enabled, and hides it from MEMBER", async () => {
+      const user = userEvent.setup();
+      mocks.workspaces.mockResolvedValue([workspace("ADMIN")]);
+      const admin = renderPage();
+      (await main().findByRole("button", { name: "Project settings" })).focus();
+      await user.keyboard("{Enter}");
+      expect(await screen.findByRole("menuitem", { name: "Delete project" })).not.toHaveAttribute(
+        "data-disabled",
+      );
+      admin.unmount();
+
+      mocks.workspaces.mockResolvedValue([workspace("MEMBER")]);
+      renderPage();
+      await main().findByText(/View-only access/);
+      expect(main().queryByRole("button", { name: "Project settings" })).not.toBeInTheDocument();
+    });
+
+    it("renames the project and its description", async () => {
+      const user = userEvent.setup();
+      const updateProject = vi
+        .fn()
+        .mockResolvedValue({ ...project, name: "Core API v2", description: "Updated text" });
+      const { api } = await import("@/shared/api/client");
+      Object.assign(api, { updateProject });
+      renderPage();
+      (await main().findByRole("button", { name: "Project settings" })).focus();
+      await user.keyboard("{Enter}");
+      await user.click(await screen.findByRole("menuitem", { name: "Rename project" }));
+      const dialog = await screen.findByRole("dialog");
+      expect(within(dialog).getByLabelText("Name")).toHaveValue("Core API");
+      await user.clear(within(dialog).getByLabelText("Name"));
+      await user.type(within(dialog).getByLabelText("Name"), "Core API v2");
+      await user.clear(within(dialog).getByLabelText(/Description/));
+      await user.type(within(dialog).getByLabelText(/Description/), "Updated text");
+      await user.click(within(dialog).getByRole("button", { name: "Save changes" }));
+      await waitFor(() =>
+        expect(updateProject).toHaveBeenCalledWith("p1", {
+          name: "Core API v2",
+          description: "Updated text",
+        }),
+      );
+      expect(await main().findByRole("heading", { level: 1, name: "Core API v2" })).toBeVisible();
+      expect(main().getByText("Updated text")).toBeVisible();
+    });
+
+    it("deletes after the name is typed and offers the way back to the workspace", async () => {
+      const user = userEvent.setup();
+      const deleteProject = vi.fn().mockResolvedValue(undefined);
+      const { api } = await import("@/shared/api/client");
+      Object.assign(api, { deleteProject });
+      renderPage();
+      (await main().findByRole("button", { name: "Project settings" })).focus();
+      await user.keyboard("{Enter}");
+      await user.click(await screen.findByRole("menuitem", { name: "Delete project" }));
+      const dialog = await screen.findByRole("dialog");
+      await user.type(within(dialog).getByLabelText(/Type the project name/), "Core API");
+      await user.click(within(dialog).getByRole("button", { name: "Delete project" }));
+      await waitFor(() => expect(deleteProject).toHaveBeenCalledWith("p1"));
+      expect(await main().findByText("Project deleted")).toBeVisible();
+      expect(main().getByRole("link", { name: "Back to workspace" })).toHaveAttribute(
+        "href",
+        "/workspaces/w1",
+      );
+    });
+  });
 });

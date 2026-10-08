@@ -52,5 +52,17 @@ export function useProjects(workspaceId: string) {
     setAttempt((value) => value + 1);
   }, []);
 
-  return { ...state, reload };
+  /** Swaps in an edited project without showing the loading state again. */
+  const replaceProject = useCallback((project: Project) => {
+    setState((current) =>
+      current.status === "ready"
+        ? {
+            ...current,
+            projects: current.projects.map((item) => (item.id === project.id ? project : item)),
+          }
+        : current,
+    );
+  }, []);
+
+  return { ...state, reload, replaceProject };
 }

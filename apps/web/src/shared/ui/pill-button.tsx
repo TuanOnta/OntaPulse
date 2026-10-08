@@ -12,6 +12,8 @@ const VARIANT = {
     "border border-landing-border-strong bg-transparent text-landing-text hover:bg-landing-surface",
   danger:
     "border border-landing-danger/40 bg-transparent text-landing-danger-text hover:bg-landing-danger/10",
+  dangerSolid:
+    "bg-landing-danger text-landing-danger-ink hover:shadow-[0_0_0_4px_rgb(255_122_107/0.18)] disabled:bg-landing-danger/25 disabled:text-white/50 disabled:opacity-100 disabled:shadow-none",
 } as const;
 
 export const SMALL_PILL = "min-h-10 px-4 text-[14px]";

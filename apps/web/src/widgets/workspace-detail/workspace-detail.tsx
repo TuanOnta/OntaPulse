@@ -3,6 +3,7 @@ import { useMemo, useState } from "react";
 import type { ProjectsError } from "@/entities/project";
 import { canManageWorkspace, workspaceLook, type MembersError } from "@/entities/workspace";
 import { CreateProjectDialog } from "@/features/projects/create-project-dialog";
+import { ManageWorkspace } from "@/features/workspaces/manage-workspace";
 import { MembersPane } from "@/features/workspaces/members-pane";
 import type { Project, Workspace, WorkspaceMember } from "@/shared/types/domain";
 
@@ -16,6 +17,8 @@ export type WorkspaceDetailProps = {
   currentUserId?: string;
   tab: WorkspaceTab;
   onTabChange: (tab: WorkspaceTab) => void;
+  onWorkspaceRenamed: (workspace: Workspace) => void;
+  onWorkspaceDeleted: (name: string) => void;
   projects: {
     status: "loading" | "ready" | "error";
     projects: Project[];
@@ -39,6 +42,8 @@ export function WorkspaceDetail({
   currentUserId,
   tab,
   onTabChange,
+  onWorkspaceRenamed,
+  onWorkspaceDeleted,
   projects,
   members,
 }: WorkspaceDetailProps) {
@@ -60,6 +65,13 @@ export function WorkspaceDetail({
         createdAt={workspace.createdAt}
         memberCount={members.status === "ready" ? members.members.length : null}
         name={workspace.name}
+        manage={
+          <ManageWorkspace
+            onDeleted={onWorkspaceDeleted}
+            onRenamed={onWorkspaceRenamed}
+            workspace={workspace}
+          />
+        }
         onAddMember={addMember}
         onNewProject={() => setProjectDialogOpen(true)}
         projectCount={projects.status === "ready" ? projects.projects.length : null}
