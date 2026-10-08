@@ -187,3 +187,50 @@ no "pixel-perfect" claim. Screenshots stay out of the repo.
 
 A live API/worker run, real devices, `moon` / Node 24, and pixel parity for the animated (non-reduced)
 frames.
+
+## Result
+
+Executed on `refactor/dashboard-page`.
+
+Implemented per the file plan, with these changes from the prompt:
+
+- **One workspace request instead of two.** `AppShell` now wraps its children in a `WorkspacesProvider`
+  (`entities/workspace`), and the dashboard reads the list through `useWorkspacesContext()`. The sidebar
+  and the page share the same data, and "Try again" refreshes both (with two independent requests the
+  sidebar kept saying "Unavailable." after a successful retry; a test covers the fix). The dashboard body
+  is therefore a child component (`pages/dashboard/dashboard-content.tsx`) rendered inside `AppShell`.
+- **No `?state=` / `?motion=` preview flags.** Every state is reachable by mocking the API, which is
+  how the parity check was done; nothing dev-only was added to the page. Reduced motion follows the real
+  `prefers-reduced-motion` query.
+- **Error banner shows the API message too.** The title is fixed as in the prototype; under it the API
+  `message` and the `Request ID` each get a line (the prototype has only the request id line), so the
+  banner is 17 px taller than the prototype's. The generic message (non-API errors) is "Check your
+  connection and try again."
+- No new design tokens were needed (`landing-*` set from the earlier phases was enough). New motion
+  keyframes (`dash-*`) are in `globals.css`.
+- `SignalField` / `BorderBeam` (`shared/ui/signal-field.tsx`) are no longer imported anywhere; the file was
+  left in place (known-debt rule). `BlurFade` is unchanged.
+
+Checks (pnpm from `apps/web`; `moon` not installed, Node 22.22.0): typecheck pass; 19 files / 84 tests
+pass; coverage thresholds pass (38.9 / 34.9 / 51.5 / 39.2); Prettier on `src`, `e2e`, `package.json` pass;
+`pnpm build` pass; `git diff --check` clean; e2e `monitoring-flow` passes through the sandbox Chromium with
+a temporary config (it now clicks the card named "Open workspace <name>"). In the build graph the 3D
+chunk is imported only by the landing-scene chunk; the dashboard chunk (4.9 KB gzip) and the app-shell
+chunk (4.1 KB gzip) contain no 3D reference.
+
+Parity (headless Chromium, reduced motion in both, prototype served with local fonts, port with a mocked
+API using the prototype's four workspaces and user), 1440 / 1024 / 768 / 360 px:
+
+- Main-column height and total page height are identical for full, loading and empty at every width;
+  error differs only by the extra banner line above.
+- Share of pixels differing by more than 40/255: full 0.00 %, admin filter 0.00 %, mobile drawer open
+  0.00 %, loading 0.00-0.08 %, empty 0.07-0.19 %, "no results" 0.03-0.08 %, error 0.33-0.85 % (banner
+  line). Two spacing issues found by the first comparison were fixed (gap inside the workspace list,
+  line-height of the e-mail line).
+- Also viewed: full dashboard at 1440 and the workspace page inside the new shell (content unchanged,
+  it keeps its old card styling next to the new sidebar).
+
+Not verified: the animated frames (count-up, drift, beam, card lift, spotlight were only checked for
+absence of errors), a live API and worker run, real devices, `moon` / Node 24, and the other
+authenticated pages beyond the e2e path and one screenshot of the workspace page (their own prototypes
+do not exist yet, so their old styling now sits inside the new shell).
