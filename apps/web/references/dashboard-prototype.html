@@ -229,6 +229,63 @@ h1 { font-size: clamp(32px, 4vw, 46px); line-height: 1.08; letter-spacing: -.02e
 .card.create strong { font: 700 19px var(--font-display); color: var(--text); }
 .card.create span { font-size: 15px; color: var(--muted); }
 
+
+/* ---------- Workspace card v2 (generative banner) ---------- */
+@property --angle { syntax: '<angle>'; inherits: false; initial-value: 0deg; }
+.grid { perspective: 1200px; }
+.card {
+  --t: 124,196,255; --rx: 0deg; --ry: 0deg;
+  padding: 0; gap: 0; min-height: 0;
+  transform: rotateX(var(--rx)) rotateY(var(--ry));
+  transform-style: preserve-3d;
+  transition: transform .25s ease-out, border-color .3s, box-shadow .35s;
+}
+.card.tone-1 { --t: 232,241,236; }
+.card.tone-2 { --t: 255,180,84; }
+.card.tone-3 { --t: 94,242,160; }
+.card:hover { transform: translateY(-4px) rotateX(var(--rx)) rotateY(var(--ry)); border-color: rgba(var(--t), .35); box-shadow: 0 28px 56px -26px rgba(0,0,0,.85), 0 0 40px -14px rgba(var(--t), .35); }
+.card::after {
+  content: ''; position: absolute; inset: 0; border-radius: inherit; padding: 1px; pointer-events: none; opacity: 0; transition: opacity .35s;
+  background: conic-gradient(from var(--angle), transparent 0 62%, rgba(var(--t), .95) 80%, transparent 96%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor;
+          mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
+  animation: spin-angle 4s linear infinite;
+}
+.card:hover::after { opacity: 1; }
+@keyframes spin-angle { to { --angle: 360deg; } }
+
+.cover {
+  position: relative; height: 104px; overflow: hidden; border-bottom: 1px solid var(--border);
+  background:
+    radial-gradient(120% 140% at 15% 0%, rgba(var(--t), .20), transparent 60%),
+    linear-gradient(180deg, rgba(var(--t), .06), transparent);
+}
+.cover::before {
+  content: ''; position: absolute; inset: 0;
+  background-image: radial-gradient(rgba(var(--t), .28) 1px, transparent 1.2px); background-size: 14px 14px;
+  -webkit-mask-image: linear-gradient(180deg, #000, transparent 85%); mask-image: linear-gradient(180deg, #000, transparent 85%);
+  transition: background-position .8s ease-out;
+}
+.card:hover .cover::before { background-position: 14px 7px; }
+.cover svg { position: absolute; left: 0; right: 0; bottom: 0; width: 100%; height: 72px; display: block; }
+.cover .fill { fill: url(#none); }
+.cover .wave { fill: none; stroke: rgba(var(--t), .75); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+.cover .glow { fill: none; stroke: rgb(var(--t)); stroke-width: 2.4; stroke-linecap: round; vector-effect: non-scaling-stroke; stroke-dasharray: 60 1000; stroke-dashoffset: 60; animation: wave-travel 5s linear infinite; filter: drop-shadow(0 0 5px rgb(var(--t))); animation-delay: var(--d, 0s); }
+.card:hover .cover .glow { animation-duration: 2.2s; }
+@keyframes wave-travel { to { stroke-dashoffset: -1000; } }
+.cover .role { position: absolute; top: 14px; right: 14px; z-index: 1; display: inline-flex; align-items: center; gap: 6px; background: rgba(10,14,13,.6); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+.cover .role svg { position: static; width: 12px; height: 12px; }
+.body { position: relative; display: flex; flex-direction: column; gap: 14px; padding: 0 22px 20px; flex: 1; }
+.body .mark { margin-top: -26px; width: 52px; height: 52px; border-radius: 16px; background: linear-gradient(145deg, rgba(var(--t), .22), var(--bg-2)); border: 1px solid rgba(var(--t), .45); box-shadow: 0 10px 24px -10px rgba(0,0,0,.8), inset 0 1px 0 rgba(255,255,255,.08); transform: translateZ(24px); transition: transform .35s cubic-bezier(.2,.8,.2,1); }
+.card:hover .body .mark { transform: translateZ(24px) scale(1.06) rotate(-3deg); }
+.card-foot { padding-top: 14px; border-top: 1px solid var(--border); }
+.card-meta { display: flex; align-items: center; gap: 8px; }
+.card-meta .dot { width: 3px; height: 3px; border-radius: 50%; background: var(--border-strong); }
+.card.create { min-height: 260px; }
+.card.create::after { display: none; }
+@media (prefers-reduced-motion: reduce) { .card { transform: none !important; } }
+html.reduce-motion .card { transform: none !important; }
+
 /* entrance */
 .rise { animation: rise .6s cubic-bezier(.2,.8,.2,1) both; animation-delay: calc(var(--i, 0) * 60ms); }
 @keyframes rise { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
@@ -448,11 +505,38 @@ html.reduce-motion *, html.reduce-motion *::before, html.reduce-motion *::after 
     }).join('');
   }
 
+  /* deterministic hash -> tone + waveform, so each workspace keeps its own look */
+  function hash(str) { var h = 2166136261; for (var i = 0; i < str.length; i++) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; }
+  function rng(seed) { var a = seed; return function () { a |= 0; a = a + 0x6D2B79F5 | 0; var t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+  function wavePath(seed) {
+    var r = rng(seed), pts = [], n = 14, x;
+    for (var i = 0; i <= n; i++) { x = i / n * 400; pts.push([x, 36 + (r() - .5) * 46 * (i % 4 === 2 ? 1.5 : .8)]); }
+    var d = 'M' + pts[0][0] + ' ' + pts[0][1].toFixed(1);
+    for (var j = 1; j < pts.length; j++) {
+      var cx = (pts[j - 1][0] + pts[j][0]) / 2;
+      d += ' C' + cx + ' ' + pts[j - 1][1].toFixed(1) + ' ' + cx + ' ' + pts[j][1].toFixed(1) + ' ' + pts[j][0] + ' ' + pts[j][1].toFixed(1);
+    }
+    return d;
+  }
+  var ROLE_ICON = {
+    OWNER: '<svg viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M1.5 9 L1 3.5 L4 6 L6 2.5 L8 6 L11 3.5 L10.5 9 Z" stroke="currentColor" stroke-width="1.1" stroke-linejoin="round"/></svg>',
+    ADMIN: '<svg viewBox="0 0 12 12" fill="none" aria-hidden="true"><path d="M6 1.2 L10.2 2.8 V6 C10.2 8.4 8.4 10 6 10.8 C3.6 10 1.8 8.4 1.8 6 V2.8 Z" stroke="currentColor" stroke-width="1.1" stroke-linejoin="round"/></svg>',
+    MEMBER: '<svg viewBox="0 0 12 12" fill="none" aria-hidden="true"><circle cx="6" cy="4" r="2.1" stroke="currentColor" stroke-width="1.1"/><path d="M2 10.4 C2.5 8.4 4 7.6 6 7.6 S9.5 8.4 10 10.4" stroke="currentColor" stroke-width="1.1" stroke-linecap="round"/></svg>'
+  };
+  function ago(iso) {
+    var days = Math.max(0, Math.floor((Date.now() - new Date(iso).getTime()) / 86400000));
+    if (days < 1) return 'today'; if (days < 30) return days + 'd ago';
+    var m = Math.floor(days / 30); if (m < 12) return m + ' mo ago';
+    return Math.floor(m / 12) + ' yr ago';
+  }
   function card(w, i) {
-    return '<article class="card rise" style="--i:' + (i + 4) + '">' +
-      '<div class="card-top"><div class="mark" aria-hidden="true">' + esc(initials(w.name) || 'W') + '</div><span class="role ' + w.role.toLowerCase() + '">' + w.role + '</span></div>' +
-      '<div><h3>' + esc(w.name) + '</h3><p class="card-meta">Created ' + fmtDate(w.createdAt) + '</p></div>' +
-      '<div class="card-foot"><span>Open workspace</span><span class="arrow" aria-hidden="true">→</span></div>' +
+    var h = hash(w.id + w.name), tone = h % 4, d = wavePath(h), delay = -((h % 50) / 10);
+    return '<article class="card tone-' + tone + ' rise" style="--i:' + (i + 4) + '">' +
+      '<div class="cover" aria-hidden="true"><span class="role ' + w.role.toLowerCase() + '">' + ROLE_ICON[w.role] + w.role + '</span>' +
+      '<svg viewBox="0 0 400 72" preserveAspectRatio="none"><path class="wave" d="' + d + '"/><path class="glow" style="--d:' + delay + 's" d="' + d + '"/></svg></div>' +
+      '<div class="body"><div class="mark" aria-hidden="true">' + esc(initials(w.name) || 'W') + '</div>' +
+      '<div><h3>' + esc(w.name) + '</h3><p class="card-meta"><span>Created ' + fmtDate(w.createdAt) + '</span><span class="dot"></span><span>' + ago(w.createdAt) + '</span></p></div>' +
+      '<div class="card-foot"><span>Open workspace <span class="sr-only">(' + w.role.toLowerCase() + ')</span></span><span class="arrow" aria-hidden="true">→</span></div></div>' +
       '<a class="stretch" href="#" aria-label="Open workspace ' + esc(w.name) + '"></a></article>';
   }
   var CREATE = function (i) {
@@ -481,7 +565,10 @@ html.reduce-motion *, html.reduce-motion *::before, html.reduce-motion *::after 
         var r = c.getBoundingClientRect();
         c.style.setProperty('--mx', (e.clientX - r.left) + 'px');
         c.style.setProperty('--my', (e.clientY - r.top) + 'px');
+        c.style.setProperty('--ry', (((e.clientX - r.left) / r.width - .5) * 6).toFixed(2) + 'deg');
+        c.style.setProperty('--rx', ((.5 - (e.clientY - r.top) / r.height) * 5).toFixed(2) + 'deg');
       });
+      c.addEventListener('pointerleave', function () { c.style.setProperty('--rx', '0deg'); c.style.setProperty('--ry', '0deg'); });
     });
   }
 
