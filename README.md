@@ -696,7 +696,6 @@ The web client provides the following routes, with application routes protected 
 | -------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
 | `/`                                                                              | Landing page, login, and registration; authenticated users are redirected to the dashboard |
 | `/dashboard`                                                                     | Overview of the user's workspaces                                                          |
-| `/workspaces/new`                                                                | Creates a workspace                                                                        |
 | `/workspaces/:workspaceId`                                                       | Workspace details, projects, and members                                                   |
 | `/workspaces/:workspaceId/projects/:projectId`                                   | Project details and monitors                                                               |
 | `/workspaces/:workspaceId/projects/:projectId/monitors/:monitorId`               | Monitor details and scan history                                                           |

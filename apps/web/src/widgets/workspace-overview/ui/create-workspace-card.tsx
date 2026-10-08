@@ -1,5 +1,4 @@
-import { Link } from "react-router-dom";
-
+import { useNewWorkspace } from "@/features/workspaces/new-workspace-context";
 import { resetTilt, trackSpotlight } from "@/shared/lib/pointer-spotlight";
 
 import { PlusIcon } from "./buttons";
@@ -9,6 +8,7 @@ import { cn } from "cn";
 
 /** Dashed "Create workspace" card, shown at the end of the grid when nothing is filtered. */
 export function CreateWorkspaceCard({ index }: { index: number }) {
+  const { openNewWorkspace } = useNewWorkspace();
   return (
     <article
       className={cn(
@@ -26,10 +26,11 @@ export function CreateWorkspaceCard({ index }: { index: number }) {
         Create workspace
       </strong>
       <span className="text-[15px] text-landing-muted">Invite teammates and start monitoring.</span>
-      <Link
+      <button
         aria-label="Create a new workspace"
-        className={STRETCH_LINK_CLASS}
-        to="/workspaces/new"
+        className={cn(STRETCH_LINK_CLASS, "cursor-pointer")}
+        onClick={openNewWorkspace}
+        type="button"
       />
     </article>
   );

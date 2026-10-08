@@ -6,11 +6,22 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ApiError } from "@/shared/api/client";
 import type { Workspace } from "@/shared/types/domain";
 
-const mocks = vi.hoisted(() => ({ workspaces: vi.fn(), logout: vi.fn() }));
+const mocks = vi.hoisted(() => ({
+  workspaces: vi.fn(),
+  createWorkspace: vi.fn(),
+  logout: vi.fn(),
+}));
 
 vi.mock("@/shared/api/client", async (importOriginal) => {
   const original = await importOriginal<typeof import("@/shared/api/client")>();
-  return { ...original, api: { ...original.api, workspaces: mocks.workspaces } };
+  return {
+    ...original,
+    api: {
+      ...original.api,
+      workspaces: mocks.workspaces,
+      createWorkspace: mocks.createWorkspace,
+    },
+  };
 });
 vi.mock("@/app/providers/auth-provider", () => ({
   useAuth: () => ({
@@ -87,10 +98,7 @@ describe("DashboardPage", () => {
     const card = main().getByRole("link", { name: "Open workspace MrScraper Platform" });
     expect(card).toHaveAttribute("href", "/workspaces/w1");
     expect(main().getAllByRole("article")).toHaveLength(5); // 4 workspaces + the create card
-    expect(main().getByRole("link", { name: "Create a new workspace" })).toHaveAttribute(
-      "href",
-      "/workspaces/new",
-    );
+    expect(main().getByRole("button", { name: "Create a new workspace" })).toBeVisible();
 
     expect(main().getByLabelText("Workspaces: 4")).toBeInTheDocument();
     expect(main().getByLabelText("You own: 2")).toBeInTheDocument();
@@ -166,10 +174,8 @@ describe("DashboardPage", () => {
     expect(
       await main().findByRole("heading", { name: "Create your first workspace" }),
     ).toBeVisible();
-    expect(main().getByRole("link", { name: "Create workspace" })).toHaveAttribute(
-      "href",
-      "/workspaces/new",
-    );
+    expect(main().getByLabelText("Workspace name")).toBeVisible();
+    expect(main().getByRole("button", { name: "Create workspace" })).toBeVisible();
     expect(main().queryByRole("searchbox")).not.toBeInTheDocument();
     expect(screen.getByText("No workspaces yet.")).toBeInTheDocument();
   });
@@ -212,5 +218,45 @@ describe("DashboardPage", () => {
     await user.click(screen.getByRole("button", { name: "Sign out" }));
     await waitFor(() => expect(screen.getByTestId("where")).toHaveTextContent("/"));
     expect(mocks.logout).toHaveBeenCalledTimes(1);
+  });
+
+  describe("creating a workspace", () => {
+    it.each([
+      ["the header button", () => main().getByRole("button", { name: "New workspace" })],
+      ["the create card", () => main().getByRole("button", { name: "Create a new workspace" })],
+      [
+        "the sidebar",
+        () =>
+          within(screen.getByRole("complementary", { name: "Primary" })).getByRole("button", {
+            name: "New workspace",
+          }),
+      ],
+    ])(
+      "opens the dialog from %s and opens the new workspace on success",
+      async (_name, trigger) => {
+        const user = userEvent.setup();
+        mocks.workspaces.mockResolvedValue(LIST);
+        mocks.createWorkspace.mockResolvedValue({ id: "w9", name: "Acme" });
+        renderDashboard();
+        await screen.findByRole("heading", { name: "Welcome back, Dzaki" });
+        await user.click(trigger());
+        const dialog = await screen.findByRole("dialog", { name: "New workspace" });
+        await user.type(within(dialog).getByLabelText("Workspace name"), "  Acme ");
+        await user.click(within(dialog).getByRole("button", { name: "Create workspace" }));
+        await waitFor(() => expect(mocks.createWorkspace).toHaveBeenCalledWith("Acme"));
+        expect(await screen.findByTestId("where")).toHaveTextContent("/workspaces/w9");
+      },
+    );
+
+    it("creates the first workspace from the inline form", async () => {
+      const user = userEvent.setup();
+      mocks.workspaces.mockResolvedValue([]);
+      mocks.createWorkspace.mockResolvedValue({ id: "w1", name: "First" });
+      renderDashboard();
+      await user.type(await main().findByLabelText("Workspace name"), "First");
+      await user.click(main().getByRole("button", { name: "Create workspace" }));
+      await waitFor(() => expect(mocks.createWorkspace).toHaveBeenCalledWith("First"));
+      expect(await screen.findByTestId("where")).toHaveTextContent("/workspaces/w1");
+    });
   });
 });

@@ -5,10 +5,13 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { AppShellFrame } from "./app-shell-frame";
 
+const onNewWorkspace = vi.fn();
+
 function renderFrame(path = "/dashboard") {
   return render(
     <MemoryRouter initialEntries={[path]}>
       <AppShellFrame
+        onNewWorkspace={onNewWorkspace}
         onSignOut={vi.fn()}
         user={{ name: "Dzaki Arta", email: "dzaki@example.com" }}
         workspaces={{
@@ -31,6 +34,7 @@ function renderFrame(path = "/dashboard") {
 }
 
 beforeEach(() => {
+  onNewWorkspace.mockReset();
   vi.stubGlobal("matchMedia", (query: string) => ({
     matches: false,
     media: query,
@@ -43,7 +47,7 @@ describe("AppShellFrame", () => {
   it("marks the current page and offers a skip link to the content", () => {
     renderFrame("/dashboard");
     expect(screen.getByRole("link", { name: "Dashboard" })).toHaveAttribute("aria-current", "page");
-    expect(screen.getByRole("link", { name: "New workspace" })).not.toHaveAttribute("aria-current");
+    expect(screen.getByRole("button", { name: "New workspace" })).toBeVisible();
     expect(screen.getByRole("link", { name: "Skip to content" })).toHaveAttribute(
       "href",
       "#content",
@@ -88,5 +92,12 @@ describe("AppShellFrame", () => {
     await user.click(menu);
     await user.click(screen.getByTestId("drawer-scrim"));
     expect(menu).toHaveAttribute("aria-expanded", "false");
+  });
+
+  it("opens the new workspace dialog from the sidebar", async () => {
+    const user = userEvent.setup();
+    renderFrame();
+    await user.click(screen.getByRole("button", { name: "New workspace" }));
+    expect(onNewWorkspace).toHaveBeenCalledOnce();
   });
 });
