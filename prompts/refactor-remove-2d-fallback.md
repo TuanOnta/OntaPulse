@@ -70,3 +70,29 @@ pages; with `?webgl=off` and with context loss no orb and no console errors; lay
 2. Add `?webgl=off` (dev): content only, no orb, no errors.
 3. In DevTools console run `document.querySelector("canvas").getContext("webgl2").getExtension("WEBGL_lose_context").loseContext()`: the orb disappears, the page keeps working.
 4. 360 px and reduced motion: unchanged apart from the missing SVG.
+
+## Result
+
+Executed on `feat/auth-page`.
+
+- Deleted `widgets/landing-scene/ui/scene-fallback.tsx`; removed the `SceneFallback` export, the
+  `fallbackSide` prop and the `ready` state from `LandingScene` (it now holds no React state). Both pages
+  use `Suspense fallback={null}`. `git grep -i scenefallback -- src` finds nothing; the only remaining
+  `scene-fallback` string is a test assertion that the test id no longer exists.
+- `AGENTS.md`: section 9 no-WebGL bullet, section 15 no-WebGL step, and phase 2/3 table wording updated;
+  Prettier re-aligned the tables (10 lines changed in total).
+- Landing test now checks the canvas is `aria-hidden` / `tabindex=-1`, and that no `scene-fallback`
+  element and no 2D orb SVG are rendered.
+
+Checks (pnpm from `apps/web`; `moon` not installed, Node 22.22.0): typecheck pass; 13 files / 55 tests
+pass; coverage thresholds pass (31.0 / 27.3 / 38.9 / 31.4); Prettier pass; `pnpm build` pass (3D chunk
+126.95 KB gzip, unchanged); `git diff --check` clean; e2e `monitoring-flow` passes (sandbox Chromium,
+temporary config).
+
+Browser (dev server, software GL): `/`, `/login`, `/register` at 1440 and 360 px have one canvas, no
+`svg circle[r=262]` at 120 ms or later, no horizontal scroll, no console errors. `?webgl=off` on the
+landing and the auth page leaves all content visible with the canvas never drawn. After
+`WEBGL_lose_context` the canvas opacity becomes 0 and the login form stays usable.
+
+Not verified: the pixel parity comparison against the prototypes was not repeated (the orb area now
+differs by design before the first frame); real-GPU behavior of the fade-in; `moon`/Node 24.

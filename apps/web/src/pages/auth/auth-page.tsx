@@ -8,7 +8,6 @@ import {
   AUTH_KEYFRAMES,
   AUTH_PROGRESS,
   LandingScene,
-  SceneFallback,
   createProgressBus,
   readDevFlags,
 } from "@/widgets/landing-scene";
@@ -75,8 +74,8 @@ export function AuthPage() {
 
   return (
     <div className="relative min-h-[100svh] overflow-x-clip bg-landing-bg font-landing-body text-[17px] leading-normal text-landing-text [&_a:focus-visible]:outline-landing-text [&_a:focus-visible]:outline-offset-[3px]">
-      <Suspense fallback={<SceneFallback ready={false} side="left" />}>
-        <LandingScene fallbackSide="left" keyframes={AUTH_KEYFRAMES} progress={progress} />
+      <Suspense fallback={null}>
+        <LandingScene keyframes={AUTH_KEYFRAMES} progress={progress} />
       </Suspense>
 
       <div className="relative z-[1] flex min-h-[100svh] flex-col">
