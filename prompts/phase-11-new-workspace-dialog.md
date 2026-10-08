@@ -67,3 +67,30 @@ Typecheck, unit tests, coverage, Prettier, build, `git diff --check`; e2e is ski
 1440 and 360 px. Manual: dashboard header button, sidebar link (also on mobile drawer), dashed card, empty
 account (inline form), empty / 121-character name, API down, success redirects to the new workspace, old URL
 `/workspaces/new` now shows the not-found / fallback route.
+
+## Result
+
+Implemented on `refactor/workspace-create-dialog`.
+
+- `features/workspaces`: `useCreateWorkspace` (validation, `POST /api/workspaces`, toast, navigate),
+  `NewWorkspaceDialog` (Radix dialog, bottom sheet below 640 px), `NewWorkspaceProvider` / `useNewWorkspace`
+  (one dialog for every trigger), `FirstWorkspaceForm` (inline form of the empty dashboard, 120-character
+  limit).
+- Triggers: sidebar "New workspace" (now a button; it closes the mobile drawer first), dashboard header
+  button, the dashed create card, and the empty state. `AppShell` mounts the provider, so every signed-in page
+  can open the dialog.
+- Removed: the `/workspaces/new` route (unknown URLs fall through to the existing `*` route, which redirects to
+  `/`), `pages/workspace-create-page.tsx`, `create-workspace-form.tsx` and its test, the README route row.
+- Card tone left as gold / blue / white by decision; the prototype's new map (owner white, member grey) was not
+  followed.
+- Shared dialog overlay changed to the prototype scrim (65 % black plus a 4 px blur), which applies to every
+  dialog in the app.
+
+Checks (`moon` not installed, Node 22.22.0): typecheck pass; 31 files / 185 tests pass (173 before); coverage
+thresholds pass; Prettier pass for everything touched; build pass; `git diff --check` clean. e2e not run, as
+agreed. Viewed in headless Chromium with a mocked API against the prototype at 1440 and 360 px: the dialog, the
+bottom sheet and the empty state match in layout, copy and spacing; differences are the fonts (the prototype
+could not load Google Fonts offline) and that the prototype's empty-state art is mid-animation.
+
+Not verified: the real API (creating a workspace and landing on its page), the sidebar trigger inside the open
+mobile drawer in a browser, the error state of the dialog in a browser (unit tests only), real devices.

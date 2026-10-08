@@ -1,6 +1,8 @@
 import type { WorkspacesError } from "@/entities/workspace";
 
-import { ActionButton, ButtonLink, PlusIcon } from "./buttons";
+import { FirstWorkspaceForm } from "@/features/workspaces/first-workspace-form";
+
+import { ActionButton } from "./buttons";
 import { riseStyle } from "./rise";
 import { StateArt } from "./state-art";
 
@@ -19,12 +21,7 @@ export function OverviewEmpty() {
         A workspace holds your projects, monitors and teammates. Add a target and OntaPulse starts
         checking it.
       </p>
-      <div className="mt-2.5 flex flex-wrap justify-center gap-3">
-        <ButtonLink to="/workspaces/new">
-          <PlusIcon size={22} stroke={1.8} />
-          Create workspace
-        </ButtonLink>
-      </div>
+      <FirstWorkspaceForm />
     </div>
   );
 }

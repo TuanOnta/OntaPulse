@@ -3,12 +3,14 @@ import { Link, useNavigate } from "react-router-dom";
 
 import { useAuth } from "@/app/providers/auth-provider";
 import { WorkspacesProvider, useWorkspacesContext } from "@/entities/workspace";
+import { NewWorkspaceProvider, useNewWorkspace } from "@/features/workspaces/new-workspace-context";
 import { AppShellFrame } from "@/widgets/app-shell";
 
 function ShellFrame({ children }: { children: React.ReactNode }) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const { status, workspaces } = useWorkspacesContext();
+  const { openNewWorkspace } = useNewWorkspace();
 
   async function handleSignOut() {
     await logout();
@@ -16,7 +18,12 @@ function ShellFrame({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <AppShellFrame onSignOut={handleSignOut} user={user} workspaces={{ status, workspaces }}>
+    <AppShellFrame
+      onNewWorkspace={openNewWorkspace}
+      onSignOut={handleSignOut}
+      user={user}
+      workspaces={{ status, workspaces }}
+    >
       {children}
     </AppShellFrame>
   );
@@ -29,7 +36,9 @@ function ShellFrame({ children }: { children: React.ReactNode }) {
 export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <WorkspacesProvider>
-      <ShellFrame>{children}</ShellFrame>
+      <NewWorkspaceProvider>
+        <ShellFrame>{children}</ShellFrame>
+      </NewWorkspaceProvider>
     </WorkspacesProvider>
   );
 }

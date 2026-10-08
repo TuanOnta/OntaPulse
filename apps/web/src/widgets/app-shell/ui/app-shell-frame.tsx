@@ -12,6 +12,7 @@ type Props = {
   user: ShellUser | null;
   workspaces: ShellWorkspaces;
   onSignOut: () => void;
+  onNewWorkspace: () => void;
   children: ReactNode;
 };
 
@@ -19,7 +20,7 @@ type Props = {
  * Frame shared by every signed-in screen: ambient background, sidebar (drawer on narrow screens),
  * mobile top bar and the content column. Data and sign-out come in through props.
  */
-export function AppShellFrame({ user, workspaces, onSignOut, children }: Props) {
+export function AppShellFrame({ user, workspaces, onSignOut, onNewWorkspace, children }: Props) {
   const { open, openDrawer, closeDrawer, sidebarRef, menuButtonRef } = useDrawer();
 
   return (
@@ -34,6 +35,10 @@ export function AppShellFrame({ user, workspaces, onSignOut, children }: Props) 
       <div className="relative z-[1] grid min-h-[100svh] grid-cols-[264px_minmax(0,1fr)] max-[959px]:grid-cols-[minmax(0,1fr)]">
         <Sidebar
           id={SIDEBAR_ID}
+          onNewWorkspace={() => {
+            closeDrawer(false);
+            onNewWorkspace();
+          }}
           onSignOut={onSignOut}
           open={open}
           ref={sidebarRef}

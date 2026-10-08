@@ -25,11 +25,6 @@ const ScanPage = lazy(() =>
 const WorkspacePage = lazy(() =>
   import("@/pages/workspace/workspace-page").then(({ WorkspacePage: Page }) => ({ default: Page })),
 );
-const WorkspaceCreatePage = lazy(() =>
-  import("@/pages/workspace-create-page").then(({ WorkspaceCreatePage: Page }) => ({
-    default: Page,
-  })),
-);
 
 function RouteLoading() {
   return (
@@ -70,14 +65,6 @@ export function AppRouter() {
               element={
                 <Protected>
                   <DashboardPage />
-                </Protected>
-              }
-            />
-            <Route
-              path="/workspaces/new"
-              element={
-                <Protected>
-                  <WorkspaceCreatePage />
                 </Protected>
               }
             />

@@ -48,11 +48,12 @@ type Props = {
   user: ShellUser | null;
   workspaces: ShellWorkspaces;
   onSignOut: () => void;
+  onNewWorkspace: () => void;
 };
 
 /** Primary navigation: persistent column on desktop, slide-in drawer below 960 px. */
 export const Sidebar = forwardRef<HTMLElement, Props>(function Sidebar(
-  { open, id, user, workspaces, onSignOut },
+  { open, id, user, workspaces, onSignOut, onNewWorkspace },
   ref,
 ) {
   return (
@@ -119,7 +120,11 @@ export const Sidebar = forwardRef<HTMLElement, Props>(function Sidebar(
           </svg>
           Dashboard
         </NavLink>
-        <NavLink className={NAV_LINK} to="/workspaces/new">
+        <button
+          className={cn(NAV_LINK, "w-full cursor-pointer text-left")}
+          onClick={onNewWorkspace}
+          type="button"
+        >
           <svg
             aria-hidden="true"
             className="flex-none opacity-85"
@@ -136,7 +141,7 @@ export const Sidebar = forwardRef<HTMLElement, Props>(function Sidebar(
             />
           </svg>
           New workspace
-        </NavLink>
+        </button>
       </nav>
 
       <section aria-labelledby={`${id}-workspaces`} className="flex min-h-0 flex-1 flex-col gap-1">

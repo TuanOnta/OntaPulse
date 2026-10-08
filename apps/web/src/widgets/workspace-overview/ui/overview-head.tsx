@@ -1,8 +1,11 @@
-import { ButtonLink, PlusIcon } from "./buttons";
+import { useNewWorkspace } from "@/features/workspaces/new-workspace-context";
+
+import { ActionButton, PlusIcon } from "./buttons";
 import { riseStyle } from "./rise";
 
 /** Eyebrow with the pulsing live dot, greeting, subtitle and the "New workspace" button. */
 export function OverviewHead({ firstName }: { firstName: string }) {
+  const { openNewWorkspace } = useNewWorkspace();
   return (
     <header
       className="flex animate-dash-rise flex-wrap items-end justify-between gap-5 motion-reduce:animate-none"
@@ -23,10 +26,10 @@ export function OverviewHead({ firstName }: { firstName: string }) {
           Your workspaces. Open one to manage its projects, monitors and members.
         </p>
       </div>
-      <ButtonLink className="max-[520px]:w-full" to="/workspaces/new">
+      <ActionButton className="max-[520px]:w-full" onClick={openNewWorkspace}>
         <PlusIcon />
         New workspace
-      </ButtonLink>
+      </ActionButton>
     </header>
   );
 }
