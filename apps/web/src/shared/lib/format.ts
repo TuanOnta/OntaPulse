@@ -31,3 +31,26 @@ export function formatClock(value: string | null | undefined) {
       }).format(new Date(value))
     : "—";
 }
+
+/** Time of day with seconds as a 24-hour clock, for example "14:05:09". */
+export function formatClockSeconds(value: string | null | undefined) {
+  return value
+    ? new Intl.DateTimeFormat(undefined, {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: false,
+      }).format(new Date(value))
+    : "—";
+}
+
+/** Date and time with seconds in the user's locale, for example "Oct 8, 2026, 21:07:09". */
+export function formatFull(value: string | null | undefined) {
+  return value
+    ? new Intl.DateTimeFormat(undefined, {
+        dateStyle: "medium",
+        timeStyle: "medium",
+        hour12: false,
+      }).format(new Date(value))
+    : "—";
+}

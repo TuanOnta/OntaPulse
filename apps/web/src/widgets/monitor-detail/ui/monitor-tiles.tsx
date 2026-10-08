@@ -1,6 +1,5 @@
-import { toast } from "sonner";
-
 import { humanInterval } from "@/entities/monitor";
+import { copyToClipboard } from "@/shared/lib/copy-to-clipboard";
 import { formatDay } from "@/shared/lib/format";
 import { riseStyle } from "@/shared/lib/rise";
 
@@ -22,15 +21,6 @@ const KEY =
   "font-mono text-[12px] leading-[normal] font-medium tracking-[.08em] text-landing-muted uppercase";
 const VALUE = "mt-1.5 truncate text-[18px] leading-[normal] font-semibold text-landing-text";
 const SUB = "mt-0.5 text-[14px] text-landing-muted";
-
-async function copyText(text: string) {
-  try {
-    await navigator.clipboard.writeText(text);
-    toast.success("Target URL copied.");
-  } catch {
-    toast.error("Could not copy the URL. Select it and copy it manually.");
-  }
-}
 
 /** Target (with copy), interval, request type and the date the monitor was added. */
 export function MonitorTiles({
@@ -61,7 +51,7 @@ export function MonitorTiles({
         <button
           aria-label="Copy target URL"
           className="absolute top-2.5 right-2.5 grid size-9 cursor-pointer place-items-center rounded-[10px] border border-transparent text-landing-muted transition-[background-color,color,border-color] duration-200 hover:border-landing-border hover:bg-landing-surface-2 hover:text-landing-text motion-reduce:transition-none"
-          onClick={() => void copyText(targetUrl)}
+          onClick={() => void copyToClipboard(targetUrl, "Target URL copied.")}
           type="button"
         >
           <CopyIcon />

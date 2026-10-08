@@ -121,8 +121,8 @@ test("registers, creates a monitor, triggers a scan, and views its result", asyn
 
   await page.getByRole("button", { name: "Run scan" }).click();
   await page.getByRole("link", { name: /^Open scan from/ }).click();
-  await expect(page.getByRole("heading", { name: "Run scan-1" })).toBeVisible();
-  await expect(page.getByText("120 ms")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Target responded normally" })).toBeVisible();
+  await expect(page.getByText("HTTP 200 in 120 ms, no findings.")).toBeVisible();
   await expect(page.getByText("No findings")).toBeVisible();
   expect(pageErrors).toEqual([]);
 });
