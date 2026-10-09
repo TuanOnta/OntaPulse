@@ -103,7 +103,7 @@ route -> controller -> service -> repository -> Prisma/PostgreSQL
 The worker uses feature-first boundaries based on a hexagonal architecture:
 
 ```text
-domain <- application ports/services <- inbound & outbound adapters
+domain <- application (ports, lifecycle) <- adapters
 ```
 
 See [docs/architecture.md](docs/architecture.md) for component boundaries, resource ownership, composition roots, and data flow.

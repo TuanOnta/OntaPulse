@@ -3,7 +3,7 @@ from pathlib import Path
 import pytest
 from pydantic import ValidationError
 
-from ontapulse_worker.platform.config.settings import (
+from ontapulse_worker.platform.config import (
     REPOSITORY_ROOT,
     WORKER_ROOT,
     Settings,

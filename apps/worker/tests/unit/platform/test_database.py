@@ -3,9 +3,9 @@ from unittest.mock import Mock
 from sqlalchemy import Engine, create_engine
 from sqlalchemy.orm import Session
 
-from ontapulse_worker.platform.config.settings import Settings
-from ontapulse_worker.platform.database import sqlalchemy as connection
-from ontapulse_worker.platform.database.sqlalchemy import (
+from ontapulse_worker.platform import database as connection
+from ontapulse_worker.platform.config import Settings
+from ontapulse_worker.platform.database import (
     create_database_engine,
     create_session_factory,
     sqlalchemy_database_url,

@@ -16,19 +16,19 @@ from dotenv import dotenv_values
 from sqlalchemy import text
 
 from ontapulse_worker.entrypoints.worker import WorkerShutdown, run_worker
-from ontapulse_worker.modules.scans.adapters.inbound.rabbitmq.consumer import RabbitMqScanConsumer
-from ontapulse_worker.modules.scans.adapters.outbound.http.http_scan_executor import (
+from ontapulse_worker.modules.scans.adapters import sqlalchemy_scan_repository
+from ontapulse_worker.modules.scans.adapters.http.http_scan_executor import (
     HttpScanExecutor,
 )
-from ontapulse_worker.modules.scans.adapters.outbound.persistence import sqlalchemy_scan_repository
-from ontapulse_worker.modules.scans.application.services.scan_lifecycle import ScanLifecycleService
+from ontapulse_worker.modules.scans.adapters.rabbitmq.consumer import RabbitMqScanConsumer
+from ontapulse_worker.modules.scans.application.scan_lifecycle import ScanLifecycleService
 from ontapulse_worker.modules.scans.domain.models import ScanJob
-from ontapulse_worker.platform.config.settings import REPOSITORY_ROOT, Settings
-from ontapulse_worker.platform.database.sqlalchemy import (
+from ontapulse_worker.platform.config import REPOSITORY_ROOT, Settings
+from ontapulse_worker.platform.database import (
     create_database_engine,
     create_session_factory,
 )
-from ontapulse_worker.platform.messaging.rabbitmq import create_connection
+from ontapulse_worker.platform.messaging import create_connection
 
 pytestmark = pytest.mark.integration
 

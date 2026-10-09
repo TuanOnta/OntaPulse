@@ -1,4 +1,4 @@
-from ontapulse_worker.platform.resilience.backoff import ExponentialBackoff
+from ontapulse_worker.platform.resilience import ExponentialBackoff
 
 
 def test_backoff_increases_until_maximum() -> None:

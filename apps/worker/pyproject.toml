@@ -16,7 +16,7 @@ dependencies = [
 ]
 
 [project.scripts]
-ontapulse-worker-check = "ontapulse_worker.entrypoints.commands.database_check:main"
+ontapulse-worker-check = "ontapulse_worker.entrypoints.database_check:main"
 
 [dependency-groups]
 dev = [
