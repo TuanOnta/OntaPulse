@@ -2,14 +2,14 @@
 
 from sqlalchemy import Engine
 
-from ontapulse_worker.modules.scans.adapters.inbound.rabbitmq.consumer import RabbitMqScanConsumer
-from ontapulse_worker.modules.scans.adapters.outbound.http.http_scan_executor import (
+from ontapulse_worker.modules.scans.adapters import sqlalchemy_scan_repository
+from ontapulse_worker.modules.scans.adapters.http.http_scan_executor import (
     HttpScanExecutor,
 )
-from ontapulse_worker.modules.scans.adapters.outbound.persistence import sqlalchemy_scan_repository
-from ontapulse_worker.modules.scans.application.services.scan_lifecycle import ScanLifecycleService
-from ontapulse_worker.platform.config.settings import Settings
-from ontapulse_worker.platform.database.sqlalchemy import (
+from ontapulse_worker.modules.scans.adapters.rabbitmq.consumer import RabbitMqScanConsumer
+from ontapulse_worker.modules.scans.application.scan_lifecycle import ScanLifecycleService
+from ontapulse_worker.platform.config import Settings
+from ontapulse_worker.platform.database import (
     check_database,
     create_database_engine,
     create_session_factory,

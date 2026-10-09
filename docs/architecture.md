@@ -133,8 +133,8 @@ Authenticated API resources are isolated by workspace membership. `OWNER` and `A
 ## Worker module boundaries
 
 Worker features live under `ontapulse_worker/modules/<feature>`. The scan module owns
-its domain models and errors, application ports and lifecycle service, and inbound
-RabbitMQ and outbound HTTP/SQLAlchemy adapters. Adapters depend on application/domain;
+its domain models and errors, application ports and lifecycle service, and
+RabbitMQ, HTTP, and SQLAlchemy adapters. Adapters depend on application/domain;
 the domain does not import HTTPX, Pika, or SQLAlchemy.
 
 `platform` provides shared settings, connection factories, and logging without scan
@@ -149,13 +149,13 @@ modules/scans/domain
 modules/scans/application
   Lifecycle orchestration and dependency ports
 
-modules/scans/adapters/inbound
+modules/scans/adapters/rabbitmq
   RabbitMQ contract, topology, retry, and consumer
 
-modules/scans/adapters/outbound/http
+modules/scans/adapters/http
   HTTP execution and URL security
 
-modules/scans/adapters/outbound/persistence
+modules/scans/adapters/sqlalchemy_scan_repository.py
   SQLAlchemy Scan and finding persistence
 
 platform

@@ -3,7 +3,7 @@ from uuid import UUID
 
 import pytest
 
-from ontapulse_worker.modules.scans.application.services.scan_lifecycle import ScanLifecycleService
+from ontapulse_worker.modules.scans.application.scan_lifecycle import ScanLifecycleService
 from ontapulse_worker.modules.scans.domain.errors import ScanExecutionError
 from ontapulse_worker.modules.scans.domain.models import ClaimedScan, ScanJob, ScanResult
 

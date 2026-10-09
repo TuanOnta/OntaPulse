@@ -1,6 +1,6 @@
 from pika.exceptions import AMQPConnectionError, ChannelClosedByBroker, ConnectionClosedByBroker
 
-from ontapulse_worker.platform.resilience.errors import is_retryable_connection_error
+from ontapulse_worker.platform.resilience import is_retryable_connection_error
 
 
 def test_connection_errors_are_retryable() -> None:

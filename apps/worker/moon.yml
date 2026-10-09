@@ -2,7 +2,7 @@ language: python
 
 tasks:
   check-db:
-    command: "uv run --locked --no-sync python -m ontapulse_worker.entrypoints.commands.database_check"
+    command: "uv run --locked --no-sync python -m ontapulse_worker.entrypoints.database_check"
     deps:
       - "worker:sync"
     options:

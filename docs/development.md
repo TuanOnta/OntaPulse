@@ -230,41 +230,28 @@ ontapulse_worker/
         policies.py
 
       application/
-        ports/
-          scan_executor.py
-          scan_repository.py
-        services/
-          scan_lifecycle.py
+        ports.py
+        scan_lifecycle.py
 
       adapters/
-        inbound/
-          rabbitmq/
-            contract.py
-            topology.py
-            retry.py
-            consumer.py
+        rabbitmq/
+          contract.py
+          topology.py
+          retry.py
+          consumer.py
 
-        outbound/
-          http/
-            http_scan_executor.py
-            url_security.py
+        http/
+          http_scan_executor.py
+          url_security.py
 
-          persistence/
-            sqlalchemy_scan_repository.py
+        sqlalchemy_scan_repository.py
 
   platform/
-    config/
-      settings.py
-
-    database/
-      sqlalchemy.py
-
-    observability/
-      logging.py
-
-    resilience/
-      backoff.py
-      errors.py
+    config.py
+    database.py
+    logging.py
+    messaging.py
+    resilience.py
 ```
 
 Responsibilities:
@@ -636,11 +623,7 @@ Use the following structure when the feature requires all layers:
 <feature>/
   domain/
   application/
-    ports/
-    services/
   adapters/
-    inbound/
-    outbound/
 ```
 
 Do not create empty layers only to satisfy the directory structure.
@@ -653,11 +636,11 @@ Examples:
 | ------------------------ | ------------------------------------- |
 | Feature domain model     | `modules/<feature>/domain`            |
 | Feature use case         | `modules/<feature>/application`       |
-| RabbitMQ consumer        | `modules/<feature>/adapters/inbound`  |
-| HTTP or database adapter | `modules/<feature>/adapters/outbound` |
-| Environment settings     | `platform/config`                     |
-| Logging setup            | `platform/observability`              |
-| Connection resilience    | `platform/resilience`                 |
+| RabbitMQ consumer        | `modules/<feature>/adapters/rabbitmq` |
+| HTTP or database adapter | `modules/<feature>/adapters`          |
+| Environment settings     | `platform/config.py`                  |
+| Logging setup            | `platform/logging.py`                 |
+| Connection resilience    | `platform/resilience.py`              |
 | Dependency composition   | `bootstrap`                           |
 | Executable process       | `entrypoints`                         |
 

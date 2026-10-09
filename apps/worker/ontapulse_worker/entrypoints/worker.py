@@ -6,11 +6,10 @@ from threading import Event
 from types import FrameType
 
 from ontapulse_worker.bootstrap.container import Container
-from ontapulse_worker.modules.scans.adapters.inbound.rabbitmq.consumer import RabbitMqScanConsumer
-from ontapulse_worker.platform.config.settings import load_settings
-from ontapulse_worker.platform.observability.logging import configure_logging
-from ontapulse_worker.platform.resilience.backoff import ExponentialBackoff
-from ontapulse_worker.platform.resilience.errors import is_retryable_connection_error
+from ontapulse_worker.modules.scans.adapters.rabbitmq.consumer import RabbitMqScanConsumer
+from ontapulse_worker.platform.config import load_settings
+from ontapulse_worker.platform.logging import configure_logging
+from ontapulse_worker.platform.resilience import ExponentialBackoff, is_retryable_connection_error
 
 logger = logging.getLogger(__name__)
 
