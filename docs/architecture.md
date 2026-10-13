@@ -32,7 +32,19 @@ The Python worker is active and implements:
 - structured logging;
 - unit and RabbitMQ integration tests.
 
-Session-based authentication and workspace authorization are implemented. The web client is the next implementation milestone.
+Session-based authentication and workspace authorization are implemented. The web client implements auth, workspaces, projects, monitors, and scans.
+
+### Planned: security features
+
+Three capability areas are designed in [security-checks.md](security-checks.md) and are built in phases on top of
+the existing monitors. None of them is implemented yet.
+
+- Web security posture (`SECURITY_POSTURE`): headers, cookies, CORS, HTTP to HTTPS redirect, TLS and certificate,
+  opt-in exposed-file probes.
+- Domain and DNS watch (`DNS_WATCH`): record changes against a baseline, dangling CNAME, SPF, DKIM, DMARC.
+- Edge detection: WAF, CDN, and anti-bot vendor profile, derived from data the two scan kinds already collect.
+
+All checks are passive. The existing `HTTP_PROBE` behavior and contract do not change.
 
 ## Domain model
 
@@ -49,6 +61,19 @@ Project
 - A ScanFinding records an issue discovered during a scan.
 
 Refer to `apps/api/prisma/schema.prisma` for exact fields, enums, relations, indexes, and deletion behavior.
+
+### Planned additions (additive)
+
+| Concept                    | Purpose                                                                                 |
+| -------------------------- | --------------------------------------------------------------------------------------- |
+| Scan kind                  | `HTTP_PROBE` (default), `SECURITY_POSTURE`, `DNS_WATCH`, stored on the Scan row         |
+| Finding fields             | Stable `checkId`, category, optional confidence, bounded sanitized evidence             |
+| Observation (edge profile) | Non-finding result: detected WAF, CDN, anti-bot vendors, confidence, supporting signals |
+| DNS baseline               | Latest normalized record snapshot per monitored host plus a bounded change history      |
+| Monitor check settings     | Enabled scan kinds; path-probe opt-in with acknowledging user and time                  |
+
+Existing rows keep working: new columns are nullable or defaulted, and enums are extended, never renamed.
+Names are final only once they appear in `schema.prisma`.
 
 ## Scan flow
 
@@ -86,6 +111,10 @@ cannot duplicate the same scheduled occurrence; a temporary broker outage leaves
 the outbox event pending instead of failing the Scan. Each non-empty scheduler cycle
 emits the structured `Scan scheduler run completed` event with `dueMonitorCount`,
 `scheduledCount`, and `durationMs` for log-derived metrics.
+
+The scheduler and the manual trigger create a Scan with its kind (default `HTTP_PROBE`). Security and DNS scan
+kinds use their own minimum interval from the catalog, not the 60 second `HTTP_PROBE` floor. How the scheduler
+selects kinds is decided in the recurring-runs phase after inspecting the scheduler code.
 
 RabbitMQ delivery is at-least-once. The worker must therefore treat `scanId` as an idempotency key and avoid processing a completed scan twice.
 
@@ -170,6 +199,33 @@ entrypoints
 
 Domain and application code do not import Pika, HTTPX, SQLAlchemy, or process
 configuration. Concrete dependencies are assembled in the bootstrap layer.
+
+### Planned: check families and dispatch
+
+The lifecycle module dispatches by scan kind through a registry built in `bootstrap`. Each check family keeps the
+same domain, application, adapters split:
+
+```text
+modules/http_probe         existing check (behavior unchanged)
+modules/security_posture   headers, cookies, CORS, redirect, TLS, path probes
+modules/dns_watch          baseline, diff, dangling CNAME, SPF, DKIM, DMARC
+modules/edge_detection     WAF, CDN, anti-bot evaluator (pure, no I/O of its own)
+```
+
+New external dependencies get a port first (`HttpClient`, `TlsInspector`, `DnsResolver`); tests use fakes. Pure
+evaluators take plain data and an injected clock. A check family never touches the broker or claims scans.
+The worker never imports API code and never runs Prisma; schema changes originate in the API migration.
+
+### Planned: security data flow
+
+```text
+web -> API (auth, role check, create Scan with kind + outbox in one tx) -> RabbitMQ
+    -> worker (claim scan, read kind from the row, run check, persist) -> PostgreSQL
+web <- API (reads scans, findings, observations, DNS baseline, edge profile)
+```
+
+The UI displays stored data only. The API decides authorization by workspace role: `OWNER` and `ADMIN` enable
+checks, enable path probes (with an acknowledgment), and trigger security and DNS scans; every member reads results.
 
 ## Validation and errors
 

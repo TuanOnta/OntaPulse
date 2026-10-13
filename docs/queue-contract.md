@@ -62,6 +62,10 @@ Both fields are required UUID strings. `messageId` must equal `scanId`, `content
 
 The producer also sets UTF-8 content encoding and a publication timestamp. Consumers must not depend on the timestamp for business ordering or idempotency.
 
+The payload does not change when security features are added. The scan kind (`HTTP_PROBE`, `SECURITY_POSTURE`,
+`DNS_WATCH`) is stored on the Scan row and the worker reads it from PostgreSQL after loading the Scan. A kind the
+worker does not know is a permanent error and goes to `scan.jobs.dead`. See [security-checks.md](security-checks.md).
+
 Do not copy Monitor configuration into the message. The worker loads current data from PostgreSQL using the identifiers, preventing stale configuration from becoming authoritative.
 
 ## Producer responsibility
@@ -87,6 +91,20 @@ Scan creation also creates a `ScanOutboxEvent` in the same PostgreSQL transactio
 6. Save Scan fields and findings in a database transaction.
 7. Set `SUCCEEDED` or `FAILED` and `finishedAt`.
 8. ACK only after the database transaction succeeds.
+
+### Security and DNS scans
+
+Applies to `SECURITY_POSTURE` and `DNS_WATCH` (planned; `HTTP_PROBE` is unchanged). The consumer steps above stay
+the same, with these additions:
+
+- After loading the Scan, the worker reads its kind and dispatches to the matching check family.
+- Each sub-check records `ran` or `skipped` with a reason. One failing sub-check does not fail the Scan.
+- Conditions caused by the target (invalid certificate, no HTTPS, missing headers, NXDOMAIN on a CNAME target)
+  are findings and the Scan is `SUCCEEDED`. The Scan is `FAILED` only when the check could not run at all:
+  non-public target, base connection timeout, or DNS failure for the monitor host.
+- Findings, observations, the DNS baseline update, and the terminal status are written in one transaction. A
+  duplicate delivery of a terminal Scan writes no second set of findings and no second DNS baseline.
+- Retry rules, topology, and the `x-scan-retry-count` header are unchanged.
 
 ## Delivery and failure rules
 
