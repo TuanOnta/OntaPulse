@@ -18,12 +18,17 @@ from ontapulse_worker.modules.scans.domain.models import (
     ClaimedScan,
     ScanFinding,
     ScanJob,
+    ScanKind,
     ScanResult,
 )
 
+# Evidence of catalog findings is bounded (docs/security-checks.md section 5). HTTP_PROBE
+# findings have no check ID and keep their evidence unchanged.
+MAX_EVIDENCE_BYTES = 4096
+
 LOAD_SCAN_FOR_UPDATE = text(
     """
-    SELECT scan.id, scan.status, monitor."targetUrl"
+    SELECT scan.id, scan.status, scan.kind, monitor."targetUrl"
     FROM "Scan" AS scan
     INNER JOIN "Monitor" AS monitor ON monitor.id = scan."monitorId"
     WHERE scan.id = :scan_id AND scan."monitorId" = :monitor_id
@@ -68,6 +73,9 @@ INSERT_SCAN_FINDING = text(
         id,
         "scanId",
         code,
+        "checkId",
+        category,
+        confidence,
         title,
         severity,
         description,
@@ -79,6 +87,9 @@ INSERT_SCAN_FINDING = text(
         :id,
         :scan_id,
         :code,
+        :check_id,
+        CAST(:category AS "FindingCategory"),
+        CAST(:confidence AS "FindingConfidence"),
         :title,
         :severity,
         :description,
@@ -138,7 +149,11 @@ class SqlAlchemyScanRepository:
             )
             self._require_changed_row(result.rowcount)
 
-            return ClaimedScan(scan_id=job.scan_id, target_url=str(row["targetUrl"]))
+            return ClaimedScan(
+                scan_id=job.scan_id,
+                target_url=str(row["targetUrl"]),
+                kind=str(row.get("kind") or ScanKind.HTTP_PROBE.value),
+            )
 
     def succeed(self, scan_id: UUID, result: ScanResult) -> None:
         finished_at = self._clock()
@@ -192,12 +207,15 @@ class SqlAlchemyScanRepository:
         finding: ScanFinding,
         created_at: datetime,
     ) -> dict[str, object]:
-        evidence = json.dumps(finding.evidence) if finding.evidence is not None else None
+        evidence = SqlAlchemyScanRepository._serialize_evidence(finding)
 
         return {
             "id": uuid4(),
             "scan_id": scan_id,
             "code": finding.code,
+            "check_id": finding.check_id,
+            "category": finding.category.value if finding.category else None,
+            "confidence": finding.confidence.value if finding.confidence else None,
             "title": finding.title,
             "severity": finding.severity.value,
             "description": finding.description,
@@ -205,3 +223,15 @@ class SqlAlchemyScanRepository:
             "evidence": evidence,
             "created_at": created_at,
         }
+
+    @staticmethod
+    def _serialize_evidence(finding: ScanFinding) -> str | None:
+        if finding.evidence is None:
+            return None
+
+        serialized = json.dumps(finding.evidence)
+
+        if finding.check_id is not None and len(serialized.encode()) > MAX_EVIDENCE_BYTES:
+            return json.dumps({"truncated": True})
+
+        return serialized

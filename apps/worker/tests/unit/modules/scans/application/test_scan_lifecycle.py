@@ -4,8 +4,16 @@ from uuid import UUID
 import pytest
 
 from ontapulse_worker.modules.scans.application.scan_lifecycle import ScanLifecycleService
-from ontapulse_worker.modules.scans.domain.errors import ScanExecutionError
-from ontapulse_worker.modules.scans.domain.models import ClaimedScan, ScanJob, ScanResult
+from ontapulse_worker.modules.scans.domain.errors import (
+    PermanentScanJobError,
+    ScanExecutionError,
+)
+from ontapulse_worker.modules.scans.domain.models import (
+    ClaimedScan,
+    ScanJob,
+    ScanKind,
+    ScanResult,
+)
 
 SCAN_ID = UUID("f7ad663f-bde8-4dc9-8281-5594d6c73c28")
 MONITOR_ID = UUID("3edca2bb-c92c-4ac8-a5ed-75630416f604")
@@ -91,3 +99,46 @@ def test_scan_events_contain_ids_and_result_without_target_payload(caplog):
         assert "example.com" not in record.message
     assert caplog.records[-1].status_code == 200
     assert caplog.records[-1].response_time_ms == 12
+
+
+def test_scan_without_a_kind_runs_as_http_probe() -> None:
+    assert CLAIMED_SCAN.kind == "HTTP_PROBE"
+
+
+def test_registered_kind_is_dispatched_to_its_own_executor() -> None:
+    repository = Mock()
+    repository.claim.return_value = ClaimedScan(
+        scan_id=SCAN_ID,
+        target_url="https://example.com",
+        kind=ScanKind.SECURITY_POSTURE.value,
+    )
+    http_executor = Mock()
+    posture_executor = Mock()
+    result = ScanResult(status_code=200, response_time_ms=10)
+    posture_executor.execute.return_value = result
+
+    ScanLifecycleService(
+        repository,
+        http_executor,
+        executors={ScanKind.SECURITY_POSTURE: posture_executor},
+    ).handle(JOB)
+
+    http_executor.execute.assert_not_called()
+    posture_executor.execute.assert_called_once_with("https://example.com")
+    repository.succeed.assert_called_once()
+
+
+@pytest.mark.parametrize("kind", ["SECURITY_POSTURE", "DNS_WATCH", "SOMETHING_NEW"])
+def test_unregistered_kind_fails_the_scan_and_is_dead_lettered(kind: str) -> None:
+    repository = Mock()
+    repository.claim.return_value = ClaimedScan(
+        scan_id=SCAN_ID, target_url="https://example.com", kind=kind
+    )
+    executor = Mock()
+
+    with pytest.raises(PermanentScanJobError):
+        ScanLifecycleService(repository, executor).handle(JOB)
+
+    executor.execute.assert_not_called()
+    repository.fail.assert_called_once_with(SCAN_ID, "Unsupported scan kind.")
+    repository.succeed.assert_not_called()

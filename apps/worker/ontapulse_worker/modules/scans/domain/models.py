@@ -12,10 +12,18 @@ class ScanJob(BaseModel):
     monitor_id: UUID = Field(alias="monitorId")
 
 
+class ScanKind(StrEnum):
+    HTTP_PROBE = "HTTP_PROBE"
+    SECURITY_POSTURE = "SECURITY_POSTURE"
+    DNS_WATCH = "DNS_WATCH"
+
+
 @dataclass(frozen=True)
 class ClaimedScan:
     scan_id: UUID
     target_url: str
+    # Kept as text: a kind added by a newer API must not crash an older worker's claim.
+    kind: str = ScanKind.HTTP_PROBE.value
 
 
 class FindingSeverity(StrEnum):
@@ -23,6 +31,23 @@ class FindingSeverity(StrEnum):
     MEDIUM = "MEDIUM"
     HIGH = "HIGH"
     CRITICAL = "CRITICAL"
+
+
+class FindingCategory(StrEnum):
+    HEADERS = "HEADERS"
+    COOKIES = "COOKIES"
+    CORS = "CORS"
+    REDIRECT = "REDIRECT"
+    TLS = "TLS"
+    EXPOSED_FILES = "EXPOSED_FILES"
+    DNS = "DNS"
+    EMAIL_AUTH = "EMAIL_AUTH"
+
+
+class FindingConfidence(StrEnum):
+    LOW = "LOW"
+    MEDIUM = "MEDIUM"
+    HIGH = "HIGH"
 
 
 @dataclass(frozen=True)
@@ -33,6 +58,9 @@ class ScanFinding:
     description: str
     recommendation: str | None = None
     evidence: dict[str, object] | None = None
+    check_id: str | None = None
+    category: FindingCategory | None = None
+    confidence: FindingConfidence | None = None
 
 
 @dataclass(frozen=True)

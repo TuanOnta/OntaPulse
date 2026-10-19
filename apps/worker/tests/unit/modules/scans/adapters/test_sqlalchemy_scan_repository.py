@@ -10,7 +10,14 @@ from ontapulse_worker.modules.scans.domain.errors import (
     ScanJobInProgressError,
     ScanStateConflictError,
 )
-from ontapulse_worker.modules.scans.domain.models import ScanJob, ScanResult
+from ontapulse_worker.modules.scans.domain.models import (
+    FindingCategory,
+    FindingConfidence,
+    FindingSeverity,
+    ScanFinding,
+    ScanJob,
+    ScanResult,
+)
 
 SCAN_ID = UUID("f7ad663f-bde8-4dc9-8281-5594d6c73c28")
 MONITOR_ID = UUID("3edca2bb-c92c-4ac8-a5ed-75630416f604")
@@ -121,3 +128,71 @@ def test_state_update_requires_exactly_one_running_scan() -> None:
 
     with pytest.raises(ScanStateConflictError, match="changed unexpectedly"):
         repository.succeed(SCAN_ID, ScanResult(status_code=200, response_time_ms=10))
+
+
+def test_claim_reads_the_scan_kind_and_defaults_to_http_probe() -> None:
+    repository, _ = create_repository(
+        query_result({"status": "QUEUED", "targetUrl": "https://example.com", "kind": "DNS_WATCH"}),
+        update_result(),
+    )
+
+    claimed_scan = repository.claim(JOB)
+
+    assert claimed_scan is not None
+    assert claimed_scan.kind == "DNS_WATCH"
+
+
+def test_succeed_inserts_http_probe_findings_without_security_fields() -> None:
+    repository, session = create_repository(update_result(), Mock())
+    finding = ScanFinding(
+        code="SLOW_RESPONSE",
+        title="Target response is slow",
+        severity=FindingSeverity.MEDIUM,
+        description="slow",
+        evidence={"responseTimeMs": 2500},
+    )
+
+    repository.succeed(
+        SCAN_ID, ScanResult(status_code=200, response_time_ms=2500, findings=(finding,))
+    )
+
+    params = session.execute.call_args_list[1].args[1][0]
+    assert params["code"] == "SLOW_RESPONSE"
+    assert params["check_id"] is None
+    assert params["category"] is None
+    assert params["confidence"] is None
+    assert params["evidence"] == '{"responseTimeMs": 2500}'
+
+
+def test_succeed_persists_catalog_fields_and_bounds_their_evidence() -> None:
+    repository, session = create_repository(update_result(), Mock())
+    findings = (
+        ScanFinding(
+            code="SEC_HDR_CSP_MISSING",
+            title="t",
+            severity=FindingSeverity.MEDIUM,
+            description="d",
+            evidence={"header": "content-security-policy"},
+            check_id="SEC_HDR_CSP_MISSING",
+            category=FindingCategory.HEADERS,
+            confidence=FindingConfidence.MEDIUM,
+        ),
+        ScanFinding(
+            code="SEC_HDR_CSP_UNSAFE_INLINE",
+            title="t",
+            severity=FindingSeverity.MEDIUM,
+            description="d",
+            evidence={"value": "x" * 5000},
+            check_id="SEC_HDR_CSP_UNSAFE_INLINE",
+        ),
+    )
+
+    repository.succeed(SCAN_ID, ScanResult(status_code=200, response_time_ms=5, findings=findings))
+
+    first, second = session.execute.call_args_list[1].args[1]
+    assert (first["check_id"], first["category"], first["confidence"]) == (
+        "SEC_HDR_CSP_MISSING",
+        "HEADERS",
+        "MEDIUM",
+    )
+    assert second["evidence"] == '{"truncated": true}'
