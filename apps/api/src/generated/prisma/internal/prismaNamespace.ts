@@ -402,6 +402,7 @@ export const ModelName = {
   WorkspaceMember: 'WorkspaceMember',
   Project: 'Project',
   Monitor: 'Monitor',
+  MonitorCheckSettings: 'MonitorCheckSettings',
   Scan: 'Scan',
   ScanOutboxEvent: 'ScanOutboxEvent',
   OperationsAuditLog: 'OperationsAuditLog',
@@ -421,7 +422,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "workspace" | "workspaceMember" | "project" | "monitor" | "scan" | "scanOutboxEvent" | "operationsAuditLog" | "scanFinding"
+    modelProps: "user" | "workspace" | "workspaceMember" | "project" | "monitor" | "monitorCheckSettings" | "scan" | "scanOutboxEvent" | "operationsAuditLog" | "scanFinding"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -792,6 +793,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         count: {
           args: Prisma.MonitorCountArgs<ExtArgs>
           result: runtime.Types.Utils.Optional<Prisma.MonitorCountAggregateOutputType> | number
+        }
+      }
+    }
+    MonitorCheckSettings: {
+      payload: Prisma.$MonitorCheckSettingsPayload<ExtArgs>
+      fields: Prisma.MonitorCheckSettingsFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.MonitorCheckSettingsFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MonitorCheckSettingsPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.MonitorCheckSettingsFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MonitorCheckSettingsPayload>
+        }
+        findFirst: {
+          args: Prisma.MonitorCheckSettingsFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MonitorCheckSettingsPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.MonitorCheckSettingsFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MonitorCheckSettingsPayload>
+        }
+        findMany: {
+          args: Prisma.MonitorCheckSettingsFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MonitorCheckSettingsPayload>[]
+        }
+        create: {
+          args: Prisma.MonitorCheckSettingsCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MonitorCheckSettingsPayload>
+        }
+        createMany: {
+          args: Prisma.MonitorCheckSettingsCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.MonitorCheckSettingsCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MonitorCheckSettingsPayload>[]
+        }
+        delete: {
+          args: Prisma.MonitorCheckSettingsDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MonitorCheckSettingsPayload>
+        }
+        update: {
+          args: Prisma.MonitorCheckSettingsUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MonitorCheckSettingsPayload>
+        }
+        deleteMany: {
+          args: Prisma.MonitorCheckSettingsDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.MonitorCheckSettingsUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.MonitorCheckSettingsUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MonitorCheckSettingsPayload>[]
+        }
+        upsert: {
+          args: Prisma.MonitorCheckSettingsUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MonitorCheckSettingsPayload>
+        }
+        aggregate: {
+          args: Prisma.MonitorCheckSettingsAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateMonitorCheckSettings>
+        }
+        groupBy: {
+          args: Prisma.MonitorCheckSettingsGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.MonitorCheckSettingsGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.MonitorCheckSettingsCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.MonitorCheckSettingsCountAggregateOutputType> | number
         }
       }
     }
@@ -1189,9 +1264,25 @@ export const MonitorScalarFieldEnum = {
 export type MonitorScalarFieldEnum = (typeof MonitorScalarFieldEnum)[keyof typeof MonitorScalarFieldEnum]
 
 
+export const MonitorCheckSettingsScalarFieldEnum = {
+  id: 'id',
+  monitorId: 'monitorId',
+  securityPostureEnabled: 'securityPostureEnabled',
+  dnsWatchEnabled: 'dnsWatchEnabled',
+  pathProbesEnabled: 'pathProbesEnabled',
+  pathProbesAcknowledgedById: 'pathProbesAcknowledgedById',
+  pathProbesAcknowledgedAt: 'pathProbesAcknowledgedAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type MonitorCheckSettingsScalarFieldEnum = (typeof MonitorCheckSettingsScalarFieldEnum)[keyof typeof MonitorCheckSettingsScalarFieldEnum]
+
+
 export const ScanScalarFieldEnum = {
   id: 'id',
   monitorId: 'monitorId',
+  kind: 'kind',
   status: 'status',
   statusCode: 'statusCode',
   responseTimeMs: 'responseTimeMs',
@@ -1235,6 +1326,9 @@ export const ScanFindingScalarFieldEnum = {
   id: 'id',
   scanId: 'scanId',
   code: 'code',
+  checkId: 'checkId',
+  category: 'category',
+  confidence: 'confidence',
   title: 'title',
   severity: 'severity',
   description: 'description',
@@ -1357,6 +1451,20 @@ export type BooleanFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel,
 
 
 /**
+ * Reference to a field of type 'ScanKind'
+ */
+export type EnumScanKindFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ScanKind'>
+    
+
+
+/**
+ * Reference to a field of type 'ScanKind[]'
+ */
+export type ListEnumScanKindFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ScanKind[]'>
+    
+
+
+/**
  * Reference to a field of type 'ScanStatus'
  */
 export type EnumScanStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ScanStatus'>
@@ -1395,6 +1503,34 @@ export type JsonFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'J
  * Reference to a field of type 'QueryMode'
  */
 export type EnumQueryModeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'QueryMode'>
+    
+
+
+/**
+ * Reference to a field of type 'FindingCategory'
+ */
+export type EnumFindingCategoryFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'FindingCategory'>
+    
+
+
+/**
+ * Reference to a field of type 'FindingCategory[]'
+ */
+export type ListEnumFindingCategoryFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'FindingCategory[]'>
+    
+
+
+/**
+ * Reference to a field of type 'FindingConfidence'
+ */
+export type EnumFindingConfidenceFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'FindingConfidence'>
+    
+
+
+/**
+ * Reference to a field of type 'FindingConfidence[]'
+ */
+export type ListEnumFindingConfidenceFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'FindingConfidence[]'>
     
 
 
@@ -1581,6 +1717,7 @@ export type GlobalOmitConfig = {
   workspaceMember?: Prisma.WorkspaceMemberOmit
   project?: Prisma.ProjectOmit
   monitor?: Prisma.MonitorOmit
+  monitorCheckSettings?: Prisma.MonitorCheckSettingsOmit
   scan?: Prisma.ScanOmit
   scanOutboxEvent?: Prisma.ScanOutboxEventOmit
   operationsAuditLog?: Prisma.OperationsAuditLogOmit

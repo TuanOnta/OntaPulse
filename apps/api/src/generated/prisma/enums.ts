@@ -19,6 +19,38 @@ export const ScanStatus = {
 export type ScanStatus = (typeof ScanStatus)[keyof typeof ScanStatus]
 
 
+export const ScanKind = {
+  HTTP_PROBE: 'HTTP_PROBE',
+  SECURITY_POSTURE: 'SECURITY_POSTURE',
+  DNS_WATCH: 'DNS_WATCH'
+} as const
+
+export type ScanKind = (typeof ScanKind)[keyof typeof ScanKind]
+
+
+export const FindingCategory = {
+  HEADERS: 'HEADERS',
+  COOKIES: 'COOKIES',
+  CORS: 'CORS',
+  REDIRECT: 'REDIRECT',
+  TLS: 'TLS',
+  EXPOSED_FILES: 'EXPOSED_FILES',
+  DNS: 'DNS',
+  EMAIL_AUTH: 'EMAIL_AUTH'
+} as const
+
+export type FindingCategory = (typeof FindingCategory)[keyof typeof FindingCategory]
+
+
+export const FindingConfidence = {
+  LOW: 'LOW',
+  MEDIUM: 'MEDIUM',
+  HIGH: 'HIGH'
+} as const
+
+export type FindingConfidence = (typeof FindingConfidence)[keyof typeof FindingConfidence]
+
+
 export const FindingSeverity = {
   LOW: 'LOW',
   MEDIUM: 'MEDIUM',

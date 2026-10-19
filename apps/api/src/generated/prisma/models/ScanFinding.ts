@@ -28,6 +28,9 @@ export type ScanFindingMinAggregateOutputType = {
   id: string | null
   scanId: string | null
   code: string | null
+  checkId: string | null
+  category: $Enums.FindingCategory | null
+  confidence: $Enums.FindingConfidence | null
   title: string | null
   severity: $Enums.FindingSeverity | null
   description: string | null
@@ -39,6 +42,9 @@ export type ScanFindingMaxAggregateOutputType = {
   id: string | null
   scanId: string | null
   code: string | null
+  checkId: string | null
+  category: $Enums.FindingCategory | null
+  confidence: $Enums.FindingConfidence | null
   title: string | null
   severity: $Enums.FindingSeverity | null
   description: string | null
@@ -50,6 +56,9 @@ export type ScanFindingCountAggregateOutputType = {
   id: number
   scanId: number
   code: number
+  checkId: number
+  category: number
+  confidence: number
   title: number
   severity: number
   description: number
@@ -64,6 +73,9 @@ export type ScanFindingMinAggregateInputType = {
   id?: true
   scanId?: true
   code?: true
+  checkId?: true
+  category?: true
+  confidence?: true
   title?: true
   severity?: true
   description?: true
@@ -75,6 +87,9 @@ export type ScanFindingMaxAggregateInputType = {
   id?: true
   scanId?: true
   code?: true
+  checkId?: true
+  category?: true
+  confidence?: true
   title?: true
   severity?: true
   description?: true
@@ -86,6 +101,9 @@ export type ScanFindingCountAggregateInputType = {
   id?: true
   scanId?: true
   code?: true
+  checkId?: true
+  category?: true
+  confidence?: true
   title?: true
   severity?: true
   description?: true
@@ -171,6 +189,9 @@ export type ScanFindingGroupByOutputType = {
   id: string
   scanId: string
   code: string
+  checkId: string | null
+  category: $Enums.FindingCategory | null
+  confidence: $Enums.FindingConfidence | null
   title: string
   severity: $Enums.FindingSeverity
   description: string
@@ -204,6 +225,9 @@ export type ScanFindingWhereInput = {
   id?: Prisma.UuidFilter<"ScanFinding"> | string
   scanId?: Prisma.UuidFilter<"ScanFinding"> | string
   code?: Prisma.StringFilter<"ScanFinding"> | string
+  checkId?: Prisma.StringNullableFilter<"ScanFinding"> | string | null
+  category?: Prisma.EnumFindingCategoryNullableFilter<"ScanFinding"> | $Enums.FindingCategory | null
+  confidence?: Prisma.EnumFindingConfidenceNullableFilter<"ScanFinding"> | $Enums.FindingConfidence | null
   title?: Prisma.StringFilter<"ScanFinding"> | string
   severity?: Prisma.EnumFindingSeverityFilter<"ScanFinding"> | $Enums.FindingSeverity
   description?: Prisma.StringFilter<"ScanFinding"> | string
@@ -217,6 +241,9 @@ export type ScanFindingOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   scanId?: Prisma.SortOrder
   code?: Prisma.SortOrder
+  checkId?: Prisma.SortOrderInput | Prisma.SortOrder
+  category?: Prisma.SortOrderInput | Prisma.SortOrder
+  confidence?: Prisma.SortOrderInput | Prisma.SortOrder
   title?: Prisma.SortOrder
   severity?: Prisma.SortOrder
   description?: Prisma.SortOrder
@@ -233,6 +260,9 @@ export type ScanFindingWhereUniqueInput = Prisma.AtLeast<{
   NOT?: Prisma.ScanFindingWhereInput | Prisma.ScanFindingWhereInput[]
   scanId?: Prisma.UuidFilter<"ScanFinding"> | string
   code?: Prisma.StringFilter<"ScanFinding"> | string
+  checkId?: Prisma.StringNullableFilter<"ScanFinding"> | string | null
+  category?: Prisma.EnumFindingCategoryNullableFilter<"ScanFinding"> | $Enums.FindingCategory | null
+  confidence?: Prisma.EnumFindingConfidenceNullableFilter<"ScanFinding"> | $Enums.FindingConfidence | null
   title?: Prisma.StringFilter<"ScanFinding"> | string
   severity?: Prisma.EnumFindingSeverityFilter<"ScanFinding"> | $Enums.FindingSeverity
   description?: Prisma.StringFilter<"ScanFinding"> | string
@@ -246,6 +276,9 @@ export type ScanFindingOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   scanId?: Prisma.SortOrder
   code?: Prisma.SortOrder
+  checkId?: Prisma.SortOrderInput | Prisma.SortOrder
+  category?: Prisma.SortOrderInput | Prisma.SortOrder
+  confidence?: Prisma.SortOrderInput | Prisma.SortOrder
   title?: Prisma.SortOrder
   severity?: Prisma.SortOrder
   description?: Prisma.SortOrder
@@ -264,6 +297,9 @@ export type ScanFindingScalarWhereWithAggregatesInput = {
   id?: Prisma.UuidWithAggregatesFilter<"ScanFinding"> | string
   scanId?: Prisma.UuidWithAggregatesFilter<"ScanFinding"> | string
   code?: Prisma.StringWithAggregatesFilter<"ScanFinding"> | string
+  checkId?: Prisma.StringNullableWithAggregatesFilter<"ScanFinding"> | string | null
+  category?: Prisma.EnumFindingCategoryNullableWithAggregatesFilter<"ScanFinding"> | $Enums.FindingCategory | null
+  confidence?: Prisma.EnumFindingConfidenceNullableWithAggregatesFilter<"ScanFinding"> | $Enums.FindingConfidence | null
   title?: Prisma.StringWithAggregatesFilter<"ScanFinding"> | string
   severity?: Prisma.EnumFindingSeverityWithAggregatesFilter<"ScanFinding"> | $Enums.FindingSeverity
   description?: Prisma.StringWithAggregatesFilter<"ScanFinding"> | string
@@ -275,6 +311,9 @@ export type ScanFindingScalarWhereWithAggregatesInput = {
 export type ScanFindingCreateInput = {
   id?: string
   code: string
+  checkId?: string | null
+  category?: $Enums.FindingCategory | null
+  confidence?: $Enums.FindingConfidence | null
   title: string
   severity: $Enums.FindingSeverity
   description: string
@@ -288,6 +327,9 @@ export type ScanFindingUncheckedCreateInput = {
   id?: string
   scanId: string
   code: string
+  checkId?: string | null
+  category?: $Enums.FindingCategory | null
+  confidence?: $Enums.FindingConfidence | null
   title: string
   severity: $Enums.FindingSeverity
   description: string
@@ -299,6 +341,9 @@ export type ScanFindingUncheckedCreateInput = {
 export type ScanFindingUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   code?: Prisma.StringFieldUpdateOperationsInput | string
+  checkId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  category?: Prisma.NullableEnumFindingCategoryFieldUpdateOperationsInput | $Enums.FindingCategory | null
+  confidence?: Prisma.NullableEnumFindingConfidenceFieldUpdateOperationsInput | $Enums.FindingConfidence | null
   title?: Prisma.StringFieldUpdateOperationsInput | string
   severity?: Prisma.EnumFindingSeverityFieldUpdateOperationsInput | $Enums.FindingSeverity
   description?: Prisma.StringFieldUpdateOperationsInput | string
@@ -312,6 +357,9 @@ export type ScanFindingUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   scanId?: Prisma.StringFieldUpdateOperationsInput | string
   code?: Prisma.StringFieldUpdateOperationsInput | string
+  checkId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  category?: Prisma.NullableEnumFindingCategoryFieldUpdateOperationsInput | $Enums.FindingCategory | null
+  confidence?: Prisma.NullableEnumFindingConfidenceFieldUpdateOperationsInput | $Enums.FindingConfidence | null
   title?: Prisma.StringFieldUpdateOperationsInput | string
   severity?: Prisma.EnumFindingSeverityFieldUpdateOperationsInput | $Enums.FindingSeverity
   description?: Prisma.StringFieldUpdateOperationsInput | string
@@ -324,6 +372,9 @@ export type ScanFindingCreateManyInput = {
   id?: string
   scanId: string
   code: string
+  checkId?: string | null
+  category?: $Enums.FindingCategory | null
+  confidence?: $Enums.FindingConfidence | null
   title: string
   severity: $Enums.FindingSeverity
   description: string
@@ -335,6 +386,9 @@ export type ScanFindingCreateManyInput = {
 export type ScanFindingUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   code?: Prisma.StringFieldUpdateOperationsInput | string
+  checkId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  category?: Prisma.NullableEnumFindingCategoryFieldUpdateOperationsInput | $Enums.FindingCategory | null
+  confidence?: Prisma.NullableEnumFindingConfidenceFieldUpdateOperationsInput | $Enums.FindingConfidence | null
   title?: Prisma.StringFieldUpdateOperationsInput | string
   severity?: Prisma.EnumFindingSeverityFieldUpdateOperationsInput | $Enums.FindingSeverity
   description?: Prisma.StringFieldUpdateOperationsInput | string
@@ -347,6 +401,9 @@ export type ScanFindingUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   scanId?: Prisma.StringFieldUpdateOperationsInput | string
   code?: Prisma.StringFieldUpdateOperationsInput | string
+  checkId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  category?: Prisma.NullableEnumFindingCategoryFieldUpdateOperationsInput | $Enums.FindingCategory | null
+  confidence?: Prisma.NullableEnumFindingConfidenceFieldUpdateOperationsInput | $Enums.FindingConfidence | null
   title?: Prisma.StringFieldUpdateOperationsInput | string
   severity?: Prisma.EnumFindingSeverityFieldUpdateOperationsInput | $Enums.FindingSeverity
   description?: Prisma.StringFieldUpdateOperationsInput | string
@@ -369,6 +426,9 @@ export type ScanFindingCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
   scanId?: Prisma.SortOrder
   code?: Prisma.SortOrder
+  checkId?: Prisma.SortOrder
+  category?: Prisma.SortOrder
+  confidence?: Prisma.SortOrder
   title?: Prisma.SortOrder
   severity?: Prisma.SortOrder
   description?: Prisma.SortOrder
@@ -381,6 +441,9 @@ export type ScanFindingMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
   scanId?: Prisma.SortOrder
   code?: Prisma.SortOrder
+  checkId?: Prisma.SortOrder
+  category?: Prisma.SortOrder
+  confidence?: Prisma.SortOrder
   title?: Prisma.SortOrder
   severity?: Prisma.SortOrder
   description?: Prisma.SortOrder
@@ -392,6 +455,9 @@ export type ScanFindingMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
   scanId?: Prisma.SortOrder
   code?: Prisma.SortOrder
+  checkId?: Prisma.SortOrder
+  category?: Prisma.SortOrder
+  confidence?: Prisma.SortOrder
   title?: Prisma.SortOrder
   severity?: Prisma.SortOrder
   description?: Prisma.SortOrder
@@ -441,6 +507,14 @@ export type ScanFindingUncheckedUpdateManyWithoutScanNestedInput = {
   deleteMany?: Prisma.ScanFindingScalarWhereInput | Prisma.ScanFindingScalarWhereInput[]
 }
 
+export type NullableEnumFindingCategoryFieldUpdateOperationsInput = {
+  set?: $Enums.FindingCategory | null
+}
+
+export type NullableEnumFindingConfidenceFieldUpdateOperationsInput = {
+  set?: $Enums.FindingConfidence | null
+}
+
 export type EnumFindingSeverityFieldUpdateOperationsInput = {
   set?: $Enums.FindingSeverity
 }
@@ -448,6 +522,9 @@ export type EnumFindingSeverityFieldUpdateOperationsInput = {
 export type ScanFindingCreateWithoutScanInput = {
   id?: string
   code: string
+  checkId?: string | null
+  category?: $Enums.FindingCategory | null
+  confidence?: $Enums.FindingConfidence | null
   title: string
   severity: $Enums.FindingSeverity
   description: string
@@ -459,6 +536,9 @@ export type ScanFindingCreateWithoutScanInput = {
 export type ScanFindingUncheckedCreateWithoutScanInput = {
   id?: string
   code: string
+  checkId?: string | null
+  category?: $Enums.FindingCategory | null
+  confidence?: $Enums.FindingConfidence | null
   title: string
   severity: $Enums.FindingSeverity
   description: string
@@ -500,6 +580,9 @@ export type ScanFindingScalarWhereInput = {
   id?: Prisma.UuidFilter<"ScanFinding"> | string
   scanId?: Prisma.UuidFilter<"ScanFinding"> | string
   code?: Prisma.StringFilter<"ScanFinding"> | string
+  checkId?: Prisma.StringNullableFilter<"ScanFinding"> | string | null
+  category?: Prisma.EnumFindingCategoryNullableFilter<"ScanFinding"> | $Enums.FindingCategory | null
+  confidence?: Prisma.EnumFindingConfidenceNullableFilter<"ScanFinding"> | $Enums.FindingConfidence | null
   title?: Prisma.StringFilter<"ScanFinding"> | string
   severity?: Prisma.EnumFindingSeverityFilter<"ScanFinding"> | $Enums.FindingSeverity
   description?: Prisma.StringFilter<"ScanFinding"> | string
@@ -511,6 +594,9 @@ export type ScanFindingScalarWhereInput = {
 export type ScanFindingCreateManyScanInput = {
   id?: string
   code: string
+  checkId?: string | null
+  category?: $Enums.FindingCategory | null
+  confidence?: $Enums.FindingConfidence | null
   title: string
   severity: $Enums.FindingSeverity
   description: string
@@ -522,6 +608,9 @@ export type ScanFindingCreateManyScanInput = {
 export type ScanFindingUpdateWithoutScanInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   code?: Prisma.StringFieldUpdateOperationsInput | string
+  checkId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  category?: Prisma.NullableEnumFindingCategoryFieldUpdateOperationsInput | $Enums.FindingCategory | null
+  confidence?: Prisma.NullableEnumFindingConfidenceFieldUpdateOperationsInput | $Enums.FindingConfidence | null
   title?: Prisma.StringFieldUpdateOperationsInput | string
   severity?: Prisma.EnumFindingSeverityFieldUpdateOperationsInput | $Enums.FindingSeverity
   description?: Prisma.StringFieldUpdateOperationsInput | string
@@ -533,6 +622,9 @@ export type ScanFindingUpdateWithoutScanInput = {
 export type ScanFindingUncheckedUpdateWithoutScanInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   code?: Prisma.StringFieldUpdateOperationsInput | string
+  checkId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  category?: Prisma.NullableEnumFindingCategoryFieldUpdateOperationsInput | $Enums.FindingCategory | null
+  confidence?: Prisma.NullableEnumFindingConfidenceFieldUpdateOperationsInput | $Enums.FindingConfidence | null
   title?: Prisma.StringFieldUpdateOperationsInput | string
   severity?: Prisma.EnumFindingSeverityFieldUpdateOperationsInput | $Enums.FindingSeverity
   description?: Prisma.StringFieldUpdateOperationsInput | string
@@ -544,6 +636,9 @@ export type ScanFindingUncheckedUpdateWithoutScanInput = {
 export type ScanFindingUncheckedUpdateManyWithoutScanInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   code?: Prisma.StringFieldUpdateOperationsInput | string
+  checkId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  category?: Prisma.NullableEnumFindingCategoryFieldUpdateOperationsInput | $Enums.FindingCategory | null
+  confidence?: Prisma.NullableEnumFindingConfidenceFieldUpdateOperationsInput | $Enums.FindingConfidence | null
   title?: Prisma.StringFieldUpdateOperationsInput | string
   severity?: Prisma.EnumFindingSeverityFieldUpdateOperationsInput | $Enums.FindingSeverity
   description?: Prisma.StringFieldUpdateOperationsInput | string
@@ -558,6 +653,9 @@ export type ScanFindingSelect<ExtArgs extends runtime.Types.Extensions.InternalA
   id?: boolean
   scanId?: boolean
   code?: boolean
+  checkId?: boolean
+  category?: boolean
+  confidence?: boolean
   title?: boolean
   severity?: boolean
   description?: boolean
@@ -571,6 +669,9 @@ export type ScanFindingSelectCreateManyAndReturn<ExtArgs extends runtime.Types.E
   id?: boolean
   scanId?: boolean
   code?: boolean
+  checkId?: boolean
+  category?: boolean
+  confidence?: boolean
   title?: boolean
   severity?: boolean
   description?: boolean
@@ -584,6 +685,9 @@ export type ScanFindingSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.E
   id?: boolean
   scanId?: boolean
   code?: boolean
+  checkId?: boolean
+  category?: boolean
+  confidence?: boolean
   title?: boolean
   severity?: boolean
   description?: boolean
@@ -597,6 +701,9 @@ export type ScanFindingSelectScalar = {
   id?: boolean
   scanId?: boolean
   code?: boolean
+  checkId?: boolean
+  category?: boolean
+  confidence?: boolean
   title?: boolean
   severity?: boolean
   description?: boolean
@@ -605,7 +712,7 @@ export type ScanFindingSelectScalar = {
   createdAt?: boolean
 }
 
-export type ScanFindingOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "scanId" | "code" | "title" | "severity" | "description" | "recommendation" | "evidence" | "createdAt", ExtArgs["result"]["scanFinding"]>
+export type ScanFindingOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "scanId" | "code" | "checkId" | "category" | "confidence" | "title" | "severity" | "description" | "recommendation" | "evidence" | "createdAt", ExtArgs["result"]["scanFinding"]>
 export type ScanFindingInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   scan?: boolean | Prisma.ScanDefaultArgs<ExtArgs>
 }
@@ -625,6 +732,9 @@ export type $ScanFindingPayload<ExtArgs extends runtime.Types.Extensions.Interna
     id: string
     scanId: string
     code: string
+    checkId: string | null
+    category: $Enums.FindingCategory | null
+    confidence: $Enums.FindingConfidence | null
     title: string
     severity: $Enums.FindingSeverity
     description: string
@@ -1058,6 +1168,9 @@ export interface ScanFindingFieldRefs {
   readonly id: Prisma.FieldRef<"ScanFinding", 'String'>
   readonly scanId: Prisma.FieldRef<"ScanFinding", 'String'>
   readonly code: Prisma.FieldRef<"ScanFinding", 'String'>
+  readonly checkId: Prisma.FieldRef<"ScanFinding", 'String'>
+  readonly category: Prisma.FieldRef<"ScanFinding", 'FindingCategory'>
+  readonly confidence: Prisma.FieldRef<"ScanFinding", 'FindingConfidence'>
   readonly title: Prisma.FieldRef<"ScanFinding", 'String'>
   readonly severity: Prisma.FieldRef<"ScanFinding", 'FindingSeverity'>
   readonly description: Prisma.FieldRef<"ScanFinding", 'String'>

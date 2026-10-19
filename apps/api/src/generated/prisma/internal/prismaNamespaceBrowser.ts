@@ -56,6 +56,7 @@ export const ModelName = {
   WorkspaceMember: 'WorkspaceMember',
   Project: 'Project',
   Monitor: 'Monitor',
+  MonitorCheckSettings: 'MonitorCheckSettings',
   Scan: 'Scan',
   ScanOutboxEvent: 'ScanOutboxEvent',
   OperationsAuditLog: 'OperationsAuditLog',
@@ -137,9 +138,25 @@ export const MonitorScalarFieldEnum = {
 export type MonitorScalarFieldEnum = (typeof MonitorScalarFieldEnum)[keyof typeof MonitorScalarFieldEnum]
 
 
+export const MonitorCheckSettingsScalarFieldEnum = {
+  id: 'id',
+  monitorId: 'monitorId',
+  securityPostureEnabled: 'securityPostureEnabled',
+  dnsWatchEnabled: 'dnsWatchEnabled',
+  pathProbesEnabled: 'pathProbesEnabled',
+  pathProbesAcknowledgedById: 'pathProbesAcknowledgedById',
+  pathProbesAcknowledgedAt: 'pathProbesAcknowledgedAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type MonitorCheckSettingsScalarFieldEnum = (typeof MonitorCheckSettingsScalarFieldEnum)[keyof typeof MonitorCheckSettingsScalarFieldEnum]
+
+
 export const ScanScalarFieldEnum = {
   id: 'id',
   monitorId: 'monitorId',
+  kind: 'kind',
   status: 'status',
   statusCode: 'statusCode',
   responseTimeMs: 'responseTimeMs',
@@ -183,6 +200,9 @@ export const ScanFindingScalarFieldEnum = {
   id: 'id',
   scanId: 'scanId',
   code: 'code',
+  checkId: 'checkId',
+  category: 'category',
+  confidence: 'confidence',
   title: 'title',
   severity: 'severity',
   description: 'description',

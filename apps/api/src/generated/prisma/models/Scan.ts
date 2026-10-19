@@ -39,6 +39,7 @@ export type ScanSumAggregateOutputType = {
 export type ScanMinAggregateOutputType = {
   id: string | null
   monitorId: string | null
+  kind: $Enums.ScanKind | null
   status: $Enums.ScanStatus | null
   statusCode: number | null
   responseTimeMs: number | null
@@ -51,6 +52,7 @@ export type ScanMinAggregateOutputType = {
 export type ScanMaxAggregateOutputType = {
   id: string | null
   monitorId: string | null
+  kind: $Enums.ScanKind | null
   status: $Enums.ScanStatus | null
   statusCode: number | null
   responseTimeMs: number | null
@@ -63,6 +65,7 @@ export type ScanMaxAggregateOutputType = {
 export type ScanCountAggregateOutputType = {
   id: number
   monitorId: number
+  kind: number
   status: number
   statusCode: number
   responseTimeMs: number
@@ -87,6 +90,7 @@ export type ScanSumAggregateInputType = {
 export type ScanMinAggregateInputType = {
   id?: true
   monitorId?: true
+  kind?: true
   status?: true
   statusCode?: true
   responseTimeMs?: true
@@ -99,6 +103,7 @@ export type ScanMinAggregateInputType = {
 export type ScanMaxAggregateInputType = {
   id?: true
   monitorId?: true
+  kind?: true
   status?: true
   statusCode?: true
   responseTimeMs?: true
@@ -111,6 +116,7 @@ export type ScanMaxAggregateInputType = {
 export type ScanCountAggregateInputType = {
   id?: true
   monitorId?: true
+  kind?: true
   status?: true
   statusCode?: true
   responseTimeMs?: true
@@ -210,6 +216,7 @@ export type ScanGroupByArgs<ExtArgs extends runtime.Types.Extensions.InternalArg
 export type ScanGroupByOutputType = {
   id: string
   monitorId: string
+  kind: $Enums.ScanKind
   status: $Enums.ScanStatus
   statusCode: number | null
   responseTimeMs: number | null
@@ -245,6 +252,7 @@ export type ScanWhereInput = {
   NOT?: Prisma.ScanWhereInput | Prisma.ScanWhereInput[]
   id?: Prisma.UuidFilter<"Scan"> | string
   monitorId?: Prisma.UuidFilter<"Scan"> | string
+  kind?: Prisma.EnumScanKindFilter<"Scan"> | $Enums.ScanKind
   status?: Prisma.EnumScanStatusFilter<"Scan"> | $Enums.ScanStatus
   statusCode?: Prisma.IntNullableFilter<"Scan"> | number | null
   responseTimeMs?: Prisma.IntNullableFilter<"Scan"> | number | null
@@ -260,6 +268,7 @@ export type ScanWhereInput = {
 export type ScanOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   monitorId?: Prisma.SortOrder
+  kind?: Prisma.SortOrder
   status?: Prisma.SortOrder
   statusCode?: Prisma.SortOrderInput | Prisma.SortOrder
   responseTimeMs?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -278,6 +287,7 @@ export type ScanWhereUniqueInput = Prisma.AtLeast<{
   OR?: Prisma.ScanWhereInput[]
   NOT?: Prisma.ScanWhereInput | Prisma.ScanWhereInput[]
   monitorId?: Prisma.UuidFilter<"Scan"> | string
+  kind?: Prisma.EnumScanKindFilter<"Scan"> | $Enums.ScanKind
   status?: Prisma.EnumScanStatusFilter<"Scan"> | $Enums.ScanStatus
   statusCode?: Prisma.IntNullableFilter<"Scan"> | number | null
   responseTimeMs?: Prisma.IntNullableFilter<"Scan"> | number | null
@@ -293,6 +303,7 @@ export type ScanWhereUniqueInput = Prisma.AtLeast<{
 export type ScanOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   monitorId?: Prisma.SortOrder
+  kind?: Prisma.SortOrder
   status?: Prisma.SortOrder
   statusCode?: Prisma.SortOrderInput | Prisma.SortOrder
   responseTimeMs?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -313,6 +324,7 @@ export type ScanScalarWhereWithAggregatesInput = {
   NOT?: Prisma.ScanScalarWhereWithAggregatesInput | Prisma.ScanScalarWhereWithAggregatesInput[]
   id?: Prisma.UuidWithAggregatesFilter<"Scan"> | string
   monitorId?: Prisma.UuidWithAggregatesFilter<"Scan"> | string
+  kind?: Prisma.EnumScanKindWithAggregatesFilter<"Scan"> | $Enums.ScanKind
   status?: Prisma.EnumScanStatusWithAggregatesFilter<"Scan"> | $Enums.ScanStatus
   statusCode?: Prisma.IntNullableWithAggregatesFilter<"Scan"> | number | null
   responseTimeMs?: Prisma.IntNullableWithAggregatesFilter<"Scan"> | number | null
@@ -324,6 +336,7 @@ export type ScanScalarWhereWithAggregatesInput = {
 
 export type ScanCreateInput = {
   id?: string
+  kind?: $Enums.ScanKind
   status?: $Enums.ScanStatus
   statusCode?: number | null
   responseTimeMs?: number | null
@@ -339,6 +352,7 @@ export type ScanCreateInput = {
 export type ScanUncheckedCreateInput = {
   id?: string
   monitorId: string
+  kind?: $Enums.ScanKind
   status?: $Enums.ScanStatus
   statusCode?: number | null
   responseTimeMs?: number | null
@@ -352,6 +366,7 @@ export type ScanUncheckedCreateInput = {
 
 export type ScanUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  kind?: Prisma.EnumScanKindFieldUpdateOperationsInput | $Enums.ScanKind
   status?: Prisma.EnumScanStatusFieldUpdateOperationsInput | $Enums.ScanStatus
   statusCode?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   responseTimeMs?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -367,6 +382,7 @@ export type ScanUpdateInput = {
 export type ScanUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   monitorId?: Prisma.StringFieldUpdateOperationsInput | string
+  kind?: Prisma.EnumScanKindFieldUpdateOperationsInput | $Enums.ScanKind
   status?: Prisma.EnumScanStatusFieldUpdateOperationsInput | $Enums.ScanStatus
   statusCode?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   responseTimeMs?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -381,6 +397,7 @@ export type ScanUncheckedUpdateInput = {
 export type ScanCreateManyInput = {
   id?: string
   monitorId: string
+  kind?: $Enums.ScanKind
   status?: $Enums.ScanStatus
   statusCode?: number | null
   responseTimeMs?: number | null
@@ -392,6 +409,7 @@ export type ScanCreateManyInput = {
 
 export type ScanUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  kind?: Prisma.EnumScanKindFieldUpdateOperationsInput | $Enums.ScanKind
   status?: Prisma.EnumScanStatusFieldUpdateOperationsInput | $Enums.ScanStatus
   statusCode?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   responseTimeMs?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -404,6 +422,7 @@ export type ScanUpdateManyMutationInput = {
 export type ScanUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   monitorId?: Prisma.StringFieldUpdateOperationsInput | string
+  kind?: Prisma.EnumScanKindFieldUpdateOperationsInput | $Enums.ScanKind
   status?: Prisma.EnumScanStatusFieldUpdateOperationsInput | $Enums.ScanStatus
   statusCode?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   responseTimeMs?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -426,6 +445,7 @@ export type ScanOrderByRelationAggregateInput = {
 export type ScanCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
   monitorId?: Prisma.SortOrder
+  kind?: Prisma.SortOrder
   status?: Prisma.SortOrder
   statusCode?: Prisma.SortOrder
   responseTimeMs?: Prisma.SortOrder
@@ -443,6 +463,7 @@ export type ScanAvgOrderByAggregateInput = {
 export type ScanMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
   monitorId?: Prisma.SortOrder
+  kind?: Prisma.SortOrder
   status?: Prisma.SortOrder
   statusCode?: Prisma.SortOrder
   responseTimeMs?: Prisma.SortOrder
@@ -455,6 +476,7 @@ export type ScanMaxOrderByAggregateInput = {
 export type ScanMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
   monitorId?: Prisma.SortOrder
+  kind?: Prisma.SortOrder
   status?: Prisma.SortOrder
   statusCode?: Prisma.SortOrder
   responseTimeMs?: Prisma.SortOrder
@@ -516,6 +538,10 @@ export type ScanUncheckedUpdateManyWithoutMonitorNestedInput = {
   deleteMany?: Prisma.ScanScalarWhereInput | Prisma.ScanScalarWhereInput[]
 }
 
+export type EnumScanKindFieldUpdateOperationsInput = {
+  set?: $Enums.ScanKind
+}
+
 export type EnumScanStatusFieldUpdateOperationsInput = {
   set?: $Enums.ScanStatus
 }
@@ -526,10 +552,6 @@ export type NullableIntFieldUpdateOperationsInput = {
   decrement?: number
   multiply?: number
   divide?: number
-}
-
-export type NullableDateTimeFieldUpdateOperationsInput = {
-  set?: Date | string | null
 }
 
 export type ScanCreateNestedOneWithoutOutboxEventsInput = {
@@ -562,6 +584,7 @@ export type ScanUpdateOneRequiredWithoutFindingsNestedInput = {
 
 export type ScanCreateWithoutMonitorInput = {
   id?: string
+  kind?: $Enums.ScanKind
   status?: $Enums.ScanStatus
   statusCode?: number | null
   responseTimeMs?: number | null
@@ -575,6 +598,7 @@ export type ScanCreateWithoutMonitorInput = {
 
 export type ScanUncheckedCreateWithoutMonitorInput = {
   id?: string
+  kind?: $Enums.ScanKind
   status?: $Enums.ScanStatus
   statusCode?: number | null
   responseTimeMs?: number | null
@@ -618,6 +642,7 @@ export type ScanScalarWhereInput = {
   NOT?: Prisma.ScanScalarWhereInput | Prisma.ScanScalarWhereInput[]
   id?: Prisma.UuidFilter<"Scan"> | string
   monitorId?: Prisma.UuidFilter<"Scan"> | string
+  kind?: Prisma.EnumScanKindFilter<"Scan"> | $Enums.ScanKind
   status?: Prisma.EnumScanStatusFilter<"Scan"> | $Enums.ScanStatus
   statusCode?: Prisma.IntNullableFilter<"Scan"> | number | null
   responseTimeMs?: Prisma.IntNullableFilter<"Scan"> | number | null
@@ -629,6 +654,7 @@ export type ScanScalarWhereInput = {
 
 export type ScanCreateWithoutOutboxEventsInput = {
   id?: string
+  kind?: $Enums.ScanKind
   status?: $Enums.ScanStatus
   statusCode?: number | null
   responseTimeMs?: number | null
@@ -643,6 +669,7 @@ export type ScanCreateWithoutOutboxEventsInput = {
 export type ScanUncheckedCreateWithoutOutboxEventsInput = {
   id?: string
   monitorId: string
+  kind?: $Enums.ScanKind
   status?: $Enums.ScanStatus
   statusCode?: number | null
   responseTimeMs?: number | null
@@ -671,6 +698,7 @@ export type ScanUpdateToOneWithWhereWithoutOutboxEventsInput = {
 
 export type ScanUpdateWithoutOutboxEventsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  kind?: Prisma.EnumScanKindFieldUpdateOperationsInput | $Enums.ScanKind
   status?: Prisma.EnumScanStatusFieldUpdateOperationsInput | $Enums.ScanStatus
   statusCode?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   responseTimeMs?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -685,6 +713,7 @@ export type ScanUpdateWithoutOutboxEventsInput = {
 export type ScanUncheckedUpdateWithoutOutboxEventsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   monitorId?: Prisma.StringFieldUpdateOperationsInput | string
+  kind?: Prisma.EnumScanKindFieldUpdateOperationsInput | $Enums.ScanKind
   status?: Prisma.EnumScanStatusFieldUpdateOperationsInput | $Enums.ScanStatus
   statusCode?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   responseTimeMs?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -697,6 +726,7 @@ export type ScanUncheckedUpdateWithoutOutboxEventsInput = {
 
 export type ScanCreateWithoutFindingsInput = {
   id?: string
+  kind?: $Enums.ScanKind
   status?: $Enums.ScanStatus
   statusCode?: number | null
   responseTimeMs?: number | null
@@ -711,6 +741,7 @@ export type ScanCreateWithoutFindingsInput = {
 export type ScanUncheckedCreateWithoutFindingsInput = {
   id?: string
   monitorId: string
+  kind?: $Enums.ScanKind
   status?: $Enums.ScanStatus
   statusCode?: number | null
   responseTimeMs?: number | null
@@ -739,6 +770,7 @@ export type ScanUpdateToOneWithWhereWithoutFindingsInput = {
 
 export type ScanUpdateWithoutFindingsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  kind?: Prisma.EnumScanKindFieldUpdateOperationsInput | $Enums.ScanKind
   status?: Prisma.EnumScanStatusFieldUpdateOperationsInput | $Enums.ScanStatus
   statusCode?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   responseTimeMs?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -753,6 +785,7 @@ export type ScanUpdateWithoutFindingsInput = {
 export type ScanUncheckedUpdateWithoutFindingsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   monitorId?: Prisma.StringFieldUpdateOperationsInput | string
+  kind?: Prisma.EnumScanKindFieldUpdateOperationsInput | $Enums.ScanKind
   status?: Prisma.EnumScanStatusFieldUpdateOperationsInput | $Enums.ScanStatus
   statusCode?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   responseTimeMs?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -765,6 +798,7 @@ export type ScanUncheckedUpdateWithoutFindingsInput = {
 
 export type ScanCreateManyMonitorInput = {
   id?: string
+  kind?: $Enums.ScanKind
   status?: $Enums.ScanStatus
   statusCode?: number | null
   responseTimeMs?: number | null
@@ -776,6 +810,7 @@ export type ScanCreateManyMonitorInput = {
 
 export type ScanUpdateWithoutMonitorInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  kind?: Prisma.EnumScanKindFieldUpdateOperationsInput | $Enums.ScanKind
   status?: Prisma.EnumScanStatusFieldUpdateOperationsInput | $Enums.ScanStatus
   statusCode?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   responseTimeMs?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -789,6 +824,7 @@ export type ScanUpdateWithoutMonitorInput = {
 
 export type ScanUncheckedUpdateWithoutMonitorInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  kind?: Prisma.EnumScanKindFieldUpdateOperationsInput | $Enums.ScanKind
   status?: Prisma.EnumScanStatusFieldUpdateOperationsInput | $Enums.ScanStatus
   statusCode?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   responseTimeMs?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -802,6 +838,7 @@ export type ScanUncheckedUpdateWithoutMonitorInput = {
 
 export type ScanUncheckedUpdateManyWithoutMonitorInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  kind?: Prisma.EnumScanKindFieldUpdateOperationsInput | $Enums.ScanKind
   status?: Prisma.EnumScanStatusFieldUpdateOperationsInput | $Enums.ScanStatus
   statusCode?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   responseTimeMs?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -854,6 +891,7 @@ export type ScanCountOutputTypeCountOutboxEventsArgs<ExtArgs extends runtime.Typ
 export type ScanSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   monitorId?: boolean
+  kind?: boolean
   status?: boolean
   statusCode?: boolean
   responseTimeMs?: boolean
@@ -870,6 +908,7 @@ export type ScanSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
 export type ScanSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   monitorId?: boolean
+  kind?: boolean
   status?: boolean
   statusCode?: boolean
   responseTimeMs?: boolean
@@ -883,6 +922,7 @@ export type ScanSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensio
 export type ScanSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   monitorId?: boolean
+  kind?: boolean
   status?: boolean
   statusCode?: boolean
   responseTimeMs?: boolean
@@ -896,6 +936,7 @@ export type ScanSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensio
 export type ScanSelectScalar = {
   id?: boolean
   monitorId?: boolean
+  kind?: boolean
   status?: boolean
   statusCode?: boolean
   responseTimeMs?: boolean
@@ -905,7 +946,7 @@ export type ScanSelectScalar = {
   createdAt?: boolean
 }
 
-export type ScanOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "monitorId" | "status" | "statusCode" | "responseTimeMs" | "errorMessage" | "startedAt" | "finishedAt" | "createdAt", ExtArgs["result"]["scan"]>
+export type ScanOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "monitorId" | "kind" | "status" | "statusCode" | "responseTimeMs" | "errorMessage" | "startedAt" | "finishedAt" | "createdAt", ExtArgs["result"]["scan"]>
 export type ScanInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   monitor?: boolean | Prisma.MonitorDefaultArgs<ExtArgs>
   findings?: boolean | Prisma.Scan$findingsArgs<ExtArgs>
@@ -929,6 +970,7 @@ export type $ScanPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
     monitorId: string
+    kind: $Enums.ScanKind
     status: $Enums.ScanStatus
     statusCode: number | null
     responseTimeMs: number | null
@@ -1364,6 +1406,7 @@ export interface Prisma__ScanClient<T, Null = never, ExtArgs extends runtime.Typ
 export interface ScanFieldRefs {
   readonly id: Prisma.FieldRef<"Scan", 'String'>
   readonly monitorId: Prisma.FieldRef<"Scan", 'String'>
+  readonly kind: Prisma.FieldRef<"Scan", 'ScanKind'>
   readonly status: Prisma.FieldRef<"Scan", 'ScanStatus'>
   readonly statusCode: Prisma.FieldRef<"Scan", 'Int'>
   readonly responseTimeMs: Prisma.FieldRef<"Scan", 'Int'>

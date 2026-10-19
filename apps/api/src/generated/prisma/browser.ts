@@ -43,6 +43,11 @@ export type Project = Prisma.ProjectModel
  */
 export type Monitor = Prisma.MonitorModel
 /**
+ * Model MonitorCheckSettings
+ * 
+ */
+export type MonitorCheckSettings = Prisma.MonitorCheckSettingsModel
+/**
  * Model Scan
  * 
  */

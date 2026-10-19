@@ -15,6 +15,29 @@ enum ScanStatus {
   FAILED
 }
 
+enum ScanKind {
+  HTTP_PROBE
+  SECURITY_POSTURE
+  DNS_WATCH
+}
+
+enum FindingCategory {
+  HEADERS
+  COOKIES
+  CORS
+  REDIRECT
+  TLS
+  EXPOSED_FILES
+  DNS
+  EMAIL_AUTH
+}
+
+enum FindingConfidence {
+  LOW
+  MEDIUM
+  HIGH
+}
+
 enum FindingSeverity {
   LOW
   MEDIUM
@@ -42,7 +65,8 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  workspaceMemberships WorkspaceMember[]
+  workspaceMemberships   WorkspaceMember[]
+  acknowledgedPathProbes MonitorCheckSettings[] @relation("PathProbeAcknowledgedBy")
 }
 
 model Workspace {
@@ -95,17 +119,36 @@ model Monitor {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
-  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  scans   Scan[]
+  project       Project               @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  scans         Scan[]
+  checkSettings MonitorCheckSettings?
 
   @@unique([projectId, targetUrl])
   @@index([projectId])
   @@index([isActive, nextScheduledAt])
 }
 
+model MonitorCheckSettings {
+  id                         String    @id @default(uuid()) @db.Uuid
+  monitorId                  String    @unique @db.Uuid
+  securityPostureEnabled     Boolean   @default(false)
+  dnsWatchEnabled            Boolean   @default(false)
+  pathProbesEnabled          Boolean   @default(false)
+  pathProbesAcknowledgedById String?   @db.Uuid
+  pathProbesAcknowledgedAt   DateTime?
+  createdAt                  DateTime  @default(now())
+  updatedAt                  DateTime  @updatedAt
+
+  monitor                  Monitor @relation(fields: [monitorId], references: [id], onDelete: Cascade)
+  pathProbesAcknowledgedBy User?   @relation("PathProbeAcknowledgedBy", fields: [pathProbesAcknowledgedById], references: [id], onDelete: SetNull)
+
+  @@index([pathProbesAcknowledgedById])
+}
+
 model Scan {
   id             String     @id @default(uuid()) @db.Uuid
   monitorId      String     @db.Uuid
+  kind           ScanKind   @default(HTTP_PROBE)
   status         ScanStatus @default(QUEUED)
   statusCode     Int?
   responseTimeMs Int?
@@ -114,7 +157,7 @@ model Scan {
   finishedAt     DateTime?
   createdAt      DateTime   @default(now())
 
-  monitor  Monitor       @relation(fields: [monitorId], references: [id], onDelete: Cascade)
+  monitor      Monitor           @relation(fields: [monitorId], references: [id], onDelete: Cascade)
   findings     ScanFinding[]
   outboxEvents ScanOutboxEvent[]
 
@@ -122,16 +165,16 @@ model Scan {
 }
 
 model ScanOutboxEvent {
-  id          String           @id @default(uuid()) @db.Uuid
-  scanId      String           @unique @db.Uuid
-  monitorId   String           @db.Uuid
+  id          String            @id @default(uuid()) @db.Uuid
+  scanId      String            @unique @db.Uuid
+  monitorId   String            @db.Uuid
   status      OutboxEventStatus @default(PENDING)
-  attempts    Int              @default(0)
+  attempts    Int               @default(0)
   lastError   String?
   claimedAt   DateTime?
   publishedAt DateTime?
-  createdAt   DateTime         @default(now())
-  updatedAt   DateTime         @updatedAt
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
 
   scan Scan @relation(fields: [scanId], references: [id], onDelete: Cascade)
 
@@ -148,17 +191,19 @@ model OperationsAuditLog {
   @@index([action, createdAt])
 }
 
-
 model ScanFinding {
-  id             String          @id @default(uuid()) @db.Uuid
-  scanId         String          @db.Uuid
+  id             String             @id @default(uuid()) @db.Uuid
+  scanId         String             @db.Uuid
   code           String
+  checkId        String?
+  category       FindingCategory?
+  confidence     FindingConfidence?
   title          String
   severity       FindingSeverity
   description    String
   recommendation String?
   evidence       Json?
-  createdAt      DateTime        @default(now())
+  createdAt      DateTime           @default(now())
 
   scan Scan @relation(fields: [scanId], references: [id], onDelete: Cascade)
 

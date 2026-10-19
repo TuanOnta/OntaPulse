@@ -191,6 +191,7 @@ export type UserWhereInput = {
   createdAt?: Prisma.DateTimeFilter<"User"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"User"> | Date | string
   workspaceMemberships?: Prisma.WorkspaceMemberListRelationFilter
+  acknowledgedPathProbes?: Prisma.MonitorCheckSettingsListRelationFilter
 }
 
 export type UserOrderByWithRelationInput = {
@@ -201,6 +202,7 @@ export type UserOrderByWithRelationInput = {
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   workspaceMemberships?: Prisma.WorkspaceMemberOrderByRelationAggregateInput
+  acknowledgedPathProbes?: Prisma.MonitorCheckSettingsOrderByRelationAggregateInput
 }
 
 export type UserWhereUniqueInput = Prisma.AtLeast<{
@@ -214,6 +216,7 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   createdAt?: Prisma.DateTimeFilter<"User"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"User"> | Date | string
   workspaceMemberships?: Prisma.WorkspaceMemberListRelationFilter
+  acknowledgedPathProbes?: Prisma.MonitorCheckSettingsListRelationFilter
 }, "id" | "email">
 
 export type UserOrderByWithAggregationInput = {
@@ -248,6 +251,7 @@ export type UserCreateInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   workspaceMemberships?: Prisma.WorkspaceMemberCreateNestedManyWithoutUserInput
+  acknowledgedPathProbes?: Prisma.MonitorCheckSettingsCreateNestedManyWithoutPathProbesAcknowledgedByInput
 }
 
 export type UserUncheckedCreateInput = {
@@ -258,6 +262,7 @@ export type UserUncheckedCreateInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   workspaceMemberships?: Prisma.WorkspaceMemberUncheckedCreateNestedManyWithoutUserInput
+  acknowledgedPathProbes?: Prisma.MonitorCheckSettingsUncheckedCreateNestedManyWithoutPathProbesAcknowledgedByInput
 }
 
 export type UserUpdateInput = {
@@ -268,6 +273,7 @@ export type UserUpdateInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   workspaceMemberships?: Prisma.WorkspaceMemberUpdateManyWithoutUserNestedInput
+  acknowledgedPathProbes?: Prisma.MonitorCheckSettingsUpdateManyWithoutPathProbesAcknowledgedByNestedInput
 }
 
 export type UserUncheckedUpdateInput = {
@@ -278,6 +284,7 @@ export type UserUncheckedUpdateInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   workspaceMemberships?: Prisma.WorkspaceMemberUncheckedUpdateManyWithoutUserNestedInput
+  acknowledgedPathProbes?: Prisma.MonitorCheckSettingsUncheckedUpdateManyWithoutPathProbesAcknowledgedByNestedInput
 }
 
 export type UserCreateManyInput = {
@@ -339,6 +346,11 @@ export type UserScalarRelationFilter = {
   isNot?: Prisma.UserWhereInput
 }
 
+export type UserNullableScalarRelationFilter = {
+  is?: Prisma.UserWhereInput | null
+  isNot?: Prisma.UserWhereInput | null
+}
+
 export type StringFieldUpdateOperationsInput = {
   set?: string
 }
@@ -361,6 +373,22 @@ export type UserUpdateOneRequiredWithoutWorkspaceMembershipsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutWorkspaceMembershipsInput, Prisma.UserUpdateWithoutWorkspaceMembershipsInput>, Prisma.UserUncheckedUpdateWithoutWorkspaceMembershipsInput>
 }
 
+export type UserCreateNestedOneWithoutAcknowledgedPathProbesInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutAcknowledgedPathProbesInput, Prisma.UserUncheckedCreateWithoutAcknowledgedPathProbesInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutAcknowledgedPathProbesInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserUpdateOneWithoutAcknowledgedPathProbesNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutAcknowledgedPathProbesInput, Prisma.UserUncheckedCreateWithoutAcknowledgedPathProbesInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutAcknowledgedPathProbesInput
+  upsert?: Prisma.UserUpsertWithoutAcknowledgedPathProbesInput
+  disconnect?: Prisma.UserWhereInput | boolean
+  delete?: Prisma.UserWhereInput | boolean
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutAcknowledgedPathProbesInput, Prisma.UserUpdateWithoutAcknowledgedPathProbesInput>, Prisma.UserUncheckedUpdateWithoutAcknowledgedPathProbesInput>
+}
+
 export type UserCreateWithoutWorkspaceMembershipsInput = {
   id?: string
   email: string
@@ -368,6 +396,7 @@ export type UserCreateWithoutWorkspaceMembershipsInput = {
   passwordHash: string
   createdAt?: Date | string
   updatedAt?: Date | string
+  acknowledgedPathProbes?: Prisma.MonitorCheckSettingsCreateNestedManyWithoutPathProbesAcknowledgedByInput
 }
 
 export type UserUncheckedCreateWithoutWorkspaceMembershipsInput = {
@@ -377,6 +406,7 @@ export type UserUncheckedCreateWithoutWorkspaceMembershipsInput = {
   passwordHash: string
   createdAt?: Date | string
   updatedAt?: Date | string
+  acknowledgedPathProbes?: Prisma.MonitorCheckSettingsUncheckedCreateNestedManyWithoutPathProbesAcknowledgedByInput
 }
 
 export type UserCreateOrConnectWithoutWorkspaceMembershipsInput = {
@@ -402,6 +432,7 @@ export type UserUpdateWithoutWorkspaceMembershipsInput = {
   passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  acknowledgedPathProbes?: Prisma.MonitorCheckSettingsUpdateManyWithoutPathProbesAcknowledgedByNestedInput
 }
 
 export type UserUncheckedUpdateWithoutWorkspaceMembershipsInput = {
@@ -411,6 +442,63 @@ export type UserUncheckedUpdateWithoutWorkspaceMembershipsInput = {
   passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  acknowledgedPathProbes?: Prisma.MonitorCheckSettingsUncheckedUpdateManyWithoutPathProbesAcknowledgedByNestedInput
+}
+
+export type UserCreateWithoutAcknowledgedPathProbesInput = {
+  id?: string
+  email: string
+  name: string
+  passwordHash: string
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  workspaceMemberships?: Prisma.WorkspaceMemberCreateNestedManyWithoutUserInput
+}
+
+export type UserUncheckedCreateWithoutAcknowledgedPathProbesInput = {
+  id?: string
+  email: string
+  name: string
+  passwordHash: string
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  workspaceMemberships?: Prisma.WorkspaceMemberUncheckedCreateNestedManyWithoutUserInput
+}
+
+export type UserCreateOrConnectWithoutAcknowledgedPathProbesInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutAcknowledgedPathProbesInput, Prisma.UserUncheckedCreateWithoutAcknowledgedPathProbesInput>
+}
+
+export type UserUpsertWithoutAcknowledgedPathProbesInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutAcknowledgedPathProbesInput, Prisma.UserUncheckedUpdateWithoutAcknowledgedPathProbesInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutAcknowledgedPathProbesInput, Prisma.UserUncheckedCreateWithoutAcknowledgedPathProbesInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutAcknowledgedPathProbesInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutAcknowledgedPathProbesInput, Prisma.UserUncheckedUpdateWithoutAcknowledgedPathProbesInput>
+}
+
+export type UserUpdateWithoutAcknowledgedPathProbesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  workspaceMemberships?: Prisma.WorkspaceMemberUpdateManyWithoutUserNestedInput
+}
+
+export type UserUncheckedUpdateWithoutAcknowledgedPathProbesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  email?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  passwordHash?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  workspaceMemberships?: Prisma.WorkspaceMemberUncheckedUpdateManyWithoutUserNestedInput
 }
 
 
@@ -420,10 +508,12 @@ export type UserUncheckedUpdateWithoutWorkspaceMembershipsInput = {
 
 export type UserCountOutputType = {
   workspaceMemberships: number
+  acknowledgedPathProbes: number
 }
 
 export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   workspaceMemberships?: boolean | UserCountOutputTypeCountWorkspaceMembershipsArgs
+  acknowledgedPathProbes?: boolean | UserCountOutputTypeCountAcknowledgedPathProbesArgs
 }
 
 /**
@@ -443,6 +533,13 @@ export type UserCountOutputTypeCountWorkspaceMembershipsArgs<ExtArgs extends run
   where?: Prisma.WorkspaceMemberWhereInput
 }
 
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountAcknowledgedPathProbesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.MonitorCheckSettingsWhereInput
+}
+
 
 export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -452,6 +549,7 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   createdAt?: boolean
   updatedAt?: boolean
   workspaceMemberships?: boolean | Prisma.User$workspaceMembershipsArgs<ExtArgs>
+  acknowledgedPathProbes?: boolean | Prisma.User$acknowledgedPathProbesArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["user"]>
 
@@ -485,6 +583,7 @@ export type UserSelectScalar = {
 export type UserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "email" | "name" | "passwordHash" | "createdAt" | "updatedAt", ExtArgs["result"]["user"]>
 export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   workspaceMemberships?: boolean | Prisma.User$workspaceMembershipsArgs<ExtArgs>
+  acknowledgedPathProbes?: boolean | Prisma.User$acknowledgedPathProbesArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type UserIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
@@ -494,6 +593,7 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
   name: "User"
   objects: {
     workspaceMemberships: Prisma.$WorkspaceMemberPayload<ExtArgs>[]
+    acknowledgedPathProbes: Prisma.$MonitorCheckSettingsPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -897,6 +997,7 @@ readonly fields: UserFieldRefs;
 export interface Prisma__UserClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
   workspaceMemberships<T extends Prisma.User$workspaceMembershipsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$workspaceMembershipsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$WorkspaceMemberPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  acknowledgedPathProbes<T extends Prisma.User$acknowledgedPathProbesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$acknowledgedPathProbesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$MonitorCheckSettingsPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1346,6 +1447,30 @@ export type User$workspaceMembershipsArgs<ExtArgs extends runtime.Types.Extensio
   take?: number
   skip?: number
   distinct?: Prisma.WorkspaceMemberScalarFieldEnum | Prisma.WorkspaceMemberScalarFieldEnum[]
+}
+
+/**
+ * User.acknowledgedPathProbes
+ */
+export type User$acknowledgedPathProbesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the MonitorCheckSettings
+   */
+  select?: Prisma.MonitorCheckSettingsSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the MonitorCheckSettings
+   */
+  omit?: Prisma.MonitorCheckSettingsOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.MonitorCheckSettingsInclude<ExtArgs> | null
+  where?: Prisma.MonitorCheckSettingsWhereInput
+  orderBy?: Prisma.MonitorCheckSettingsOrderByWithRelationInput | Prisma.MonitorCheckSettingsOrderByWithRelationInput[]
+  cursor?: Prisma.MonitorCheckSettingsWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.MonitorCheckSettingsScalarFieldEnum | Prisma.MonitorCheckSettingsScalarFieldEnum[]
 }
 
 /**
