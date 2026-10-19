@@ -53,6 +53,11 @@ export type MonitorCheckSettings = Prisma.MonitorCheckSettingsModel
  */
 export type Scan = Prisma.ScanModel
 /**
+ * Model MonitorEdgeProfile
+ * 
+ */
+export type MonitorEdgeProfile = Prisma.MonitorEdgeProfileModel
+/**
  * Model ScanOutboxEvent
  * 
  */

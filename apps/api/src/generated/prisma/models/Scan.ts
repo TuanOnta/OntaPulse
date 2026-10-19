@@ -267,6 +267,7 @@ export type ScanWhereInput = {
   monitor?: Prisma.XOR<Prisma.MonitorScalarRelationFilter, Prisma.MonitorWhereInput>
   findings?: Prisma.ScanFindingListRelationFilter
   outboxEvents?: Prisma.ScanOutboxEventListRelationFilter
+  edgeProfile?: Prisma.XOR<Prisma.MonitorEdgeProfileNullableScalarRelationFilter, Prisma.MonitorEdgeProfileWhereInput> | null
 }
 
 export type ScanOrderByWithRelationInput = {
@@ -284,6 +285,7 @@ export type ScanOrderByWithRelationInput = {
   monitor?: Prisma.MonitorOrderByWithRelationInput
   findings?: Prisma.ScanFindingOrderByRelationAggregateInput
   outboxEvents?: Prisma.ScanOutboxEventOrderByRelationAggregateInput
+  edgeProfile?: Prisma.MonitorEdgeProfileOrderByWithRelationInput
 }
 
 export type ScanWhereUniqueInput = Prisma.AtLeast<{
@@ -304,6 +306,7 @@ export type ScanWhereUniqueInput = Prisma.AtLeast<{
   monitor?: Prisma.XOR<Prisma.MonitorScalarRelationFilter, Prisma.MonitorWhereInput>
   findings?: Prisma.ScanFindingListRelationFilter
   outboxEvents?: Prisma.ScanOutboxEventListRelationFilter
+  edgeProfile?: Prisma.XOR<Prisma.MonitorEdgeProfileNullableScalarRelationFilter, Prisma.MonitorEdgeProfileWhereInput> | null
 }, "id">
 
 export type ScanOrderByWithAggregationInput = {
@@ -356,6 +359,7 @@ export type ScanCreateInput = {
   monitor: Prisma.MonitorCreateNestedOneWithoutScansInput
   findings?: Prisma.ScanFindingCreateNestedManyWithoutScanInput
   outboxEvents?: Prisma.ScanOutboxEventCreateNestedManyWithoutScanInput
+  edgeProfile?: Prisma.MonitorEdgeProfileCreateNestedOneWithoutScanInput
 }
 
 export type ScanUncheckedCreateInput = {
@@ -372,6 +376,7 @@ export type ScanUncheckedCreateInput = {
   createdAt?: Date | string
   findings?: Prisma.ScanFindingUncheckedCreateNestedManyWithoutScanInput
   outboxEvents?: Prisma.ScanOutboxEventUncheckedCreateNestedManyWithoutScanInput
+  edgeProfile?: Prisma.MonitorEdgeProfileUncheckedCreateNestedOneWithoutScanInput
 }
 
 export type ScanUpdateInput = {
@@ -388,6 +393,7 @@ export type ScanUpdateInput = {
   monitor?: Prisma.MonitorUpdateOneRequiredWithoutScansNestedInput
   findings?: Prisma.ScanFindingUpdateManyWithoutScanNestedInput
   outboxEvents?: Prisma.ScanOutboxEventUpdateManyWithoutScanNestedInput
+  edgeProfile?: Prisma.MonitorEdgeProfileUpdateOneWithoutScanNestedInput
 }
 
 export type ScanUncheckedUpdateInput = {
@@ -404,6 +410,7 @@ export type ScanUncheckedUpdateInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   findings?: Prisma.ScanFindingUncheckedUpdateManyWithoutScanNestedInput
   outboxEvents?: Prisma.ScanOutboxEventUncheckedUpdateManyWithoutScanNestedInput
+  edgeProfile?: Prisma.MonitorEdgeProfileUncheckedUpdateOneWithoutScanNestedInput
 }
 
 export type ScanCreateManyInput = {
@@ -570,6 +577,20 @@ export type NullableIntFieldUpdateOperationsInput = {
   divide?: number
 }
 
+export type ScanCreateNestedOneWithoutEdgeProfileInput = {
+  create?: Prisma.XOR<Prisma.ScanCreateWithoutEdgeProfileInput, Prisma.ScanUncheckedCreateWithoutEdgeProfileInput>
+  connectOrCreate?: Prisma.ScanCreateOrConnectWithoutEdgeProfileInput
+  connect?: Prisma.ScanWhereUniqueInput
+}
+
+export type ScanUpdateOneRequiredWithoutEdgeProfileNestedInput = {
+  create?: Prisma.XOR<Prisma.ScanCreateWithoutEdgeProfileInput, Prisma.ScanUncheckedCreateWithoutEdgeProfileInput>
+  connectOrCreate?: Prisma.ScanCreateOrConnectWithoutEdgeProfileInput
+  upsert?: Prisma.ScanUpsertWithoutEdgeProfileInput
+  connect?: Prisma.ScanWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.ScanUpdateToOneWithWhereWithoutEdgeProfileInput, Prisma.ScanUpdateWithoutEdgeProfileInput>, Prisma.ScanUncheckedUpdateWithoutEdgeProfileInput>
+}
+
 export type ScanCreateNestedOneWithoutOutboxEventsInput = {
   create?: Prisma.XOR<Prisma.ScanCreateWithoutOutboxEventsInput, Prisma.ScanUncheckedCreateWithoutOutboxEventsInput>
   connectOrCreate?: Prisma.ScanCreateOrConnectWithoutOutboxEventsInput
@@ -611,6 +632,7 @@ export type ScanCreateWithoutMonitorInput = {
   createdAt?: Date | string
   findings?: Prisma.ScanFindingCreateNestedManyWithoutScanInput
   outboxEvents?: Prisma.ScanOutboxEventCreateNestedManyWithoutScanInput
+  edgeProfile?: Prisma.MonitorEdgeProfileCreateNestedOneWithoutScanInput
 }
 
 export type ScanUncheckedCreateWithoutMonitorInput = {
@@ -626,6 +648,7 @@ export type ScanUncheckedCreateWithoutMonitorInput = {
   createdAt?: Date | string
   findings?: Prisma.ScanFindingUncheckedCreateNestedManyWithoutScanInput
   outboxEvents?: Prisma.ScanOutboxEventUncheckedCreateNestedManyWithoutScanInput
+  edgeProfile?: Prisma.MonitorEdgeProfileUncheckedCreateNestedOneWithoutScanInput
 }
 
 export type ScanCreateOrConnectWithoutMonitorInput = {
@@ -671,6 +694,86 @@ export type ScanScalarWhereInput = {
   createdAt?: Prisma.DateTimeFilter<"Scan"> | Date | string
 }
 
+export type ScanCreateWithoutEdgeProfileInput = {
+  id?: string
+  kind?: $Enums.ScanKind
+  status?: $Enums.ScanStatus
+  statusCode?: number | null
+  responseTimeMs?: number | null
+  errorMessage?: string | null
+  subChecks?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  startedAt?: Date | string | null
+  finishedAt?: Date | string | null
+  createdAt?: Date | string
+  monitor: Prisma.MonitorCreateNestedOneWithoutScansInput
+  findings?: Prisma.ScanFindingCreateNestedManyWithoutScanInput
+  outboxEvents?: Prisma.ScanOutboxEventCreateNestedManyWithoutScanInput
+}
+
+export type ScanUncheckedCreateWithoutEdgeProfileInput = {
+  id?: string
+  monitorId: string
+  kind?: $Enums.ScanKind
+  status?: $Enums.ScanStatus
+  statusCode?: number | null
+  responseTimeMs?: number | null
+  errorMessage?: string | null
+  subChecks?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  startedAt?: Date | string | null
+  finishedAt?: Date | string | null
+  createdAt?: Date | string
+  findings?: Prisma.ScanFindingUncheckedCreateNestedManyWithoutScanInput
+  outboxEvents?: Prisma.ScanOutboxEventUncheckedCreateNestedManyWithoutScanInput
+}
+
+export type ScanCreateOrConnectWithoutEdgeProfileInput = {
+  where: Prisma.ScanWhereUniqueInput
+  create: Prisma.XOR<Prisma.ScanCreateWithoutEdgeProfileInput, Prisma.ScanUncheckedCreateWithoutEdgeProfileInput>
+}
+
+export type ScanUpsertWithoutEdgeProfileInput = {
+  update: Prisma.XOR<Prisma.ScanUpdateWithoutEdgeProfileInput, Prisma.ScanUncheckedUpdateWithoutEdgeProfileInput>
+  create: Prisma.XOR<Prisma.ScanCreateWithoutEdgeProfileInput, Prisma.ScanUncheckedCreateWithoutEdgeProfileInput>
+  where?: Prisma.ScanWhereInput
+}
+
+export type ScanUpdateToOneWithWhereWithoutEdgeProfileInput = {
+  where?: Prisma.ScanWhereInput
+  data: Prisma.XOR<Prisma.ScanUpdateWithoutEdgeProfileInput, Prisma.ScanUncheckedUpdateWithoutEdgeProfileInput>
+}
+
+export type ScanUpdateWithoutEdgeProfileInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  kind?: Prisma.EnumScanKindFieldUpdateOperationsInput | $Enums.ScanKind
+  status?: Prisma.EnumScanStatusFieldUpdateOperationsInput | $Enums.ScanStatus
+  statusCode?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  responseTimeMs?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  errorMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  subChecks?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  startedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  finishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  monitor?: Prisma.MonitorUpdateOneRequiredWithoutScansNestedInput
+  findings?: Prisma.ScanFindingUpdateManyWithoutScanNestedInput
+  outboxEvents?: Prisma.ScanOutboxEventUpdateManyWithoutScanNestedInput
+}
+
+export type ScanUncheckedUpdateWithoutEdgeProfileInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  monitorId?: Prisma.StringFieldUpdateOperationsInput | string
+  kind?: Prisma.EnumScanKindFieldUpdateOperationsInput | $Enums.ScanKind
+  status?: Prisma.EnumScanStatusFieldUpdateOperationsInput | $Enums.ScanStatus
+  statusCode?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  responseTimeMs?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  errorMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  subChecks?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
+  startedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  finishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  findings?: Prisma.ScanFindingUncheckedUpdateManyWithoutScanNestedInput
+  outboxEvents?: Prisma.ScanOutboxEventUncheckedUpdateManyWithoutScanNestedInput
+}
+
 export type ScanCreateWithoutOutboxEventsInput = {
   id?: string
   kind?: $Enums.ScanKind
@@ -684,6 +787,7 @@ export type ScanCreateWithoutOutboxEventsInput = {
   createdAt?: Date | string
   monitor: Prisma.MonitorCreateNestedOneWithoutScansInput
   findings?: Prisma.ScanFindingCreateNestedManyWithoutScanInput
+  edgeProfile?: Prisma.MonitorEdgeProfileCreateNestedOneWithoutScanInput
 }
 
 export type ScanUncheckedCreateWithoutOutboxEventsInput = {
@@ -699,6 +803,7 @@ export type ScanUncheckedCreateWithoutOutboxEventsInput = {
   finishedAt?: Date | string | null
   createdAt?: Date | string
   findings?: Prisma.ScanFindingUncheckedCreateNestedManyWithoutScanInput
+  edgeProfile?: Prisma.MonitorEdgeProfileUncheckedCreateNestedOneWithoutScanInput
 }
 
 export type ScanCreateOrConnectWithoutOutboxEventsInput = {
@@ -730,6 +835,7 @@ export type ScanUpdateWithoutOutboxEventsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   monitor?: Prisma.MonitorUpdateOneRequiredWithoutScansNestedInput
   findings?: Prisma.ScanFindingUpdateManyWithoutScanNestedInput
+  edgeProfile?: Prisma.MonitorEdgeProfileUpdateOneWithoutScanNestedInput
 }
 
 export type ScanUncheckedUpdateWithoutOutboxEventsInput = {
@@ -745,6 +851,7 @@ export type ScanUncheckedUpdateWithoutOutboxEventsInput = {
   finishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   findings?: Prisma.ScanFindingUncheckedUpdateManyWithoutScanNestedInput
+  edgeProfile?: Prisma.MonitorEdgeProfileUncheckedUpdateOneWithoutScanNestedInput
 }
 
 export type ScanCreateWithoutFindingsInput = {
@@ -760,6 +867,7 @@ export type ScanCreateWithoutFindingsInput = {
   createdAt?: Date | string
   monitor: Prisma.MonitorCreateNestedOneWithoutScansInput
   outboxEvents?: Prisma.ScanOutboxEventCreateNestedManyWithoutScanInput
+  edgeProfile?: Prisma.MonitorEdgeProfileCreateNestedOneWithoutScanInput
 }
 
 export type ScanUncheckedCreateWithoutFindingsInput = {
@@ -775,6 +883,7 @@ export type ScanUncheckedCreateWithoutFindingsInput = {
   finishedAt?: Date | string | null
   createdAt?: Date | string
   outboxEvents?: Prisma.ScanOutboxEventUncheckedCreateNestedManyWithoutScanInput
+  edgeProfile?: Prisma.MonitorEdgeProfileUncheckedCreateNestedOneWithoutScanInput
 }
 
 export type ScanCreateOrConnectWithoutFindingsInput = {
@@ -806,6 +915,7 @@ export type ScanUpdateWithoutFindingsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   monitor?: Prisma.MonitorUpdateOneRequiredWithoutScansNestedInput
   outboxEvents?: Prisma.ScanOutboxEventUpdateManyWithoutScanNestedInput
+  edgeProfile?: Prisma.MonitorEdgeProfileUpdateOneWithoutScanNestedInput
 }
 
 export type ScanUncheckedUpdateWithoutFindingsInput = {
@@ -821,6 +931,7 @@ export type ScanUncheckedUpdateWithoutFindingsInput = {
   finishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   outboxEvents?: Prisma.ScanOutboxEventUncheckedUpdateManyWithoutScanNestedInput
+  edgeProfile?: Prisma.MonitorEdgeProfileUncheckedUpdateOneWithoutScanNestedInput
 }
 
 export type ScanCreateManyMonitorInput = {
@@ -849,6 +960,7 @@ export type ScanUpdateWithoutMonitorInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   findings?: Prisma.ScanFindingUpdateManyWithoutScanNestedInput
   outboxEvents?: Prisma.ScanOutboxEventUpdateManyWithoutScanNestedInput
+  edgeProfile?: Prisma.MonitorEdgeProfileUpdateOneWithoutScanNestedInput
 }
 
 export type ScanUncheckedUpdateWithoutMonitorInput = {
@@ -864,6 +976,7 @@ export type ScanUncheckedUpdateWithoutMonitorInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   findings?: Prisma.ScanFindingUncheckedUpdateManyWithoutScanNestedInput
   outboxEvents?: Prisma.ScanOutboxEventUncheckedUpdateManyWithoutScanNestedInput
+  edgeProfile?: Prisma.MonitorEdgeProfileUncheckedUpdateOneWithoutScanNestedInput
 }
 
 export type ScanUncheckedUpdateManyWithoutMonitorInput = {
@@ -934,6 +1047,7 @@ export type ScanSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   monitor?: boolean | Prisma.MonitorDefaultArgs<ExtArgs>
   findings?: boolean | Prisma.Scan$findingsArgs<ExtArgs>
   outboxEvents?: boolean | Prisma.Scan$outboxEventsArgs<ExtArgs>
+  edgeProfile?: boolean | Prisma.Scan$edgeProfileArgs<ExtArgs>
   _count?: boolean | Prisma.ScanCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["scan"]>
 
@@ -986,6 +1100,7 @@ export type ScanInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   monitor?: boolean | Prisma.MonitorDefaultArgs<ExtArgs>
   findings?: boolean | Prisma.Scan$findingsArgs<ExtArgs>
   outboxEvents?: boolean | Prisma.Scan$outboxEventsArgs<ExtArgs>
+  edgeProfile?: boolean | Prisma.Scan$edgeProfileArgs<ExtArgs>
   _count?: boolean | Prisma.ScanCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type ScanIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1001,6 +1116,7 @@ export type $ScanPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     monitor: Prisma.$MonitorPayload<ExtArgs>
     findings: Prisma.$ScanFindingPayload<ExtArgs>[]
     outboxEvents: Prisma.$ScanOutboxEventPayload<ExtArgs>[]
+    edgeProfile: Prisma.$MonitorEdgeProfilePayload<ExtArgs> | null
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1411,6 +1527,7 @@ export interface Prisma__ScanClient<T, Null = never, ExtArgs extends runtime.Typ
   monitor<T extends Prisma.MonitorDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.MonitorDefaultArgs<ExtArgs>>): Prisma.Prisma__MonitorClient<runtime.Types.Result.GetResult<Prisma.$MonitorPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   findings<T extends Prisma.Scan$findingsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Scan$findingsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ScanFindingPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   outboxEvents<T extends Prisma.Scan$outboxEventsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Scan$outboxEventsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ScanOutboxEventPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  edgeProfile<T extends Prisma.Scan$edgeProfileArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Scan$edgeProfileArgs<ExtArgs>>): Prisma.Prisma__MonitorEdgeProfileClient<runtime.Types.Result.GetResult<Prisma.$MonitorEdgeProfilePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1897,6 +2014,25 @@ export type Scan$outboxEventsArgs<ExtArgs extends runtime.Types.Extensions.Inter
   take?: number
   skip?: number
   distinct?: Prisma.ScanOutboxEventScalarFieldEnum | Prisma.ScanOutboxEventScalarFieldEnum[]
+}
+
+/**
+ * Scan.edgeProfile
+ */
+export type Scan$edgeProfileArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the MonitorEdgeProfile
+   */
+  select?: Prisma.MonitorEdgeProfileSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the MonitorEdgeProfile
+   */
+  omit?: Prisma.MonitorEdgeProfileOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.MonitorEdgeProfileInclude<ExtArgs> | null
+  where?: Prisma.MonitorEdgeProfileWhereInput
 }
 
 /**

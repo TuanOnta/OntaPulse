@@ -58,6 +58,7 @@ export const ModelName = {
   Monitor: 'Monitor',
   MonitorCheckSettings: 'MonitorCheckSettings',
   Scan: 'Scan',
+  MonitorEdgeProfile: 'MonitorEdgeProfile',
   ScanOutboxEvent: 'ScanOutboxEvent',
   OperationsAuditLog: 'OperationsAuditLog',
   ScanFinding: 'ScanFinding'
@@ -170,6 +171,20 @@ export const ScanScalarFieldEnum = {
 export type ScanScalarFieldEnum = (typeof ScanScalarFieldEnum)[keyof typeof ScanScalarFieldEnum]
 
 
+export const MonitorEdgeProfileScalarFieldEnum = {
+  id: 'id',
+  monitorId: 'monitorId',
+  scanId: 'scanId',
+  challengeObserved: 'challengeObserved',
+  detections: 'detections',
+  observedAt: 'observedAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type MonitorEdgeProfileScalarFieldEnum = (typeof MonitorEdgeProfileScalarFieldEnum)[keyof typeof MonitorEdgeProfileScalarFieldEnum]
+
+
 export const ScanOutboxEventScalarFieldEnum = {
   id: 'id',
   scanId: 'scanId',
@@ -229,6 +244,13 @@ export const NullableJsonNullValueInput = {
 } as const
 
 export type NullableJsonNullValueInput = (typeof NullableJsonNullValueInput)[keyof typeof NullableJsonNullValueInput]
+
+
+export const JsonNullValueInput = {
+  JsonNull: JsonNull
+} as const
+
+export type JsonNullValueInput = (typeof JsonNullValueInput)[keyof typeof JsonNullValueInput]
 
 
 export const QueryMode = {
