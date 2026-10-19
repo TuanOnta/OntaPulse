@@ -18,3 +18,9 @@ export const triggerScanBodySchema = z
   .optional();
 
 export type TriggerScanInput = z.infer<typeof triggerScanBodySchema>;
+
+export const listScansQuerySchema = z
+  .object({
+    kind: z.enum(SCAN_KINDS).optional(),
+  })
+  .strict();

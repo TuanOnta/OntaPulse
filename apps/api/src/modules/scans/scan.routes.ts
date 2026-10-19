@@ -5,6 +5,7 @@ import { WorkspaceRepository } from "../workspaces/workspace.repository.js";
 import { ScanController } from "./scan.controller.js";
 import {
   findAllScansRouteSchema,
+  findLatestSecurityPostureRouteSchema,
   findScanByIdRouteSchema,
   triggerScanRouteSchema,
 } from "./scan.openapi.js";
@@ -46,5 +47,13 @@ export const scanRoutes: FastifyPluginAsync = async (app) => {
       schema: findScanByIdRouteSchema,
     },
     scanController.findById,
+  );
+
+  app.get(
+    "/monitors/:monitorId/security-posture/latest",
+    {
+      schema: findLatestSecurityPostureRouteSchema,
+    },
+    scanController.findLatestSecurityPosture,
   );
 };

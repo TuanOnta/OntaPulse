@@ -1,6 +1,11 @@
 import type { FastifySchema } from "fastify";
 
-import { FINDING_CATEGORIES, FINDING_CONFIDENCES, SCAN_KINDS } from "./scan-kinds.js";
+import {
+  FINDING_CATEGORIES,
+  FINDING_CONFIDENCES,
+  SCAN_KINDS,
+  SUB_CHECK_STATES,
+} from "./scan-kinds.js";
 
 const scanKindSchema = {
   type: "string",
@@ -28,6 +33,7 @@ const scanResponseSchema = {
     "startedAt",
     "finishedAt",
     "createdAt",
+    "subChecks",
   ],
 
   properties: {
@@ -70,6 +76,21 @@ const scanResponseSchema = {
     createdAt: {
       type: "string",
       format: "date-time",
+    },
+
+    subChecks: {
+      type: ["array", "null"],
+
+      items: {
+        type: "object",
+        required: ["name", "state", "reason"],
+
+        properties: {
+          name: { type: "string" },
+          state: { type: "string", enum: [...SUB_CHECK_STATES] },
+          reason: { type: ["string", "null"] },
+        },
+      },
     },
   },
 } as const;
@@ -245,7 +266,9 @@ export const triggerScanRouteSchema: FastifySchema = {
   summary: "Trigger a monitor scan",
   description:
     "Creates a queued scan for the selected monitor. The optional body selects the scan kind " +
-    "and defaults to HTTP_PROBE. Kinds without a worker implementation return 400 SCAN_KIND_NOT_AVAILABLE.",
+    "and defaults to HTTP_PROBE. Kinds without a worker implementation return 400 " +
+    "SCAN_KIND_NOT_AVAILABLE. SECURITY_POSTURE needs the check enabled on the monitor " +
+    "(409 SECURITY_CHECKS_DISABLED) and is rate limited (429 SCAN_RATE_LIMITED).",
 
   params: monitorIdParamsSchema,
 
@@ -257,6 +280,8 @@ export const triggerScanRouteSchema: FastifySchema = {
     401: errorResponseSchema,
     403: errorResponseSchema,
     404: errorResponseSchema,
+    409: errorResponseSchema,
+    429: errorResponseSchema,
     503: errorResponseSchema,
   },
 };
@@ -266,6 +291,15 @@ export const findAllScansRouteSchema: FastifySchema = {
   summary: "List scans for a monitor",
 
   params: monitorIdParamsSchema,
+
+  querystring: {
+    type: "object",
+    additionalProperties: false,
+
+    properties: {
+      kind: scanKindSchema,
+    },
+  },
 
   response: {
     200: {
@@ -284,6 +318,23 @@ export const findScanByIdRouteSchema: FastifySchema = {
   summary: "Get scan details",
 
   params: scanIdParamsSchema,
+
+  response: {
+    200: scanDetailsResponseSchema,
+    400: errorResponseSchema,
+    401: errorResponseSchema,
+    404: errorResponseSchema,
+  },
+};
+
+export const findLatestSecurityPostureRouteSchema: FastifySchema = {
+  tags: ["Scans"],
+  summary: "Get the latest security posture scan of a monitor",
+  description:
+    "Returns the newest finished SECURITY_POSTURE scan with its findings and sub-check results. " +
+    "Responds 404 NO_SECURITY_SCAN when the monitor has none.",
+
+  params: monitorIdParamsSchema,
 
   response: {
     200: scanDetailsResponseSchema,
