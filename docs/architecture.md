@@ -75,6 +75,11 @@ Refer to `apps/api/prisma/schema.prisma` for exact fields, enums, relations, ind
 Existing rows keep working: new columns are nullable or defaulted, and enums are extended, never renamed.
 Names are final only once they appear in `schema.prisma`.
 
+Implemented so far (scan kind plumbing): `Scan.kind`, `ScanFinding.checkId`, `category`, and `confidence`, and the
+`MonitorCheckSettings` table. Only `HTTP_PROBE` is runnable; the worker dispatches by kind through a registry and
+the API rejects other kinds on trigger until their checks ship. The edge profile and DNS baseline tables are added
+in the phases that use them.
+
 ## Scan flow
 
 ```mermaid

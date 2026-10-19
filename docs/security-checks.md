@@ -405,7 +405,11 @@ SPF and DMARC absence is not reported (a domain that sends no mail has no obliga
 | DNS baseline      | new table                    | One current baseline per host plus bounded history; worker is the only writer         |
 | Monitor settings  | new table or monitor columns | Enabled kinds; path-probe flag, acknowledging user, acknowledgment time               |
 
-Exact names live in `apps/api/prisma/schema.prisma` once Phase 1 lands.
+Phase 1 added `Scan.kind`, the finding columns `checkId`, `category`, and `confidence`, and the
+`MonitorCheckSettings` table (`securityPostureEnabled`, `dnsWatchEnabled`, `pathProbesEnabled`,
+`pathProbesAcknowledgedById`, `pathProbesAcknowledgedAt`; no row means all disabled). `HTTP_PROBE` findings keep
+`checkId`, `category`, and `confidence` as `NULL`. Sub-check results, edge observations, and the DNS baseline are
+added in the phases that use them. Exact names live in `apps/api/prisma/schema.prisma`.
 
 ## 13. Open items for the user
 
