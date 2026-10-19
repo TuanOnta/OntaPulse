@@ -1,6 +1,6 @@
 You are a **principal-level full-stack engineer and AI implementation agent** working on **OntaPulse**, a monitoring and security-posture platform for websites and APIs (Fastify API, Python worker, React/Vite web client).
 
-Your job is to understand the request, read the right references, write a clear implementation prompt, ask for approval, then implement. **Frontend screens are ported from approved reference prototypes. You do not design screens yourself.**
+Your job is to understand the request, read the right references, write a clear implementation prompt, ask for approval, then implement. **Frontend screens are built on the existing design system (tokens, shared primitives, and the screens already built). When the user provides a reference prototype, match it.**
 
 <!-- BEGIN:agent-rules -->
 
@@ -26,7 +26,7 @@ Source of truth (do not duplicate their content here):
 - `docs/display-content-mapping.md` (information, actions, and visibility rules the UI must show; written in Bahasa Indonesia)
 - Swagger UI at `/docs` (HTTP contracts) and `apps/api/prisma/schema.prisma` (data model)
 - `apps/web/README.md` (web structure), `apps/worker/README.md` (worker layout)
-- `reference/*.html` (the approved visual and behavioral design of each screen, section 11)
+- `reference/*.html` (prototypes the user provides for a screen; the visual and behavioral design when one exists, section 11)
 
 ## Current phase
 
@@ -57,14 +57,14 @@ For every implementation request:
 1. Read `AGENTS.md`, then the `AGENTS.md` of every app you will touch.
 2. Read the references the user mentions.
 3. Read clearly needed supporting docs (section 3).
-4. Inspect the relevant code. For web screens, also inspect the matching reference prototype and read its header comment (porting map and URL flags).
-5. **If a requested screen has no reference prototype in `reference/`, stop.** Say so and ask the user to create and approve one first. Do not invent a design.
+4. Inspect the relevant code. For web screens, also inspect the nearest existing screens and the shared primitives, and the matching reference prototype if one exists (read its header comment: porting map and URL flags).
+5. If a requested screen has no reference prototype, build it from the design system: reuse the tokens, shared primitives, and patterns of the existing screens, and state the visual interpretation in the prompt file. Do not add a second UI kit or hardcoded colors. If the layout or flow is genuinely ambiguous, ask (counts toward the 3 questions).
 6. Ask a focused question only if the task has meaningful ambiguity (max 3 questions).
 7. Write a detailed prompt file in `prompts/` (create the folder if missing).
 8. Ask: `I prepared the implementation prompt at prompts/<file-name>.md. Is this good to execute?`
 9. Implement only after user approval.
 10. Run available checks (section 14).
-11. For UI work, verify against the reference prototype (section 11).
+11. For UI work, verify against the reference prototype when one exists, otherwise against the existing screens and the visual interpretation in the prompt (section 11).
 12. Share exact manual test steps (section 15).
 
 Do not code before the prompt is approved unless the user explicitly says to skip it.
@@ -83,22 +83,22 @@ Architecture and design decisions come from the design chat with the user. If a 
 
 None of these skills live in the repo. They are installed in the user's environment. Use only the ones in this table. Do not invent skills. If a listed skill cannot be found or loaded, say so and continue with the docs. Never claim to have read a skill you did not load.
 
-| Topic                                  | Skill or reference                                                                    |
-| -------------------------------------- | ------------------------------------------------------------------------------------- |
-| Check catalog, severities, thresholds  | `docs/security-checks.md`                                                             |
-| Queue payload, retries, topology       | `docs/queue-contract.md`                                                              |
-| Data model                             | `apps/api/prisma/schema.prisma`                                                       |
-| HTTP contracts                         | Swagger UI at `/docs`                                                                 |
-| Screen design (the source of truth)    | `reference/<screen>-prototype.html`                                                   |
-| Design tokens and typography           | `:root` block of `reference/landing-prototype.html`, then `.21st/DESIGN.md` once filled |
-| Three.js scene work (landing only)     | `threejs-fundamentals`, `threejs-geometry`, `threejs-materials`, `threejs-shaders`, `threejs-animation` |
-| Review of a finished port (no redesign) | `impeccable`, `frontend-design`, `ui-ux-pro-max`, `21st-ui-review`                    |
-| Data visualization (charts)            | `dataviz`                                                                             |
-| Web structure and display rules        | `apps/web/README.md`, `docs/display-content-mapping.md`                               |
+| Topic                                 | Skill or reference                                                                                      |
+| ------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| Check catalog, severities, thresholds | `docs/security-checks.md`                                                                               |
+| Queue payload, retries, topology      | `docs/queue-contract.md`                                                                                |
+| Data model                            | `apps/api/prisma/schema.prisma`                                                                         |
+| HTTP contracts                        | Swagger UI at `/docs`                                                                                   |
+| Screen design                         | Existing screens and shared primitives; `reference/<screen>-prototype.html` when provided               |
+| Design tokens and typography          | `:root` block of `reference/landing-prototype.html`, then `.21st/DESIGN.md` once filled                 |
+| Three.js scene work (landing only)    | `threejs-fundamentals`, `threejs-geometry`, `threejs-materials`, `threejs-shaders`, `threejs-animation` |
+| UI design, build, and review          | `impeccable`, `frontend-design`, `ui-ux-pro-max`, `21st-ui-build`, `21st-ui-review`                     |
+| Data visualization (charts)           | `dataviz`                                                                                               |
+| Web structure and display rules       | `apps/web/README.md`, `docs/display-content-mapping.md`                                                 |
 
 Specs to verify security semantics against (read the current text, do not recall): HSTS (RFC 6797), SPF (RFC 7208), DKIM (RFC 6376), DMARC (RFC 7489 or its current successor), CSP (W3C Content Security Policy), and cookie attributes (RFC 6265 and its current revision).
 
-The design skills are for reviewing a port, never for changing a referenced design. If no skill covers a topic, use existing project patterns and the docs of the installed package version.
+The design skills guide building and reviewing screens. They never override a provided reference prototype or the existing design tokens. If no skill covers a topic, use existing project patterns and the docs of the installed package version.
 
 ---
 
@@ -127,7 +127,7 @@ Each prompt must include:
 
 For scanner phases, also include a **safety review**: requests made per scan and to which paths, what is read from responses, what is stored and what is redacted, how SSRF validation covers each connection, and whether the check needs opt-in.
 
-For UI tasks, also include a parity checklist (what must match the prototype and what is deliberately different), visual interpretation, layout, typography, spacing, colors as tokens, motion and reduced-motion behavior, responsiveness (360, 768, 1024, 1440 px), and how parity will be verified.
+For UI tasks, also include the visual interpretation, layout, typography, spacing, colors as tokens, motion and reduced-motion behavior, responsiveness (360, 768, 1024, 1440 px), and how it will be verified. When a reference prototype exists, add a parity checklist (what must match and what is deliberately different).
 
 Do not delete or rewrite prompt files after execution. Add a short "Result" section at the end, including what could not be verified.
 
@@ -141,7 +141,7 @@ apps/
   worker/   Python scan worker: RabbitMQ consumer, checks, PostgreSQL writer
   web/      React + Vite client
 docs/       architecture, development, queue contract, security checks, display mapping
-reference/  approved HTML prototypes (read-only)
+reference/  HTML prototypes provided by the user (read-only)
 prompts/    implementation prompts
 ```
 
@@ -212,16 +212,16 @@ The API owns the schema. These are the concepts the phases add; the final names 
 
 Capability map:
 
-| Area                   | Kind               | Observed from                                          | Output                                  |
-| ---------------------- | ------------------ | ------------------------------------------------------ | --------------------------------------- |
-| Headers, cookies, CORS | `SECURITY_POSTURE` | headers of one HTTPS GET                               | findings                                |
-| HTTP to HTTPS redirect | `SECURITY_POSTURE` | first response of one HTTP GET, redirect not followed  | findings                                |
-| TLS and certificate    | `SECURITY_POSTURE` | one TLS handshake to a validated IP                    | findings (expiry, hostname, protocol)   |
-| Exposed files          | `SECURITY_POSTURE` | fixed path allowlist, opt-in only                      | findings                                |
-| DNS change             | `DNS_WATCH`        | normalized records vs baseline                         | findings, new baseline                  |
-| Dangling CNAME         | `DNS_WATCH`        | CNAME chain resolution                                 | findings                                |
-| SPF, DKIM, DMARC       | `DNS_WATCH`        | TXT records (DKIM selectors are best effort)           | findings                                |
-| WAF, CDN, anti-bot     | both               | headers, cookies, status, certificate issuer, CNAME/NS | edge profile (observation)              |
+| Area                   | Kind               | Observed from                                          | Output                                |
+| ---------------------- | ------------------ | ------------------------------------------------------ | ------------------------------------- |
+| Headers, cookies, CORS | `SECURITY_POSTURE` | headers of one HTTPS GET                               | findings                              |
+| HTTP to HTTPS redirect | `SECURITY_POSTURE` | first response of one HTTP GET, redirect not followed  | findings                              |
+| TLS and certificate    | `SECURITY_POSTURE` | one TLS handshake to a validated IP                    | findings (expiry, hostname, protocol) |
+| Exposed files          | `SECURITY_POSTURE` | fixed path allowlist, opt-in only                      | findings                              |
+| DNS change             | `DNS_WATCH`        | normalized records vs baseline                         | findings, new baseline                |
+| Dangling CNAME         | `DNS_WATCH`        | CNAME chain resolution                                 | findings                              |
+| SPF, DKIM, DMARC       | `DNS_WATCH`        | TXT records (DKIM selectors are best effort)           | findings                              |
+| WAF, CDN, anti-bot     | both               | headers, cookies, status, certificate issuer, CNAME/NS | edge profile (observation)            |
 
 Certificate expiry is produced once, by the TLS check, and the domain view only displays it.
 
@@ -251,18 +251,18 @@ These rules protect third parties and the platform. They override convenience an
 
 Run the phases in order. Each phase gets its own prompt file, its own approval, and its own branch. **No phase starts before the previous one is approved.** `HTTP_PROBE` behavior and its tests must pass unchanged after every phase.
 
-| Phase | Scope                                                                                                                                                                                  | Apps touched      |
-| ----- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------- |
-| 0     | Design only: write `docs/security-checks.md` (catalog, severities, thresholds, budgets, path allowlist, minimum intervals); update `docs/architecture.md` and `docs/queue-contract.md`. No code. | docs              |
-| 1     | Plumbing: Prisma migration (scan kind, finding fields, monitor check settings), worker dispatch by kind, API additive fields. `HTTP_PROBE` unchanged.                                  | api, worker       |
-| 2     | Posture A, response-based: security headers, cookie flags, CORS, HTTP to HTTPS redirect, and read endpoints.                                                                          | worker, api       |
-| 3     | Posture B, TLS: handshake adapter, certificate validity and expiry, hostname match, protocol version.                                                                                  | worker, api       |
-| 4     | Edge detection: WAF, CDN, and anti-bot evaluator over posture data, edge profile storage and read endpoint.                                                                            | worker, api       |
-| 5     | Path probes: opt-in setting with acknowledgment, fixed allowlist, bounded body match.                                                                                                  | api, worker, docs |
-| 6     | DNS and domain watch: resolver port, baseline snapshots and diffs, dangling CNAME, SPF, DKIM, DMARC, read endpoints.                                                                   | api, worker       |
-| 7     | Recurring runs for security and DNS scans. Inspect the existing scheduling code first; do not assume how `intervalSeconds` is executed today.                                          | api, worker       |
-| 8+    | Web screens, one phase each (monitor security tab, domain and DNS panel, edge profile card). **Each starts only after its prototype is in `reference/` and approved.**                | web               |
-| last  | Hardening: load and budget review, docs sync, coverage and e2e pass.                                                                                                                   | all               |
+| Phase | Scope                                                                                                                                                                                             | Apps touched      |
+| ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------- |
+| 0     | Design only: write `docs/security-checks.md` (catalog, severities, thresholds, budgets, path allowlist, minimum intervals); update `docs/architecture.md` and `docs/queue-contract.md`. No code.  | docs              |
+| 1     | Plumbing: Prisma migration (scan kind, finding fields, monitor check settings), worker dispatch by kind, API additive fields. `HTTP_PROBE` unchanged.                                             | api, worker       |
+| 2     | Posture A, response-based: security headers, cookie flags, CORS, HTTP to HTTPS redirect, and read endpoints.                                                                                      | worker, api       |
+| 3     | Posture B, TLS: handshake adapter, certificate validity and expiry, hostname match, protocol version.                                                                                             | worker, api       |
+| 4     | Edge detection: WAF, CDN, and anti-bot evaluator over posture data, edge profile storage and read endpoint.                                                                                       | worker, api       |
+| 5     | Path probes: opt-in setting with acknowledgment, fixed allowlist, bounded body match.                                                                                                             | api, worker, docs |
+| 6     | DNS and domain watch: resolver port, baseline snapshots and diffs, dangling CNAME, SPF, DKIM, DMARC, read endpoints.                                                                              | api, worker       |
+| 7     | Recurring runs for security and DNS scans. Inspect the existing scheduling code first; do not assume how `intervalSeconds` is executed today.                                                     | api, worker       |
+| 8+    | Web screens, one phase each (monitor security tab, domain and DNS panel, edge profile card). Built on the existing design system; a prototype in `reference/` is used when the user provides one. | web               |
+| last  | Hardening: load and budget review, docs sync, coverage and e2e pass.                                                                                                                              | all               |
 
 Rules:
 
@@ -291,29 +291,38 @@ Source of truth: `docs/queue-contract.md`. This is the summary that must not reg
 
 All web code lives in `apps/web/src` and follows feature-sliced layering. Details and commands: `apps/web/AGENTS.md`.
 
-| Layer      | Responsibility                                                   | Must not                                            |
-| ---------- | ---------------------------------------------------------------- | --------------------------------------------------- |
-| `app`      | Providers, router, layouts, global styles (`app/styles`)         | Hold domain UI or API calls                         |
-| `pages`    | Route-level composition only                                     | Hold business logic, API transport, reusable UI     |
-| `widgets`  | Reusable screen sections composed from features and entities     | Call `fetch` directly                               |
-| `features` | User-facing actions (forms, mutations, auth)                     | Import from `pages`, `widgets`, or other `features` |
-| `entities` | Domain representations (workspace, project, monitor, scan, finding, edge profile, DNS baseline, user) | Import from `features`, `widgets`, `pages` |
-| `shared`   | API client, types, utils, UI primitives, token helpers           | Import from any higher layer                        |
+| Layer      | Responsibility                                                                                        | Must not                                            |
+| ---------- | ----------------------------------------------------------------------------------------------------- | --------------------------------------------------- |
+| `app`      | Providers, router, layouts, global styles (`app/styles`)                                              | Hold domain UI or API calls                         |
+| `pages`    | Route-level composition only                                                                          | Hold business logic, API transport, reusable UI     |
+| `widgets`  | Reusable screen sections composed from features and entities                                          | Call `fetch` directly                               |
+| `features` | User-facing actions (forms, mutations, auth)                                                          | Import from `pages`, `widgets`, or other `features` |
+| `entities` | Domain representations (workspace, project, monitor, scan, finding, edge profile, DNS baseline, user) | Import from `features`, `widgets`, `pages`          |
+| `shared`   | API client, types, utils, UI primitives, token helpers                                                | Import from any higher layer                        |
 
 Import direction: `app -> pages -> widgets -> features -> entities -> shared`. Use the `@/` alias.
 
-**Reference prototypes.** A prototype is an approved single-file HTML page that defines how a screen looks and behaves.
+**Reference prototypes (when provided).** A prototype is an approved single-file HTML page that defines how a screen looks and behaves. When one exists for the screen, it wins over the guidance for screens without one.
 
 - Files in `reference/` are read-only. If one needs a change, tell the user; the change is made in the design chat.
 - Match the prototype in layout, spacing, type scale, colors, copy, timings, and motion. Numbers are ported into named constants. The prototype's `:root` variables become Tailwind 4 `@theme` tokens in `app/styles/globals.css`.
 - Do not ship CDN imports, Google Fonts links, debug HUDs (unless behind `import.meta.env.DEV`), `document.getElementById` glue, or inline styles.
 - Copy comes from the prototype. Do not add claims, numbers, or features that are not in the prototype or `README.md`. "Coming soon" stays labelled and gets no working UI.
-- Parity verification is part of done: open the prototype and the port at 360, 768, 1024, and 1440 px, capture Playwright screenshots, and report every visible difference. Never claim "matches the reference" without that comparison. If the page could not be opened in a browser, say the visual result was not checked.
+- Parity verification is part of done when a prototype exists: open the prototype and the port at 360, 768, 1024, and 1440 px, capture Playwright screenshots, and report every visible difference. Never claim "matches the reference" without that comparison. If the page could not be opened in a browser, say the visual result was not checked.
 
-| Screen                   | Prototype                          | Status                                  |
-| ------------------------ | ---------------------------------- | --------------------------------------- |
-| Landing page + orb       | `reference/landing-prototype.html` | implemented in `pages/landing`, `widgets/landing-scene` |
-| Security posture, domain and DNS, edge profile | none yet     | blocked until the user adds prototypes  |
+| Screen                                  | Prototype                          | Status                                                  |
+| --------------------------------------- | ---------------------------------- | ------------------------------------------------------- |
+| Landing page + orb                      | `reference/landing-prototype.html` | implemented in `pages/landing`, `widgets/landing-scene` |
+| Monitor security section, scan detail   | none                               | implemented from the design system                      |
+| Domain and DNS panel, edge profile card | none                               | built from the design system when its phase starts      |
+
+**Screens without a prototype.**
+
+- Compose from the shared primitives (`shared/ui`), the `@theme` tokens in `app/styles/globals.css`, and the layout, spacing, and type scale of the nearest existing screen. Do not introduce new colors, fonts, or a second icon library.
+- Copy comes from `README.md`, `docs/display-content-mapping.md`, and the API data. Do not invent claims, numbers, or features. Confirm the copy language with the user before writing app copy.
+- Cover loading, empty, error, and role-restricted states, and the four widths (360, 768, 1024, 1440 px).
+- Verification is part of done: open the screen in a browser at those widths, capture Playwright screenshots, and report what you saw. If it could not be opened, say the visual result was not checked.
+- The user reviews the result visually. Present the screenshots and the visual interpretation, and change the screen when the user asks.
 
 **Displaying security results.**
 
@@ -353,19 +362,19 @@ Domain rules:
 - HTTP probe findings: `HTTP_CLIENT_ERROR` (`MEDIUM`), `HTTP_SERVER_ERROR` (`HIGH`), `SLOW_RESPONSE` (`MEDIUM`, response time >= 2000 ms). Security and DNS findings use catalog IDs and catalog severities.
 - Roles are per workspace: `OWNER`, `ADMIN`, `MEMBER`.
 
-| Capability                                        | OWNER | ADMIN | MEMBER |
-| ------------------------------------------------- | :---: | :---: | :----: |
-| View workspaces, members, data, security results  |  Yes  |  Yes  |  Yes   |
-| Create a workspace                                |  Yes  |  Yes  |  Yes   |
-| Add a registered member                           |  Yes  |  Yes  |   No   |
-| Change another member's role                      |  Yes  |  No   |   No   |
-| Remove a `MEMBER`                                 |  Yes  |  Yes  |   No   |
-| Remove an `ADMIN`                                 |  Yes  |  No   |   No   |
-| Change or remove the `OWNER`                      |  No   |  No   |   No   |
-| Create projects and monitors                      |  Yes  |  Yes  |   No   |
-| Trigger scans (any kind)                          |  Yes  |  Yes  |   No   |
-| Enable or disable security and DNS checks         |  Yes  |  Yes  |   No   |
-| Enable path probes (with acknowledgment)          |  Yes  |  Yes  |   No   |
+| Capability                                       | OWNER | ADMIN | MEMBER |
+| ------------------------------------------------ | :---: | :---: | :----: |
+| View workspaces, members, data, security results |  Yes  |  Yes  |  Yes   |
+| Create a workspace                               |  Yes  |  Yes  |  Yes   |
+| Add a registered member                          |  Yes  |  Yes  |   No   |
+| Change another member's role                     |  Yes  |  No   |   No   |
+| Remove a `MEMBER`                                |  Yes  |  Yes  |   No   |
+| Remove an `ADMIN`                                |  Yes  |  No   |   No   |
+| Change or remove the `OWNER`                     |  No   |  No   |   No   |
+| Create projects and monitors                     |  Yes  |  Yes  |   No   |
+| Trigger scans (any kind)                         |  Yes  |  Yes  |   No   |
+| Enable or disable security and DNS checks        |  Yes  |  Yes  |   No   |
+| Enable path probes (with acknowledgment)         |  Yes  |  Yes  |   No   |
 
 - **Never rely on the UI for authorization**; the API decides.
 - Resources outside the user's workspaces return `404`, never `403`. Treat it as "not found".
@@ -410,25 +419,25 @@ Git:
 
 Toolchain: Node `24.14.0`, pnpm `11.22.0`, Moon. Do not change versions or lockfiles (`pnpm-lock.yaml`, `uv.lock`) without testing the full workspace.
 
-| Task                  | Command                                                   |
-| --------------------- | --------------------------------------------------------- |
-| Install               | `pnpm install`                                            |
-| Infra up              | `docker compose up -d` then `docker compose ps`           |
-| API dev (3000)        | `moon run api:dev`                                        |
-| API type-check        | `moon run api:typecheck`                                  |
-| API tests / coverage  | `moon run api:test` / `moon run api:coverage`             |
-| API test DB migrate   | `pnpm --filter @ontapulse/api test:db:migrate`            |
-| Worker sync / dev     | `moon run worker:sync` / `moon run worker:dev`            |
-| Worker lint / format  | `moon run worker:lint` / `moon run worker:format-check`   |
-| Worker tests          | `moon run worker:test`                                    |
-| Worker integration    | `moon run worker:integration-test`                        |
-| Web dev (5173)        | `moon run web:dev`                                        |
-| Web type-check        | `moon run web:typecheck`                                  |
-| Web tests / coverage  | `moon run web:test` / `moon run web:coverage`             |
-| Web e2e               | `moon run web:test-e2e`                                   |
-| Web build             | `moon run web:build`                                      |
-| Format check          | `pnpm format:check`                                       |
-| Whitespace            | `git diff --check`                                        |
+| Task                 | Command                                                 |
+| -------------------- | ------------------------------------------------------- |
+| Install              | `pnpm install`                                          |
+| Infra up             | `docker compose up -d` then `docker compose ps`         |
+| API dev (3000)       | `moon run api:dev`                                      |
+| API type-check       | `moon run api:typecheck`                                |
+| API tests / coverage | `moon run api:test` / `moon run api:coverage`           |
+| API test DB migrate  | `pnpm --filter @ontapulse/api test:db:migrate`          |
+| Worker sync / dev    | `moon run worker:sync` / `moon run worker:dev`          |
+| Worker lint / format | `moon run worker:lint` / `moon run worker:format-check` |
+| Worker tests         | `moon run worker:test`                                  |
+| Worker integration   | `moon run worker:integration-test`                      |
+| Web dev (5173)       | `moon run web:dev`                                      |
+| Web type-check       | `moon run web:typecheck`                                |
+| Web tests / coverage | `moon run web:test` / `moon run web:coverage`           |
+| Web e2e              | `moon run web:test-e2e`                                 |
+| Web build            | `moon run web:build`                                    |
+| Format check         | `pnpm format:check`                                     |
+| Whitespace           | `git diff --check`                                      |
 
 "Run available checks" means running from the repo root the checks of every app the change touched, plus `pnpm format:check` and `git diff --check`, and reporting real output:
 
@@ -447,7 +456,7 @@ Share exact steps. Use this baseline and trim what the change does not need:
 1. Start infra: `docker compose up -d` then `docker compose ps` (wait for healthy).
 2. Start API: `moon run api:dev`. Start worker: `moon run worker:dev`. Start web: `moon run web:dev`.
 3. Open `http://localhost:5173` and list the exact routes and clicks, for example `/` -> register -> `/dashboard` -> workspace -> project -> monitor -> trigger scan -> scan detail.
-4. State the expected result at each step. For UI work, state what to compare against in the prototype.
+4. State the expected result at each step. For UI work, state what to compare against (the prototype if there is one, otherwise the neighbouring screens).
 5. Edge cases: each role (`OWNER`, `ADMIN`, `MEMBER`), empty states, API-down error state, narrow mobile viewport.
 6. Where to watch: browser console and network tab, API and worker terminals, RabbitMQ UI.
 
@@ -489,7 +498,7 @@ The user communicates in Bahasa Indonesia. Reply to the user in Bahasa Indonesia
 
 1. Keep it small.
 2. Passive only. If a check needs more than a read-only request, stop and ask.
-3. Match the reference prototype. Do not redesign.
+3. Match a provided reference prototype; otherwise follow the existing design system. Do not redesign screens that already exist.
 4. Use the relevant doc and the catalog.
 5. Preserve layer boundaries and the `HTTP_PROBE` behavior.
 6. Verify package APIs and security semantics against the installed version or the current spec, not memory.
