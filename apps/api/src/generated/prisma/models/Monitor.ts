@@ -251,6 +251,7 @@ export type MonitorWhereInput = {
   project?: Prisma.XOR<Prisma.ProjectScalarRelationFilter, Prisma.ProjectWhereInput>
   scans?: Prisma.ScanListRelationFilter
   checkSettings?: Prisma.XOR<Prisma.MonitorCheckSettingsNullableScalarRelationFilter, Prisma.MonitorCheckSettingsWhereInput> | null
+  edgeProfile?: Prisma.XOR<Prisma.MonitorEdgeProfileNullableScalarRelationFilter, Prisma.MonitorEdgeProfileWhereInput> | null
 }
 
 export type MonitorOrderByWithRelationInput = {
@@ -266,6 +267,7 @@ export type MonitorOrderByWithRelationInput = {
   project?: Prisma.ProjectOrderByWithRelationInput
   scans?: Prisma.ScanOrderByRelationAggregateInput
   checkSettings?: Prisma.MonitorCheckSettingsOrderByWithRelationInput
+  edgeProfile?: Prisma.MonitorEdgeProfileOrderByWithRelationInput
 }
 
 export type MonitorWhereUniqueInput = Prisma.AtLeast<{
@@ -285,6 +287,7 @@ export type MonitorWhereUniqueInput = Prisma.AtLeast<{
   project?: Prisma.XOR<Prisma.ProjectScalarRelationFilter, Prisma.ProjectWhereInput>
   scans?: Prisma.ScanListRelationFilter
   checkSettings?: Prisma.XOR<Prisma.MonitorCheckSettingsNullableScalarRelationFilter, Prisma.MonitorCheckSettingsWhereInput> | null
+  edgeProfile?: Prisma.XOR<Prisma.MonitorEdgeProfileNullableScalarRelationFilter, Prisma.MonitorEdgeProfileWhereInput> | null
 }, "id" | "projectId_targetUrl">
 
 export type MonitorOrderByWithAggregationInput = {
@@ -331,6 +334,7 @@ export type MonitorCreateInput = {
   project: Prisma.ProjectCreateNestedOneWithoutMonitorsInput
   scans?: Prisma.ScanCreateNestedManyWithoutMonitorInput
   checkSettings?: Prisma.MonitorCheckSettingsCreateNestedOneWithoutMonitorInput
+  edgeProfile?: Prisma.MonitorEdgeProfileCreateNestedOneWithoutMonitorInput
 }
 
 export type MonitorUncheckedCreateInput = {
@@ -345,6 +349,7 @@ export type MonitorUncheckedCreateInput = {
   updatedAt?: Date | string
   scans?: Prisma.ScanUncheckedCreateNestedManyWithoutMonitorInput
   checkSettings?: Prisma.MonitorCheckSettingsUncheckedCreateNestedOneWithoutMonitorInput
+  edgeProfile?: Prisma.MonitorEdgeProfileUncheckedCreateNestedOneWithoutMonitorInput
 }
 
 export type MonitorUpdateInput = {
@@ -359,6 +364,7 @@ export type MonitorUpdateInput = {
   project?: Prisma.ProjectUpdateOneRequiredWithoutMonitorsNestedInput
   scans?: Prisma.ScanUpdateManyWithoutMonitorNestedInput
   checkSettings?: Prisma.MonitorCheckSettingsUpdateOneWithoutMonitorNestedInput
+  edgeProfile?: Prisma.MonitorEdgeProfileUpdateOneWithoutMonitorNestedInput
 }
 
 export type MonitorUncheckedUpdateInput = {
@@ -373,6 +379,7 @@ export type MonitorUncheckedUpdateInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   scans?: Prisma.ScanUncheckedUpdateManyWithoutMonitorNestedInput
   checkSettings?: Prisma.MonitorCheckSettingsUncheckedUpdateOneWithoutMonitorNestedInput
+  edgeProfile?: Prisma.MonitorEdgeProfileUncheckedUpdateOneWithoutMonitorNestedInput
 }
 
 export type MonitorCreateManyInput = {
@@ -556,6 +563,20 @@ export type MonitorUpdateOneRequiredWithoutScansNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.MonitorUpdateToOneWithWhereWithoutScansInput, Prisma.MonitorUpdateWithoutScansInput>, Prisma.MonitorUncheckedUpdateWithoutScansInput>
 }
 
+export type MonitorCreateNestedOneWithoutEdgeProfileInput = {
+  create?: Prisma.XOR<Prisma.MonitorCreateWithoutEdgeProfileInput, Prisma.MonitorUncheckedCreateWithoutEdgeProfileInput>
+  connectOrCreate?: Prisma.MonitorCreateOrConnectWithoutEdgeProfileInput
+  connect?: Prisma.MonitorWhereUniqueInput
+}
+
+export type MonitorUpdateOneRequiredWithoutEdgeProfileNestedInput = {
+  create?: Prisma.XOR<Prisma.MonitorCreateWithoutEdgeProfileInput, Prisma.MonitorUncheckedCreateWithoutEdgeProfileInput>
+  connectOrCreate?: Prisma.MonitorCreateOrConnectWithoutEdgeProfileInput
+  upsert?: Prisma.MonitorUpsertWithoutEdgeProfileInput
+  connect?: Prisma.MonitorWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.MonitorUpdateToOneWithWhereWithoutEdgeProfileInput, Prisma.MonitorUpdateWithoutEdgeProfileInput>, Prisma.MonitorUncheckedUpdateWithoutEdgeProfileInput>
+}
+
 export type MonitorCreateWithoutProjectInput = {
   id?: string
   name: string
@@ -567,6 +588,7 @@ export type MonitorCreateWithoutProjectInput = {
   updatedAt?: Date | string
   scans?: Prisma.ScanCreateNestedManyWithoutMonitorInput
   checkSettings?: Prisma.MonitorCheckSettingsCreateNestedOneWithoutMonitorInput
+  edgeProfile?: Prisma.MonitorEdgeProfileCreateNestedOneWithoutMonitorInput
 }
 
 export type MonitorUncheckedCreateWithoutProjectInput = {
@@ -580,6 +602,7 @@ export type MonitorUncheckedCreateWithoutProjectInput = {
   updatedAt?: Date | string
   scans?: Prisma.ScanUncheckedCreateNestedManyWithoutMonitorInput
   checkSettings?: Prisma.MonitorCheckSettingsUncheckedCreateNestedOneWithoutMonitorInput
+  edgeProfile?: Prisma.MonitorEdgeProfileUncheckedCreateNestedOneWithoutMonitorInput
 }
 
 export type MonitorCreateOrConnectWithoutProjectInput = {
@@ -634,6 +657,7 @@ export type MonitorCreateWithoutCheckSettingsInput = {
   updatedAt?: Date | string
   project: Prisma.ProjectCreateNestedOneWithoutMonitorsInput
   scans?: Prisma.ScanCreateNestedManyWithoutMonitorInput
+  edgeProfile?: Prisma.MonitorEdgeProfileCreateNestedOneWithoutMonitorInput
 }
 
 export type MonitorUncheckedCreateWithoutCheckSettingsInput = {
@@ -647,6 +671,7 @@ export type MonitorUncheckedCreateWithoutCheckSettingsInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   scans?: Prisma.ScanUncheckedCreateNestedManyWithoutMonitorInput
+  edgeProfile?: Prisma.MonitorEdgeProfileUncheckedCreateNestedOneWithoutMonitorInput
 }
 
 export type MonitorCreateOrConnectWithoutCheckSettingsInput = {
@@ -676,6 +701,7 @@ export type MonitorUpdateWithoutCheckSettingsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   project?: Prisma.ProjectUpdateOneRequiredWithoutMonitorsNestedInput
   scans?: Prisma.ScanUpdateManyWithoutMonitorNestedInput
+  edgeProfile?: Prisma.MonitorEdgeProfileUpdateOneWithoutMonitorNestedInput
 }
 
 export type MonitorUncheckedUpdateWithoutCheckSettingsInput = {
@@ -689,6 +715,7 @@ export type MonitorUncheckedUpdateWithoutCheckSettingsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   scans?: Prisma.ScanUncheckedUpdateManyWithoutMonitorNestedInput
+  edgeProfile?: Prisma.MonitorEdgeProfileUncheckedUpdateOneWithoutMonitorNestedInput
 }
 
 export type MonitorCreateWithoutScansInput = {
@@ -702,6 +729,7 @@ export type MonitorCreateWithoutScansInput = {
   updatedAt?: Date | string
   project: Prisma.ProjectCreateNestedOneWithoutMonitorsInput
   checkSettings?: Prisma.MonitorCheckSettingsCreateNestedOneWithoutMonitorInput
+  edgeProfile?: Prisma.MonitorEdgeProfileCreateNestedOneWithoutMonitorInput
 }
 
 export type MonitorUncheckedCreateWithoutScansInput = {
@@ -715,6 +743,7 @@ export type MonitorUncheckedCreateWithoutScansInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   checkSettings?: Prisma.MonitorCheckSettingsUncheckedCreateNestedOneWithoutMonitorInput
+  edgeProfile?: Prisma.MonitorEdgeProfileUncheckedCreateNestedOneWithoutMonitorInput
 }
 
 export type MonitorCreateOrConnectWithoutScansInput = {
@@ -744,6 +773,7 @@ export type MonitorUpdateWithoutScansInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   project?: Prisma.ProjectUpdateOneRequiredWithoutMonitorsNestedInput
   checkSettings?: Prisma.MonitorCheckSettingsUpdateOneWithoutMonitorNestedInput
+  edgeProfile?: Prisma.MonitorEdgeProfileUpdateOneWithoutMonitorNestedInput
 }
 
 export type MonitorUncheckedUpdateWithoutScansInput = {
@@ -756,6 +786,79 @@ export type MonitorUncheckedUpdateWithoutScansInput = {
   nextScheduledAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  checkSettings?: Prisma.MonitorCheckSettingsUncheckedUpdateOneWithoutMonitorNestedInput
+  edgeProfile?: Prisma.MonitorEdgeProfileUncheckedUpdateOneWithoutMonitorNestedInput
+}
+
+export type MonitorCreateWithoutEdgeProfileInput = {
+  id?: string
+  name: string
+  targetUrl: string
+  intervalSeconds?: number
+  isActive?: boolean
+  nextScheduledAt?: Date | string
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  project: Prisma.ProjectCreateNestedOneWithoutMonitorsInput
+  scans?: Prisma.ScanCreateNestedManyWithoutMonitorInput
+  checkSettings?: Prisma.MonitorCheckSettingsCreateNestedOneWithoutMonitorInput
+}
+
+export type MonitorUncheckedCreateWithoutEdgeProfileInput = {
+  id?: string
+  projectId: string
+  name: string
+  targetUrl: string
+  intervalSeconds?: number
+  isActive?: boolean
+  nextScheduledAt?: Date | string
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  scans?: Prisma.ScanUncheckedCreateNestedManyWithoutMonitorInput
+  checkSettings?: Prisma.MonitorCheckSettingsUncheckedCreateNestedOneWithoutMonitorInput
+}
+
+export type MonitorCreateOrConnectWithoutEdgeProfileInput = {
+  where: Prisma.MonitorWhereUniqueInput
+  create: Prisma.XOR<Prisma.MonitorCreateWithoutEdgeProfileInput, Prisma.MonitorUncheckedCreateWithoutEdgeProfileInput>
+}
+
+export type MonitorUpsertWithoutEdgeProfileInput = {
+  update: Prisma.XOR<Prisma.MonitorUpdateWithoutEdgeProfileInput, Prisma.MonitorUncheckedUpdateWithoutEdgeProfileInput>
+  create: Prisma.XOR<Prisma.MonitorCreateWithoutEdgeProfileInput, Prisma.MonitorUncheckedCreateWithoutEdgeProfileInput>
+  where?: Prisma.MonitorWhereInput
+}
+
+export type MonitorUpdateToOneWithWhereWithoutEdgeProfileInput = {
+  where?: Prisma.MonitorWhereInput
+  data: Prisma.XOR<Prisma.MonitorUpdateWithoutEdgeProfileInput, Prisma.MonitorUncheckedUpdateWithoutEdgeProfileInput>
+}
+
+export type MonitorUpdateWithoutEdgeProfileInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  targetUrl?: Prisma.StringFieldUpdateOperationsInput | string
+  intervalSeconds?: Prisma.IntFieldUpdateOperationsInput | number
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  nextScheduledAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  project?: Prisma.ProjectUpdateOneRequiredWithoutMonitorsNestedInput
+  scans?: Prisma.ScanUpdateManyWithoutMonitorNestedInput
+  checkSettings?: Prisma.MonitorCheckSettingsUpdateOneWithoutMonitorNestedInput
+}
+
+export type MonitorUncheckedUpdateWithoutEdgeProfileInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  projectId?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  targetUrl?: Prisma.StringFieldUpdateOperationsInput | string
+  intervalSeconds?: Prisma.IntFieldUpdateOperationsInput | number
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  nextScheduledAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  scans?: Prisma.ScanUncheckedUpdateManyWithoutMonitorNestedInput
   checkSettings?: Prisma.MonitorCheckSettingsUncheckedUpdateOneWithoutMonitorNestedInput
 }
 
@@ -781,6 +884,7 @@ export type MonitorUpdateWithoutProjectInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   scans?: Prisma.ScanUpdateManyWithoutMonitorNestedInput
   checkSettings?: Prisma.MonitorCheckSettingsUpdateOneWithoutMonitorNestedInput
+  edgeProfile?: Prisma.MonitorEdgeProfileUpdateOneWithoutMonitorNestedInput
 }
 
 export type MonitorUncheckedUpdateWithoutProjectInput = {
@@ -794,6 +898,7 @@ export type MonitorUncheckedUpdateWithoutProjectInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   scans?: Prisma.ScanUncheckedUpdateManyWithoutMonitorNestedInput
   checkSettings?: Prisma.MonitorCheckSettingsUncheckedUpdateOneWithoutMonitorNestedInput
+  edgeProfile?: Prisma.MonitorEdgeProfileUncheckedUpdateOneWithoutMonitorNestedInput
 }
 
 export type MonitorUncheckedUpdateManyWithoutProjectInput = {
@@ -851,6 +956,7 @@ export type MonitorSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   project?: boolean | Prisma.ProjectDefaultArgs<ExtArgs>
   scans?: boolean | Prisma.Monitor$scansArgs<ExtArgs>
   checkSettings?: boolean | Prisma.Monitor$checkSettingsArgs<ExtArgs>
+  edgeProfile?: boolean | Prisma.Monitor$edgeProfileArgs<ExtArgs>
   _count?: boolean | Prisma.MonitorCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["monitor"]>
 
@@ -897,6 +1003,7 @@ export type MonitorInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs
   project?: boolean | Prisma.ProjectDefaultArgs<ExtArgs>
   scans?: boolean | Prisma.Monitor$scansArgs<ExtArgs>
   checkSettings?: boolean | Prisma.Monitor$checkSettingsArgs<ExtArgs>
+  edgeProfile?: boolean | Prisma.Monitor$edgeProfileArgs<ExtArgs>
   _count?: boolean | Prisma.MonitorCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type MonitorIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -912,6 +1019,7 @@ export type $MonitorPayload<ExtArgs extends runtime.Types.Extensions.InternalArg
     project: Prisma.$ProjectPayload<ExtArgs>
     scans: Prisma.$ScanPayload<ExtArgs>[]
     checkSettings: Prisma.$MonitorCheckSettingsPayload<ExtArgs> | null
+    edgeProfile: Prisma.$MonitorEdgeProfilePayload<ExtArgs> | null
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1320,6 +1428,7 @@ export interface Prisma__MonitorClient<T, Null = never, ExtArgs extends runtime.
   project<T extends Prisma.ProjectDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.ProjectDefaultArgs<ExtArgs>>): Prisma.Prisma__ProjectClient<runtime.Types.Result.GetResult<Prisma.$ProjectPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   scans<T extends Prisma.Monitor$scansArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Monitor$scansArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ScanPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   checkSettings<T extends Prisma.Monitor$checkSettingsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Monitor$checkSettingsArgs<ExtArgs>>): Prisma.Prisma__MonitorCheckSettingsClient<runtime.Types.Result.GetResult<Prisma.$MonitorCheckSettingsPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  edgeProfile<T extends Prisma.Monitor$edgeProfileArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Monitor$edgeProfileArgs<ExtArgs>>): Prisma.Prisma__MonitorEdgeProfileClient<runtime.Types.Result.GetResult<Prisma.$MonitorEdgeProfilePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1799,6 +1908,25 @@ export type Monitor$checkSettingsArgs<ExtArgs extends runtime.Types.Extensions.I
    */
   include?: Prisma.MonitorCheckSettingsInclude<ExtArgs> | null
   where?: Prisma.MonitorCheckSettingsWhereInput
+}
+
+/**
+ * Monitor.edgeProfile
+ */
+export type Monitor$edgeProfileArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the MonitorEdgeProfile
+   */
+  select?: Prisma.MonitorEdgeProfileSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the MonitorEdgeProfile
+   */
+  omit?: Prisma.MonitorEdgeProfileOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.MonitorEdgeProfileInclude<ExtArgs> | null
+  where?: Prisma.MonitorEdgeProfileWhereInput
 }
 
 /**

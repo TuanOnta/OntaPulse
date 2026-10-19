@@ -3,7 +3,7 @@
 Design contract for the `SECURITY_POSTURE` and `DNS_WATCH` scan kinds and for edge (WAF, CDN, anti-bot)
 detection. `HTTP_PROBE` is the existing check and is unchanged by this document.
 
-Status: **draft. Phase 2 implemented the header, cookie, CORS, and redirect checks of `SECURITY_POSTURE`.** Values marked _(draft)_ wait for the user's confirmation. Entries marked _(unverified)_
+Status: **draft. Phases 2 to 4 implemented the header, cookie, CORS, redirect, TLS, and edge checks of `SECURITY_POSTURE`.** Values marked _(draft)_ wait for the user's confirmation. Entries marked _(unverified)_
 could not be checked against a primary source when this file was written and must be re-verified before the phase
 that implements them.
 
@@ -301,13 +301,14 @@ Rules:
 
 A response is classified as a **challenge** when any of the following holds (signals are fingerprints, section 10):
 
-1. A verified vendor challenge marker. Phase 2 implements one, verified against Cloudflare documentation: the
-   response header `cf-mitigated` with the value `challenge` (the documented only value; set for all Challenge
-   Page types; the documentation names no status code). Other vendors are added in Phase 4 after the same
-   verification. _(unverified: markers for other vendors)_
+1. A verified vendor challenge marker. Cloudflare: the response header `cf-mitigated` with the value `challenge`
+   (the documented only value; set for all Challenge Page types; the documentation names no status code). AWS WAF
+   (Phase 4, AWS documentation): the response header `x-amzn-waf-action` with the value `challenge` (status 202) or
+   `captcha` (status 405). Markers for other vendors are added only after the same primary-source verification.
 2. Heuristic, low certainty: status 403, 429, or 503 without a verified marker. Findings from such a response are
    kept with `confidence = LOW` and `possible_challenge = true` in the evidence.
-3. A known anti-bot challenge cookie name is set on a non-2xx response.
+3. A known anti-bot challenge cookie is set on a non-2xx response (Phase 4): `datadome` (DataDome) or `_pxhd`
+   (HUMAN). The same `datadome` cookie on a 2xx response is not a challenge.
 
 Effects:
 
@@ -322,42 +323,58 @@ When classification is uncertain (single weak signal), findings from that respon
 
 ## 10. Edge detection (WAF, CDN, anti-bot): observations
 
-Pure evaluator in the worker `domain` layer over data already collected by the posture and DNS scans. No requests
-of its own. Output is an **observation**, not a finding: an edge layer is informational, not a defect.
+Pure evaluator in the worker `domain` layer (`modules/edge_detection`) over data already collected by the posture
+scan. No requests of its own (Phase 4). Output is an **observation**, not a finding: an edge layer is informational,
+not a defect. Wording is "observed": a vendor header proves that vendor's edge was in the path, not that a rule set is
+enabled.
 
-Signals used: response header names (and for a fixed set of headers, the value class), cookie names, status code,
-challenge markers, certificate issuer, CNAME and NS suffix patterns.
+Signals used in Phase 4: response header names (and, for the fixed rows below, a header value class), cookie names,
+status class, and challenge markers. The input model also accepts certificate issuer, CNAME suffix, and NS suffix, but
+no table row uses them yet: no primary-source patterns were verified, and DNS data arrives in Phase 6.
 
-Observation shape (stored additively, one current profile per monitor plus the scan that produced it):
+Observation shape (one current profile per monitor plus the scan that produced it, table `MonitorEdgeProfile`):
 
-| Field                | Meaning                                                                                              |
-| -------------------- | ---------------------------------------------------------------------------------------------------- |
-| `vendor`             | Vendor key from the table below                                                                      |
-| `layer`              | `CDN`, `WAF`, `ANTI_BOT`                                                                             |
-| `confidence`         | `HIGH` (two or more independent signal types), `MEDIUM` (one strong signal), `LOW` (one weak signal) |
-| `signals`            | List of `{ type, name }` that supported the match (no values)                                        |
-| `challenge_observed` | Boolean for the scan                                                                                 |
+| Field                | Meaning                                                                                                     |
+| -------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `vendor`             | Vendor key from the table below                                                                             |
+| `layer`              | `CDN`, `WAF`, `ANTI_BOT`                                                                                    |
+| `confidence`         | `HIGH` (two or more independent signal types), `MEDIUM` (one `STRONG` signal), `LOW` (only `WEAK` signals)  |
+| `signals`            | List of `{ type, name }` that supported the match (no values); a signal seen in both responses counts once  |
+| `challenge_observed` | Boolean for the scan (profile level): at least one response classified as a confirmed challenge (section 9) |
 
-Signal types: `HEADER_NAME`, `COOKIE_NAME`, `CNAME_SUFFIX`, `NS_SUFFIX`, `CERT_ISSUER`, `STATUS_MARKER`.
+An empty `detections` list means "no edge layer observed in this scan" and replaces an older profile. A vendor can
+appear under several layers when each has its own supporting signals.
 
-Vendor fingerprint table _(unverified)_: header names, cookie names, and CNAME suffix patterns per vendor must be
-taken from each vendor's own documentation when Phase 4 is written. This file lists only the vendor keys in scope
-for the first version; the signal lists are filled in at Phase 4 with a source link per row.
+Signal types: `HEADER_NAME`, `COOKIE_NAME`, `CERT_ISSUER`, `CNAME_SUFFIX`, `NS_SUFFIX`, `STATUS_MARKER`
+(`CERT_ISSUER`, `CNAME_SUFFIX`, and `NS_SUFFIX` have no rules yet). `STATUS_MARKER` is a verified challenge or
+mitigation marker header value. Strength `S` = `STRONG`, `W` = `WEAK`.
 
-| Vendor key         | Layer         | Signals                                 |
-| ------------------ | ------------- | --------------------------------------- |
-| `CLOUDFLARE`       | CDN, WAF      | to be filled from vendor docs (Phase 4) |
-| `AKAMAI`           | CDN, WAF      | to be filled from vendor docs (Phase 4) |
-| `FASTLY`           | CDN           | to be filled from vendor docs (Phase 4) |
-| `AWS_CLOUDFRONT`   | CDN           | to be filled from vendor docs (Phase 4) |
-| `AWS_WAF`          | WAF           | to be filled from vendor docs (Phase 4) |
-| `IMPERVA`          | WAF, ANTI_BOT | to be filled from vendor docs (Phase 4) |
-| `DATADOME`         | ANTI_BOT      | to be filled from vendor docs (Phase 4) |
-| `HUMAN_PERIMETERX` | ANTI_BOT      | to be filled from vendor docs (Phase 4) |
-| `VERCEL`           | CDN           | to be filled from vendor docs (Phase 4) |
+Fingerprint table, read from each vendor's own documentation on 2026-10-20. Signals found only in third-party
+write-ups are not used.
 
-Rules: a vendor needs at least one signal; weak signals alone give `LOW`. Unknown vendors are not guessed.
-Detection never sends traffic designed to trigger a WAF.
+| Vendor key         | Layer      | Signal                                                | Type          | Str | Source                                                                                                            |
+| ------------------ | ---------- | ----------------------------------------------------- | ------------- | --- | ----------------------------------------------------------------------------------------------------------------- |
+| `CLOUDFLARE`       | `CDN`      | header `cf-ray`                                       | HEADER_NAME   | S   | developers.cloudflare.com/fundamentals/reference/http-headers/                                                    |
+| `CLOUDFLARE`       | `CDN`      | header `cf-cache-status`                              | HEADER_NAME   | W   | developers.cloudflare.com/cache/concepts/cache-responses/ (cache decision header)                                 |
+| `CLOUDFLARE`       | `WAF`      | header `cf-mitigated` = `challenge`                   | STATUS_MARKER | S   | Cloudflare challenge documentation (verified in Phase 2)                                                          |
+| `AWS_CLOUDFRONT`   | `CDN`      | header name starting `x-amz-cf-`                      | HEADER_NAME   | S   | docs.aws.amazon.com CloudFront "Understand response headers policies" (reserved `X-Amz-Cf-.*` family)             |
+| `AWS_CLOUDFRONT`   | `CDN`      | header `server` equal to `CloudFront`                 | HEADER_NAME   | W   | same page: the `Server` value CloudFront adds is `CloudFront`; an origin may also send `Server`                   |
+| `AWS_WAF`          | `WAF`      | header `x-amzn-waf-action` = `challenge` or `captcha` | STATUS_MARKER | S   | docs.aws.amazon.com/waf/latest/developerguide/waf-captcha-and-challenge-actions.html (Challenge 202, CAPTCHA 405) |
+| `VERCEL`           | `CDN`      | header `x-vercel-id`                                  | HEADER_NAME   | S   | vercel.com/docs/headers/response-headers                                                                          |
+| `VERCEL`           | `CDN`      | header `server` equal to `Vercel`                     | HEADER_NAME   | W   | same page: can be overridden by other proxies                                                                     |
+| `FASTLY`           | `CDN`      | header `x-served-by` with a value starting `cache-`   | HEADER_NAME   | S   | fastly.com/documentation/reference/http/http-headers/X-Served-By/ (`cache-{datacenter}{nodeid}-{datacenter}`)     |
+| `DATADOME`         | `ANTI_BOT` | cookie `datadome` set on a non-2xx response           | COOKIE_NAME   | S   | docs.datadome.co/reference/validate-request (`Set-Cookie: datadome=...` returned with a challenge)                |
+| `DATADOME`         | `ANTI_BOT` | cookie `datadome` set on a 2xx response               | COOKIE_NAME   | W   | same page: the module also sets the cookie on allowed responses, so it shows presence, not a challenge            |
+| `DATADOME`         | `ANTI_BOT` | header `x-dd-b`                                       | HEADER_NAME   | W   | same page lists it in an example response; its meaning is not defined there                                       |
+| `HUMAN_PERIMETERX` | `ANTI_BOT` | cookie `_pxhd`                                        | COOKIE_NAME   | S   | docs.humansecurity.com/applications/use-of-cookies-web-storage (HTTP cookie for server-side detection)            |
+| `HUMAN_PERIMETERX` | `ANTI_BOT` | cookie name starting `_px`                            | COOKIE_NAME   | W   | same page: the `_px*` family is set by JavaScript, so a `Set-Cookie` match is unlikely                            |
+| `AKAMAI`           | -          | none                                                  | -             | -   | not detected in this version: no primary source found                                                             |
+| `IMPERVA`          | -          | none                                                  | -             | -   | not detected in this version: no primary source found                                                             |
+
+Rules: a vendor needs at least one signal; weak signals alone give `LOW`. Unknown vendors are not guessed. Detection
+never sends traffic designed to trigger a WAF. Values are matched in memory (lowercased, trimmed, exact or prefix) and
+never stored or logged. At most 16 detections and 8 signals per detection are kept, and the stored profile is capped at
+8 KB.
 
 ## 11. Check catalog: `DNS_WATCH`
 
@@ -433,16 +450,16 @@ SPF and DMARC absence is not reported (a domain that sends no mail has no obliga
 
 ## 12. Result storage summary (additive, implemented from Phase 1)
 
-| Concept           | Added to                     | Notes                                                                                 |
-| ----------------- | ---------------------------- | ------------------------------------------------------------------------------------- |
-| `Scan.kind`       | `Scan`                       | `HTTP_PROBE` default; existing rows keep the default                                  |
-| `checkId`         | finding row                  | Existing `code` stays; for new findings `code` equals `checkId`                       |
-| `category`        | finding row                  | `HEADERS`, `COOKIES`, `CORS`, `REDIRECT`, `TLS`, `EXPOSED_FILES`, `DNS`, `EMAIL_AUTH` |
-| `confidence`      | finding row                  | Nullable `LOW`, `MEDIUM`, `HIGH`                                                      |
-| Sub-check results | scan row or child table      | `ran` or `skipped` with a reason, decided in Phase 1                                  |
-| Edge observations | new table                    | Current profile per monitor plus producing scan                                       |
-| DNS baseline      | new table                    | One current baseline per host plus bounded history; worker is the only writer         |
-| Monitor settings  | new table or monitor columns | Enabled kinds; path-probe flag, acknowledging user, acknowledgment time               |
+| Concept           | Added to                       | Notes                                                                                             |
+| ----------------- | ------------------------------ | ------------------------------------------------------------------------------------------------- |
+| `Scan.kind`       | `Scan`                         | `HTTP_PROBE` default; existing rows keep the default                                              |
+| `checkId`         | finding row                    | Existing `code` stays; for new findings `code` equals `checkId`                                   |
+| `category`        | finding row                    | `HEADERS`, `COOKIES`, `CORS`, `REDIRECT`, `TLS`, `EXPOSED_FILES`, `DNS`, `EMAIL_AUTH`             |
+| `confidence`      | finding row                    | Nullable `LOW`, `MEDIUM`, `HIGH`                                                                  |
+| Sub-check results | scan row or child table        | `ran` or `skipped` with a reason, decided in Phase 1                                              |
+| Edge observations | `MonitorEdgeProfile` (Phase 4) | One current profile per monitor plus producing scan; worker writes it in the terminal transaction |
+| DNS baseline      | new table                      | One current baseline per host plus bounded history; worker is the only writer                     |
+| Monitor settings  | new table or monitor columns   | Enabled kinds; path-probe flag, acknowledging user, acknowledgment time                           |
 
 Phase 2 added `Scan.subChecks` (nullable JSON list of `{ name, state, reason }`; `NULL` for `HTTP_PROBE`),
 the `GET`/`PATCH` `/api/monitors/:monitorId/check-settings` routes, the trigger rules for `SECURITY_POSTURE`
@@ -451,7 +468,10 @@ the `GET`/`PATCH` `/api/monitors/:monitorId/check-settings` routes, the trigger 
 `MonitorCheckSettings` table (`securityPostureEnabled`, `dnsWatchEnabled`, `pathProbesEnabled`,
 `pathProbesAcknowledgedById`, `pathProbesAcknowledgedAt`; no row means all disabled). `HTTP_PROBE` findings keep
 `checkId`, `category`, and `confidence` as `NULL`. Sub-check results, edge observations, and the DNS baseline are
-added in the phases that use them. Exact names live in `apps/api/prisma/schema.prisma`.
+added in the phases that use them. Phase 4 added the `MonitorEdgeProfile` table (`monitorId` unique, `scanId`,
+`challengeObserved`, `detections` JSON, `observedAt`), the sub-check name `edge`, and
+`GET /api/monitors/:monitorId/edge-profile` (any member; `404 NO_EDGE_PROFILE` before the first posture scan).
+Exact names live in `apps/api/prisma/schema.prisma`.
 
 ## 13. Open items for the user
 
@@ -459,7 +479,7 @@ added in the phases that use them. Exact names live in `apps/api/prisma/schema.p
 2. Confirm the draft intervals, expiry thresholds (30 and 14 days), HSTS minimum `max-age` (180 days), DNS query
    cap (40), and CNAME hop limit (8).
 3. Confirm whether CDN-fronted address churn is emitted at `LOW` or suppressed.
-4. Vendor fingerprint signals and challenge markers are filled from vendor documentation at Phase 4.
+4. Akamai and Imperva fingerprints need a primary vendor source; until then they are not detected (section 10).
 5. `SEC_HDR_CSP_*` unsafe source semantics, `SEC_CORS_*` wildcard-with-credentials rules, and the Fetch standard
    `X-Content-Type-Options`, `Referrer-Policy`, and `Permissions-Policy` rules need a source read in Phase 2.
 6. RFC 6265bis becomes an RFC: re-check wording of cookie rules when Phase 2 starts.

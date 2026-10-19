@@ -236,3 +236,94 @@ def test_succeed_stores_sub_check_results_in_the_same_transaction() -> None:
     assert findings[0]["check_id"] == "SEC_HDR_HSTS_MISSING"
     sessions_used = repository._sessions.begin.call_count
     assert sessions_used == 1
+
+
+def edge_profile():
+    from ontapulse_worker.modules.scans.domain.models import (
+        EdgeDetection,
+        EdgeLayer,
+        EdgeProfile,
+        EdgeSignal,
+        EdgeSignalType,
+    )
+
+    return EdgeProfile(
+        detections=(
+            EdgeDetection(
+                vendor="CLOUDFLARE",
+                layer=EdgeLayer.CDN,
+                confidence=FindingConfidence.MEDIUM,
+                signals=(EdgeSignal(EdgeSignalType.HEADER_NAME, "cf-ray"),),
+            ),
+        ),
+        challenge_observed=True,
+    )
+
+
+def test_succeed_upserts_the_edge_profile_in_the_same_transaction() -> None:
+    repository, session = create_repository(update_result(), Mock())
+
+    repository.succeed(
+        SCAN_ID,
+        ScanResult(status_code=200, response_time_ms=10, edge_profile=edge_profile()),
+    )
+
+    metrics, upsert = (call.args[1] for call in session.execute.call_args_list)
+    statement = session.execute.call_args_list[1].args[0]
+    assert metrics["scan_id"] == SCAN_ID
+    assert "ON CONFLICT" in str(statement)
+    assert 'WHERE "MonitorEdgeProfile"."observedAt" <= EXCLUDED."observedAt"' in str(statement)
+    assert upsert["scan_id"] == SCAN_ID
+    assert upsert["challenge_observed"] is True
+    assert upsert["observed_at"] == NOW
+    assert upsert["detections"] == (
+        '[{"vendor": "CLOUDFLARE", "layer": "CDN", "confidence": "MEDIUM", '
+        '"signals": [{"type": "HEADER_NAME", "name": "cf-ray"}]}]'
+    )
+    assert repository._sessions.begin.call_count == 1
+
+
+def test_succeed_writes_an_empty_profile_as_an_empty_list() -> None:
+    from ontapulse_worker.modules.scans.domain.models import EdgeProfile
+
+    repository, session = create_repository(update_result(), Mock())
+
+    repository.succeed(
+        SCAN_ID,
+        ScanResult(200, 10, edge_profile=EdgeProfile(detections=(), challenge_observed=False)),
+    )
+
+    assert session.execute.call_args_list[1].args[1]["detections"] == "[]"
+
+
+def test_succeed_without_a_profile_does_not_touch_the_edge_table() -> None:
+    repository, session = create_repository(update_result())
+
+    repository.succeed(SCAN_ID, ScanResult(status_code=200, response_time_ms=10))
+
+    assert session.execute.call_count == 1
+
+
+def test_an_oversized_edge_profile_drops_trailing_detections_to_fit() -> None:
+    from ontapulse_worker.modules.edge_detection.domain.fingerprints import MAX_EDGE_PROFILE_BYTES
+    from ontapulse_worker.modules.scans.domain.models import (
+        EdgeDetection,
+        EdgeLayer,
+        EdgeProfile,
+        EdgeSignal,
+        EdgeSignalType,
+    )
+
+    big = EdgeDetection(
+        vendor="VERCEL",
+        layer=EdgeLayer.CDN,
+        confidence=FindingConfidence.LOW,
+        signals=tuple(EdgeSignal(EdgeSignalType.HEADER_NAME, "h" * 1000) for _ in range(4)),
+    )
+    repository, session = create_repository(update_result(), Mock())
+
+    repository.succeed(SCAN_ID, ScanResult(200, 10, edge_profile=EdgeProfile((big,) * 5)))
+
+    stored = session.execute.call_args_list[1].args[1]["detections"]
+    assert len(stored.encode()) <= MAX_EDGE_PROFILE_BYTES
+    assert stored.count('"vendor"') < 5

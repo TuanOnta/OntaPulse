@@ -105,7 +105,7 @@ the same, with these additions:
 - Conditions caused by the target (invalid certificate, no HTTPS, missing headers, NXDOMAIN on a CNAME target)
   are findings and the Scan is `SUCCEEDED`. The Scan is `FAILED` only when the check could not run at all:
   non-public target, base connection timeout, or DNS failure for the monitor host.
-- Findings, observations, the DNS baseline update, and the terminal status are written in one transaction. A
+- Findings, observations (the edge profile upsert), the DNS baseline update, and the terminal status are written in one transaction. A
   duplicate delivery of a terminal Scan writes no second set of findings and no second DNS baseline.
 - Retry rules, topology, and the `x-scan-retry-count` header are unchanged.
 - `SECURITY_POSTURE` is implemented: it makes at most two requests (one HTTPS GET and one HTTP GET, redirects not

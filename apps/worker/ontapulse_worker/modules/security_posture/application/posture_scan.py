@@ -6,8 +6,11 @@ from datetime import UTC, datetime
 from time import perf_counter
 from urllib.parse import urlsplit
 
+from ontapulse_worker.modules.edge_detection.domain.detector import detect_edge
+from ontapulse_worker.modules.edge_detection.domain.models import EdgeInput, EdgeResponse
 from ontapulse_worker.modules.scans.domain.errors import ScanExecutionError
 from ontapulse_worker.modules.scans.domain.models import (
+    EdgeProfile,
     ScanFinding,
     ScanResult,
     SubCheckResult,
@@ -24,8 +27,10 @@ from ontapulse_worker.modules.security_posture.domain.catalog import (
     MAX_TLS_HANDSHAKES_PER_SCAN,
     REASON_CHALLENGE_RESPONSE,
     REASON_CONNECTION_FAILED,
+    REASON_PREREQUISITE_FAILED,
     SUB_CHECK_COOKIES,
     SUB_CHECK_CORS,
+    SUB_CHECK_EDGE,
     SUB_CHECK_HEADERS,
     SUB_CHECK_REDIRECT,
     SUB_CHECK_TLS,
@@ -112,6 +117,7 @@ class PostureScanExecutor:
         findings.extend(self._https_checks(https_response, sub_checks))
         findings.extend(self._redirect_check(http_response, sub_checks))
         findings.extend(self._tls_check(observation, sub_checks))
+        edge_profile = self._edge_check((https_response, http_response), observation, sub_checks)
 
         elapsed_ms = max(0, round((self._clock() - started_at) * 1_000))
         logger.info(
@@ -127,6 +133,7 @@ class PostureScanExecutor:
             response_time_ms=https_response.elapsed_ms if https_response else elapsed_ms,
             findings=tuple(findings),
             sub_checks=tuple(sub_checks),
+            edge_profile=edge_profile,
         )
 
     def _fetch(self, budget: RequestBudget, url: str) -> PostureResponse | None:
@@ -159,6 +166,51 @@ class PostureScanExecutor:
         sub_checks.append(SubCheckResult(SUB_CHECK_TLS, SubCheckState.RAN))
 
         return evaluate_tls(observation, self._now())
+
+    @staticmethod
+    def _edge_check(
+        responses: tuple[PostureResponse | None, ...],
+        observation: TlsObservation | None,
+        sub_checks: list[SubCheckResult],
+    ) -> EdgeProfile | None:
+        """Reuse the data already collected; this makes no request of its own."""
+        collected = tuple(response for response in responses if response is not None)
+
+        if not collected:
+            # Nothing was observed, so the stored profile must not be overwritten with "none".
+            sub_checks.append(_skipped(SUB_CHECK_EDGE, REASON_CONNECTION_FAILED))
+            return None
+
+        data = EdgeInput(
+            responses=tuple(
+                EdgeResponse(
+                    status_code=response.status_code,
+                    headers=response.headers,
+                    cookie_names=tuple(cookie.name for cookie in response.cookies),
+                )
+                for response in collected
+            ),
+            tls_issuer=observation.issuer if observation is not None else None,
+        )
+
+        try:
+            profile = detect_edge(data)
+        except Exception:
+            # The evaluator is pure; a failure here is a bug and must not fail the scan.
+            logger.exception("posture.edge_failed")
+            sub_checks.append(_skipped(SUB_CHECK_EDGE, REASON_PREREQUISITE_FAILED))
+            return None
+
+        sub_checks.append(SubCheckResult(SUB_CHECK_EDGE, SubCheckState.RAN))
+        logger.info(
+            "posture.edge_profile",
+            extra={
+                "edge_vendors": [item.vendor for item in profile.detections],
+                "challenge_observed": profile.challenge_observed,
+            },
+        )
+
+        return profile
 
     @staticmethod
     def _https_checks(

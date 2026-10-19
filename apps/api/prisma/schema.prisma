@@ -122,6 +122,7 @@ model Monitor {
   project       Project               @relation(fields: [projectId], references: [id], onDelete: Cascade)
   scans         Scan[]
   checkSettings MonitorCheckSettings?
+  edgeProfile   MonitorEdgeProfile?
 
   @@unique([projectId, targetUrl])
   @@index([projectId])
@@ -161,8 +162,24 @@ model Scan {
   monitor      Monitor           @relation(fields: [monitorId], references: [id], onDelete: Cascade)
   findings     ScanFinding[]
   outboxEvents ScanOutboxEvent[]
+  edgeProfile  MonitorEdgeProfile?
 
   @@index([monitorId, createdAt])
+}
+
+// Current edge (CDN, WAF, anti-bot) observation per monitor. The worker is the only writer.
+model MonitorEdgeProfile {
+  id                String   @id @default(uuid()) @db.Uuid
+  monitorId         String   @unique @db.Uuid
+  scanId            String   @unique @db.Uuid
+  challengeObserved Boolean  @default(false)
+  detections        Json
+  observedAt        DateTime
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  monitor Monitor @relation(fields: [monitorId], references: [id], onDelete: Cascade)
+  scan    Scan    @relation(fields: [scanId], references: [id], onDelete: Cascade)
 }
 
 model ScanOutboxEvent {

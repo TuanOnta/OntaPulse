@@ -404,6 +404,7 @@ export const ModelName = {
   Monitor: 'Monitor',
   MonitorCheckSettings: 'MonitorCheckSettings',
   Scan: 'Scan',
+  MonitorEdgeProfile: 'MonitorEdgeProfile',
   ScanOutboxEvent: 'ScanOutboxEvent',
   OperationsAuditLog: 'OperationsAuditLog',
   ScanFinding: 'ScanFinding'
@@ -422,7 +423,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "workspace" | "workspaceMember" | "project" | "monitor" | "monitorCheckSettings" | "scan" | "scanOutboxEvent" | "operationsAuditLog" | "scanFinding"
+    modelProps: "user" | "workspace" | "workspaceMember" | "project" | "monitor" | "monitorCheckSettings" | "scan" | "monitorEdgeProfile" | "scanOutboxEvent" | "operationsAuditLog" | "scanFinding"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -944,6 +945,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    MonitorEdgeProfile: {
+      payload: Prisma.$MonitorEdgeProfilePayload<ExtArgs>
+      fields: Prisma.MonitorEdgeProfileFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.MonitorEdgeProfileFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MonitorEdgeProfilePayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.MonitorEdgeProfileFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MonitorEdgeProfilePayload>
+        }
+        findFirst: {
+          args: Prisma.MonitorEdgeProfileFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MonitorEdgeProfilePayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.MonitorEdgeProfileFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MonitorEdgeProfilePayload>
+        }
+        findMany: {
+          args: Prisma.MonitorEdgeProfileFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MonitorEdgeProfilePayload>[]
+        }
+        create: {
+          args: Prisma.MonitorEdgeProfileCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MonitorEdgeProfilePayload>
+        }
+        createMany: {
+          args: Prisma.MonitorEdgeProfileCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.MonitorEdgeProfileCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MonitorEdgeProfilePayload>[]
+        }
+        delete: {
+          args: Prisma.MonitorEdgeProfileDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MonitorEdgeProfilePayload>
+        }
+        update: {
+          args: Prisma.MonitorEdgeProfileUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MonitorEdgeProfilePayload>
+        }
+        deleteMany: {
+          args: Prisma.MonitorEdgeProfileDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.MonitorEdgeProfileUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.MonitorEdgeProfileUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MonitorEdgeProfilePayload>[]
+        }
+        upsert: {
+          args: Prisma.MonitorEdgeProfileUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$MonitorEdgeProfilePayload>
+        }
+        aggregate: {
+          args: Prisma.MonitorEdgeProfileAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateMonitorEdgeProfile>
+        }
+        groupBy: {
+          args: Prisma.MonitorEdgeProfileGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.MonitorEdgeProfileGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.MonitorEdgeProfileCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.MonitorEdgeProfileCountAggregateOutputType> | number
+        }
+      }
+    }
     ScanOutboxEvent: {
       payload: Prisma.$ScanOutboxEventPayload<ExtArgs>
       fields: Prisma.ScanOutboxEventFieldRefs
@@ -1296,6 +1371,20 @@ export const ScanScalarFieldEnum = {
 export type ScanScalarFieldEnum = (typeof ScanScalarFieldEnum)[keyof typeof ScanScalarFieldEnum]
 
 
+export const MonitorEdgeProfileScalarFieldEnum = {
+  id: 'id',
+  monitorId: 'monitorId',
+  scanId: 'scanId',
+  challengeObserved: 'challengeObserved',
+  detections: 'detections',
+  observedAt: 'observedAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type MonitorEdgeProfileScalarFieldEnum = (typeof MonitorEdgeProfileScalarFieldEnum)[keyof typeof MonitorEdgeProfileScalarFieldEnum]
+
+
 export const ScanOutboxEventScalarFieldEnum = {
   id: 'id',
   scanId: 'scanId',
@@ -1355,6 +1444,13 @@ export const NullableJsonNullValueInput = {
 } as const
 
 export type NullableJsonNullValueInput = (typeof NullableJsonNullValueInput)[keyof typeof NullableJsonNullValueInput]
+
+
+export const JsonNullValueInput = {
+  JsonNull: JsonNull
+} as const
+
+export type JsonNullValueInput = (typeof JsonNullValueInput)[keyof typeof JsonNullValueInput]
 
 
 export const QueryMode = {
@@ -1720,6 +1816,7 @@ export type GlobalOmitConfig = {
   monitor?: Prisma.MonitorOmit
   monitorCheckSettings?: Prisma.MonitorCheckSettingsOmit
   scan?: Prisma.ScanOmit
+  monitorEdgeProfile?: Prisma.MonitorEdgeProfileOmit
   scanOutboxEvent?: Prisma.ScanOutboxEventOmit
   operationsAuditLog?: Prisma.OperationsAuditLogOmit
   scanFinding?: Prisma.ScanFindingOmit

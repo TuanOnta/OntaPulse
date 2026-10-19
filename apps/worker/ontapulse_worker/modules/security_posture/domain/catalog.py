@@ -24,8 +24,10 @@ SUB_CHECK_COOKIES = "cookies"
 SUB_CHECK_CORS = "cors"
 SUB_CHECK_REDIRECT = "redirect"
 SUB_CHECK_TLS = "tls"
+SUB_CHECK_EDGE = "edge"
 REASON_CONNECTION_FAILED = "connection_failed"
 REASON_CHALLENGE_RESPONSE = "challenge_response"
+REASON_PREREQUISITE_FAILED = "prerequisite_failed"
 
 # Thresholds.
 HSTS_MIN_MAX_AGE_SECONDS = 15_552_000
@@ -35,8 +37,6 @@ MAX_COOKIES_IN_EVIDENCE = 20
 MAX_COOKIE_NAME_CHARS = 100
 SESSION_COOKIE_NAME_HINTS = ("session", "sess", "sid", "auth", "token", "jwt")
 CHALLENGE_STATUS_CODES = frozenset({403, 429, 503})
-CHALLENGE_HEADER = "cf-mitigated"
-CHALLENGE_HEADER_VALUE = "challenge"
 
 # TLS (docs/security-checks.md section 6.5).
 TLS_CONNECT_TIMEOUT_SECONDS = 5.0

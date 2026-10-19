@@ -75,6 +75,45 @@ class SubCheckResult:
     reason: str | None = None
 
 
+class EdgeLayer(StrEnum):
+    CDN = "CDN"
+    WAF = "WAF"
+    ANTI_BOT = "ANTI_BOT"
+
+
+class EdgeSignalType(StrEnum):
+    HEADER_NAME = "HEADER_NAME"
+    COOKIE_NAME = "COOKIE_NAME"
+    CERT_ISSUER = "CERT_ISSUER"
+    CNAME_SUFFIX = "CNAME_SUFFIX"
+    NS_SUFFIX = "NS_SUFFIX"
+    STATUS_MARKER = "STATUS_MARKER"
+
+
+@dataclass(frozen=True)
+class EdgeSignal:
+    """A supporting signal. Only its kind and name are kept, never a header or cookie value."""
+
+    type: EdgeSignalType
+    name: str
+
+
+@dataclass(frozen=True)
+class EdgeDetection:
+    vendor: str
+    layer: EdgeLayer
+    confidence: FindingConfidence
+    signals: tuple[EdgeSignal, ...]
+
+
+@dataclass(frozen=True)
+class EdgeProfile:
+    """Observation, not a finding: which edge layers were seen in front of the monitor."""
+
+    detections: tuple[EdgeDetection, ...] = ()
+    challenge_observed: bool = False
+
+
 @dataclass(frozen=True)
 class ScanResult:
     # None only for kinds whose request never produced a response (see SECURITY_POSTURE).
@@ -82,3 +121,5 @@ class ScanResult:
     response_time_ms: int | None
     findings: tuple[ScanFinding, ...] = ()
     sub_checks: tuple[SubCheckResult, ...] = ()
+    # None when the kind produces no edge observation or the check was skipped.
+    edge_profile: EdgeProfile | None = None
