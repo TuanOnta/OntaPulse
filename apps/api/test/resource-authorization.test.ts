@@ -175,6 +175,37 @@ describe("resource authorization", () => {
     expect(scanQueue.jobs).toHaveLength(0);
   });
 
+  it("checks the role and workspace before the scan kind", async () => {
+    const fixture = await createFixture();
+    const scanCount = await prisma.scan.count();
+    const url = `/api/monitors/${fixture.monitorId}/scans`;
+    const payload = { kind: "SECURITY_POSTURE" };
+    const memberResponse = await app.inject({
+      method: "POST",
+      url,
+      headers: { cookie: fixture.memberCookie },
+      payload,
+    });
+    const outsiderResponse = await app.inject({
+      method: "POST",
+      url,
+      headers: { cookie: fixture.outsiderCookie },
+      payload,
+    });
+    const adminResponse = await app.inject({
+      method: "POST",
+      url,
+      headers: { cookie: fixture.adminCookie },
+      payload,
+    });
+
+    expect(memberResponse.statusCode).toBe(403);
+    expect(outsiderResponse.statusCode).toBe(404);
+    expect(adminResponse.statusCode).toBe(400);
+    expect(adminResponse.json()).toMatchObject({ code: "SCAN_KIND_NOT_AVAILABLE" });
+    expect(await prisma.scan.count()).toBe(scanCount);
+  });
+
   it("allows a MEMBER to read monitors and scans in their workspace", async () => {
     const fixture = await createFixture();
     const monitorsResponse = await app.inject({

@@ -100,6 +100,7 @@ describe("Scan API", () => {
       expect(response.json()).toEqual({
         id: expect.any(String),
         monitorId,
+        kind: "HTTP_PROBE",
         status: "QUEUED",
         statusCode: null,
         responseTimeMs: null,
@@ -215,6 +216,70 @@ describe("Scan API", () => {
 
       expect(scanCount).toBe(2);
     });
+
+    it("defaults the scan kind to HTTP_PROBE with no body", async () => {
+      const monitorId = await createMonitor(await createProject());
+
+      const response = await app.inject({
+        method: "POST",
+        url: `/api/monitors/${monitorId}/scans`,
+      });
+
+      expect(response.statusCode).toBe(202);
+      expect(response.json()).toMatchObject({ kind: "HTTP_PROBE", status: "QUEUED" });
+      await expect(prisma.scan.findFirst({ where: { monitorId } })).resolves.toMatchObject({
+        kind: "HTTP_PROBE",
+      });
+    });
+
+    it.each([{}, { kind: "HTTP_PROBE" }])("accepts the HTTP_PROBE body %j", async (payload) => {
+      const monitorId = await createMonitor(await createProject());
+
+      const response = await app.inject({
+        method: "POST",
+        url: `/api/monitors/${monitorId}/scans`,
+        payload,
+      });
+
+      expect(response.statusCode).toBe(202);
+      expect(response.json()).toMatchObject({ kind: "HTTP_PROBE" });
+      await expect(prisma.scanOutboxEvent.count({ where: { monitorId } })).resolves.toBe(1);
+    });
+
+    it.each(["SECURITY_POSTURE", "DNS_WATCH"])(
+      "rejects the unavailable kind %s and queues nothing",
+      async (kind) => {
+        const monitorId = await createMonitor(await createProject());
+
+        const response = await app.inject({
+          method: "POST",
+          url: `/api/monitors/${monitorId}/scans`,
+          payload: { kind },
+        });
+
+        expect(response.statusCode).toBe(400);
+        expect(response.json()).toMatchObject({ code: "SCAN_KIND_NOT_AVAILABLE" });
+        await expect(prisma.scan.count({ where: { monitorId } })).resolves.toBe(0);
+        await expect(prisma.scanOutboxEvent.count({ where: { monitorId } })).resolves.toBe(0);
+      },
+    );
+
+    it.each([{ kind: "UNKNOWN" }, { kind: "HTTP_PROBE", extra: true }])(
+      "rejects the invalid body %j",
+      async (payload) => {
+        const monitorId = await createMonitor(await createProject());
+
+        const response = await app.inject({
+          method: "POST",
+          url: `/api/monitors/${monitorId}/scans`,
+          payload,
+        });
+
+        expect(response.statusCode).toBe(400);
+        expect(response.json()).toMatchObject({ code: "VALIDATION_ERROR" });
+        await expect(prisma.scan.count({ where: { monitorId } })).resolves.toBe(0);
+      },
+    );
 
     it("rejects an invalid monitor ID", async () => {
       const response = await app.inject({
@@ -529,6 +594,7 @@ describe("Scan API", () => {
       expect(response.json()).toEqual({
         id: scanId,
         monitorId,
+        kind: "HTTP_PROBE",
         status: "QUEUED",
         statusCode: null,
         responseTimeMs: null,
@@ -690,6 +756,39 @@ describe("Scan API", () => {
       expect(response.json().findings[0]).toMatchObject({
         recommendation: null,
         evidence: null,
+        checkId: null,
+        category: null,
+        confidence: null,
+      });
+    });
+
+    it("returns the kind and the security fields of a finding", async () => {
+      const monitorId = await createMonitor(await createProject());
+
+      const scan = await prisma.scan.create({
+        data: { monitorId, kind: "SECURITY_POSTURE", status: "SUCCEEDED" },
+      });
+      await prisma.scanFinding.create({
+        data: {
+          scanId: scan.id,
+          code: "SEC_HDR_CSP_MISSING",
+          checkId: "SEC_HDR_CSP_MISSING",
+          category: "HEADERS",
+          confidence: "MEDIUM",
+          title: "Content-Security-Policy not observed",
+          severity: "MEDIUM",
+          description: "No Content-Security-Policy header was observed.",
+        },
+      });
+
+      const response = await app.inject({ method: "GET", url: `/api/scans/${scan.id}` });
+
+      expect(response.statusCode).toBe(200);
+      expect(response.json()).toMatchObject({ kind: "SECURITY_POSTURE" });
+      expect(response.json().findings[0]).toMatchObject({
+        checkId: "SEC_HDR_CSP_MISSING",
+        category: "HEADERS",
+        confidence: "MEDIUM",
       });
     });
 

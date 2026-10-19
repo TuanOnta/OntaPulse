@@ -1,5 +1,13 @@
 import type { FastifySchema } from "fastify";
 
+import { FINDING_CATEGORIES, FINDING_CONFIDENCES, SCAN_KINDS } from "./scan-kinds.js";
+
+const scanKindSchema = {
+  type: "string",
+
+  enum: [...SCAN_KINDS],
+} as const;
+
 const scanStatusSchema = {
   type: "string",
 
@@ -12,6 +20,7 @@ const scanResponseSchema = {
   required: [
     "id",
     "monitorId",
+    "kind",
     "status",
     "statusCode",
     "responseTimeMs",
@@ -31,6 +40,8 @@ const scanResponseSchema = {
       type: "string",
       format: "uuid",
     },
+
+    kind: scanKindSchema,
 
     status: scanStatusSchema,
 
@@ -70,6 +81,9 @@ const findingResponseSchema = {
     "id",
     "scanId",
     "code",
+    "checkId",
+    "category",
+    "confidence",
     "title",
     "severity",
     "description",
@@ -91,6 +105,22 @@ const findingResponseSchema = {
 
     code: {
       type: "string",
+    },
+
+    checkId: {
+      type: ["string", "null"],
+    },
+
+    category: {
+      type: ["string", "null"],
+
+      enum: [...FINDING_CATEGORIES, null],
+    },
+
+    confidence: {
+      type: ["string", "null"],
+
+      enum: [...FINDING_CONFIDENCES, null],
     },
 
     title: {
@@ -161,6 +191,15 @@ const scanIdParamsSchema = {
   },
 } as const;
 
+const triggerScanBodyJsonSchema = {
+  type: "object",
+  additionalProperties: false,
+
+  properties: {
+    kind: scanKindSchema,
+  },
+} as const;
+
 const errorResponseSchema = {
   type: "object",
 
@@ -204,9 +243,13 @@ const errorResponseSchema = {
 export const triggerScanRouteSchema: FastifySchema = {
   tags: ["Scans"],
   summary: "Trigger a monitor scan",
-  description: "Creates a queued scan for the selected monitor.",
+  description:
+    "Creates a queued scan for the selected monitor. The optional body selects the scan kind " +
+    "and defaults to HTTP_PROBE. Kinds without a worker implementation return 400 SCAN_KIND_NOT_AVAILABLE.",
 
   params: monitorIdParamsSchema,
+
+  body: triggerScanBodyJsonSchema,
 
   response: {
     202: scanResponseSchema,

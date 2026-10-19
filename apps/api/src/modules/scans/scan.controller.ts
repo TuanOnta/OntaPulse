@@ -1,7 +1,11 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 
 import { AppError } from "../../infrastructure/errors/app-error.js";
-import { monitorIdParamsSchema, scanIdParamsSchema } from "./scan.schema.js";
+import {
+  monitorIdParamsSchema,
+  scanIdParamsSchema,
+  triggerScanBodySchema,
+} from "./scan.schema.js";
 import { ScanService } from "./scan.service.js";
 
 export class ScanController {
@@ -20,12 +24,28 @@ export class ScanController {
       );
     }
 
-    const scan = await this.scanService.trigger(parsedParams.data.monitorId, userId);
+    const parsedBody = triggerScanBodySchema.safeParse(request.body);
+
+    if (!parsedBody.success) {
+      throw new AppError(
+        "Request validation failed",
+        400,
+        "VALIDATION_ERROR",
+        parsedBody.error.flatten().fieldErrors,
+      );
+    }
+
+    const scan = await this.scanService.trigger(
+      parsedParams.data.monitorId,
+      userId,
+      parsedBody.data?.kind,
+    );
 
     request.log.info(
       {
         scanId: scan.id,
         monitorId: scan.monitorId,
+        kind: scan.kind,
       },
       "Scan queued",
     );

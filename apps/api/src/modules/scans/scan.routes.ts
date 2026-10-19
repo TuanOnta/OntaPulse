@@ -24,6 +24,10 @@ export const scanRoutes: FastifyPluginAsync = async (app) => {
     "/monitors/:monitorId/scans",
     {
       schema: triggerScanRouteSchema,
+      // The body is optional: a request without one behaves like `{}` (HTTP_PROBE).
+      preValidation: async (request) => {
+        request.body ??= {};
+      },
     },
     scanController.trigger,
   );

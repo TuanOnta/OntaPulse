@@ -1,4 +1,5 @@
 import { prisma } from "../../infrastructure/database/prisma.js";
+import { DEFAULT_SCAN_KIND, type ScanKind } from "./scan-kinds.js";
 
 export class ScanRepository {
   findMonitorById(monitorId: string) {
@@ -18,9 +19,9 @@ export class ScanRepository {
     });
   }
 
-  create(monitorId: string) {
+  create(monitorId: string, kind: ScanKind = DEFAULT_SCAN_KIND) {
     return prisma.$transaction(async (transaction) => {
-      const scan = await transaction.scan.create({ data: { monitorId } });
+      const scan = await transaction.scan.create({ data: { monitorId, kind } });
       await transaction.scanOutboxEvent.create({
         data: { scanId: scan.id, monitorId },
       });
