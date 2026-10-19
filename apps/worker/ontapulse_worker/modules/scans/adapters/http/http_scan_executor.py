@@ -13,7 +13,7 @@ from ontapulse_worker.modules.scans.domain.errors import ScanExecutionError
 from ontapulse_worker.modules.scans.domain.models import ScanResult
 
 DEFAULT_CONNECT_TIMEOUT_SECONDS = 5.0
-DEFAULT_READ_TIMEOUT_SECONDS = 10.0
+DEFAULT_READ_TIMEOUT_SECONDS = 30.0
 DEFAULT_WRITE_TIMEOUT_SECONDS = 5.0
 DEFAULT_POOL_TIMEOUT_SECONDS = 5.0
 

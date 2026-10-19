@@ -664,7 +664,7 @@ The worker performs one HTTP GET request per job with the following policy:
 - private, loopback, link-local, multicast, reserved, and other non-global addresses are rejected;
 - redirects are not followed;
 - the connection timeout is 5 seconds;
-- the read timeout is 10 seconds;
+- the read timeout is 30 seconds;
 - the write and pool timeouts are 5 seconds each;
 - response bodies are not read or stored;
 - response time is measured in milliseconds.

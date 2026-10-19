@@ -58,7 +58,13 @@ class ScanLifecycleService:
             try:
                 logger.info("scan.started", extra=fields)
                 raw_result = executor.execute(claimed_scan.target_url)
-                result = evaluate_scan_result(raw_result)
+                # Only the HTTP probe uses the status/latency policy. Other kinds return findings
+                # that are already final.
+                result = (
+                    evaluate_scan_result(raw_result)
+                    if claimed_scan.kind == ScanKind.HTTP_PROBE
+                    else raw_result
+                )
                 self._repository.succeed(claimed_scan.scan_id, result)
             except ScanExecutionError as error:
                 self._repository.fail(claimed_scan.scan_id, error.safe_message)

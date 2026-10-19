@@ -29,6 +29,11 @@ def resolve_host_addresses(
     return {str(address[4][0]) for address in addresses}
 
 
+def ensure_public_address(address: str) -> None:
+    """Raise ScanExecutionError unless the address is a global (public) IP address."""
+    PublicTargetUrlValidator._validate_address(address)
+
+
 class PublicTargetUrlValidator:
     """Allow only HTTP targets that resolve to public IP addresses."""
 

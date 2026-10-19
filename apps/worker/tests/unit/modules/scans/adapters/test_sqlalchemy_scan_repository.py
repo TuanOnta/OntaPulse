@@ -196,3 +196,43 @@ def test_succeed_persists_catalog_fields_and_bounds_their_evidence() -> None:
         "MEDIUM",
     )
     assert second["evidence"] == '{"truncated": true}'
+
+
+def test_succeed_stores_sub_check_results_in_the_same_transaction() -> None:
+    from ontapulse_worker.modules.scans.domain.models import SubCheckResult, SubCheckState
+
+    repository, session = create_repository(update_result(), Mock(), Mock())
+    finding = ScanFinding(
+        code="SEC_HDR_HSTS_MISSING",
+        title="t",
+        severity=FindingSeverity.MEDIUM,
+        description="d",
+        check_id="SEC_HDR_HSTS_MISSING",
+        category=FindingCategory.HEADERS,
+    )
+
+    repository.succeed(
+        SCAN_ID,
+        ScanResult(
+            status_code=None,
+            response_time_ms=None,
+            findings=(finding,),
+            sub_checks=(
+                SubCheckResult("headers", SubCheckState.RAN),
+                SubCheckResult("redirect", SubCheckState.SKIPPED, "connection_failed"),
+            ),
+        ),
+    )
+
+    metrics, sub_checks, findings = (call.args[1] for call in session.execute.call_args_list)
+    assert metrics["status_code"] is None
+    assert sub_checks == {
+        "scan_id": SCAN_ID,
+        "sub_checks": (
+            '[{"name": "headers", "state": "ran", "reason": null}, '
+            '{"name": "redirect", "state": "skipped", "reason": "connection_failed"}]'
+        ),
+    }
+    assert findings[0]["check_id"] == "SEC_HDR_HSTS_MISSING"
+    sessions_used = repository._sessions.begin.call_count
+    assert sessions_used == 1

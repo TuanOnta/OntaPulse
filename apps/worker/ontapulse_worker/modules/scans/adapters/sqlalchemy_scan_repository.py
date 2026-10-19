@@ -67,6 +67,13 @@ RELEASE_SCAN = text(
     WHERE id = :scan_id AND status = 'RUNNING'
     """
 )
+SET_SCAN_SUB_CHECKS = text(
+    """
+    UPDATE "Scan"
+    SET "subChecks" = CAST(:sub_checks AS JSONB)
+    WHERE id = :scan_id AND status = 'SUCCEEDED'
+    """
+)
 INSERT_SCAN_FINDING = text(
     """
     INSERT INTO "ScanFinding" (
@@ -169,6 +176,24 @@ class SqlAlchemyScanRepository:
                 },
             )
             self._require_changed_row(updated.rowcount)
+
+            if result.sub_checks:
+                session.execute(
+                    SET_SCAN_SUB_CHECKS,
+                    {
+                        "scan_id": scan_id,
+                        "sub_checks": json.dumps(
+                            [
+                                {
+                                    "name": item.name,
+                                    "state": item.state.value,
+                                    "reason": item.reason,
+                                }
+                                for item in result.sub_checks
+                            ]
+                        ),
+                    },
+                )
 
             if result.findings:
                 session.execute(
