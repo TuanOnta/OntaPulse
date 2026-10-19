@@ -52,4 +52,12 @@ export {
   type TimelineState,
   type TimelineStep,
 } from "./model/scan-view";
+export {
+  formatWait,
+  isSecurityScan,
+  subCheckCounts,
+  subCheckLabel,
+  subCheckStateText,
+} from "./model/security-scan";
 export { ScanOrb } from "./ui/scan-orb";
+export { SubCheckList } from "./ui/sub-check-list";

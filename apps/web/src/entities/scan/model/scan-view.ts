@@ -1,6 +1,7 @@
 import type { Finding, FindingSeverity, ScanDetail } from "@/shared/types/domain";
 
 import { SLOW_MS } from "./scan-history";
+import { isSecurityScan, subCheckCounts } from "./security-scan";
 
 /** Top of the response-time meter on the scan screen; the 2 s tick sits at SLOW_MS / METER_MAX_MS. */
 export const METER_MAX_MS = 3000;
@@ -35,10 +36,59 @@ export function severityCounts(
     .sort((a, b) => severityRank(b.severity) - severityRank(a.severity));
 }
 
-type ScanLike = Pick<ScanDetail, "status" | "statusCode" | "responseTimeMs" | "findings">;
+type ScanLike = Pick<ScanDetail, "status" | "statusCode" | "responseTimeMs" | "findings"> &
+  Partial<Pick<ScanDetail, "kind" | "subChecks">>;
+
+/** Hero headline of a security check: what was observed, never a verdict on the whole site. */
+function securityOutcome(scan: ScanLike, host?: string): ScanOutcome {
+  const target = host ?? "the target";
+  if (scan.status === "QUEUED") {
+    return {
+      tone: "queued",
+      orb: "queued",
+      title: "Waiting for a worker",
+      sub: "The security check is queued and will start shortly.",
+    };
+  }
+  if (scan.status === "RUNNING") {
+    return {
+      tone: "running",
+      orb: "running",
+      title: "Running security checks…",
+      sub: `A worker is inspecting ${target}.`,
+    };
+  }
+  if (scan.status === "FAILED") {
+    return {
+      tone: "bad",
+      orb: "failed",
+      title: "The security check could not complete",
+      sub: "The target could not be reached for any of the checks.",
+    };
+  }
+  const { ran } = subCheckCounts(scan.subChecks);
+  const checks = `${ran} check${ran === 1 ? "" : "s"} ran`;
+  if (scan.findings.length === 0) {
+    return {
+      tone: "ok",
+      orb: "ok",
+      title: "Security check complete",
+      sub: `${checks}, nothing was flagged.`,
+    };
+  }
+  const top = Math.max(...scan.findings.map((finding) => severityRank(finding.severity)));
+  const count = scan.findings.length;
+  return {
+    tone: top >= HIGH_RANK ? "bad" : "warn",
+    orb: "warn",
+    title: `Security check complete, with ${count} finding${count > 1 ? "s" : ""}`,
+    sub: `${checks}. Review what was observed below.`,
+  };
+}
 
 /** Headline of the hero: what happened, in words, with the colour tone and orb that go with it. */
 export function scanOutcome(scan: ScanLike, host?: string): ScanOutcome {
+  if (isSecurityScan(scan)) return securityOutcome(scan, host);
   const target = host ?? "the target";
   if (scan.status === "QUEUED") {
     return {

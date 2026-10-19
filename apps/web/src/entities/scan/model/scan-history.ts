@@ -75,11 +75,15 @@ export function formatMs(responseTimeMs: number): string {
 }
 
 /** The finished scans of a newest-first list, oldest to newest, at most `limit`. */
-export function chartScans<T extends Pick<Scan, "status">>(
+export function chartScans<T extends Pick<Scan, "status" | "kind">>(
   scans: readonly T[],
   limit: number = CHART_BARS,
 ): T[] {
-  return scans.filter(isFinishedScan).slice(0, limit).reverse();
+  // Response time is an HTTP probe measure; security scans are not charted.
+  return scans
+    .filter((scan) => isFinishedScan(scan) && scan.kind !== "SECURITY_POSTURE")
+    .slice(0, limit)
+    .reverse();
 }
 
 /** Top of the chart scale: always shows the 2 s line, and grows for slower responses. */

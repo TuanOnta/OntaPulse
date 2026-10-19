@@ -12,6 +12,7 @@ import {
   relativeTime,
   statusChip,
 } from "../model/scan-history";
+import { isSecurityScan } from "../model/security-scan";
 import { ScanChip } from "./scan-run-chip";
 
 const HTTP_TONE = {
@@ -55,6 +56,11 @@ export function ScanRow({
         role="cell"
       >
         <ScanChip label={chip.label} live={false} tone={chip.tone} />
+        {isSecurityScan(scan) ? (
+          <span className="ml-2 font-mono text-[12px] leading-[normal] tracking-[.08em] text-landing-muted uppercase">
+            Security
+          </span>
+        ) : null}
       </span>
       <span
         className="pointer-events-none relative max-[1099px]:col-start-2 max-[1099px]:row-start-1 max-[1099px]:justify-self-end"
@@ -113,7 +119,7 @@ export function ScanRow({
         )}
       />
       <Link
-        aria-label={`Open scan from ${when}, ${chip.label.toLowerCase()}`}
+        aria-label={`Open ${isSecurityScan(scan) ? "security " : ""}scan from ${when}, ${chip.label.toLowerCase()}`}
         className="absolute inset-0 z-[1] focus-visible:outline-offset-[-3px]"
         to={href}
       />
