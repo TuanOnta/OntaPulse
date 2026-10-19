@@ -8,7 +8,6 @@ is verified against it (httpcore `sni_hostname` extension, httpcore 1.0.9).
 
 from collections.abc import Callable
 from importlib import metadata
-from ipaddress import IPv4Address, ip_address
 from time import perf_counter
 from urllib.parse import urlsplit, urlunsplit
 
@@ -16,10 +15,12 @@ import httpx
 
 from ontapulse_worker.modules.scans.adapters.http.url_security import (
     AddressResolver,
-    ensure_public_address,
     resolve_host_addresses,
 )
 from ontapulse_worker.modules.scans.domain.errors import ScanExecutionError
+from ontapulse_worker.modules.security_posture.adapters.pinned_address import (
+    resolve_pinned_address,
+)
 from ontapulse_worker.modules.security_posture.application.ports import PostureConnectionError
 from ontapulse_worker.modules.security_posture.domain.catalog import (
     USER_AGENT_PRODUCT,
@@ -71,7 +72,7 @@ class PinnedHttpxClient:
     def fetch(self, url: str) -> PostureResponse:
         parts = urlsplit(url)
         hostname, port = self._validated_host_and_port(url)
-        address = self._pinned_address(hostname, port)
+        address = resolve_pinned_address(self._resolver, hostname, port)
 
         literal = f"[{address}]" if ":" in address else address
         pinned_url = urlunsplit(
@@ -130,26 +131,6 @@ class PinnedHttpxClient:
             raise ScanExecutionError("Scan target URL is invalid")
 
         return hostname, resolved_port
-
-    def _pinned_address(self, hostname: str, port: int) -> str:
-        try:
-            addresses = set(self._resolver(hostname, port))
-        except (OSError, UnicodeError) as error:
-            raise ScanExecutionError("Scan target hostname could not be resolved") from error
-
-        if not addresses:
-            raise ScanExecutionError("Scan target hostname could not be resolved")
-
-        for address in addresses:
-            ensure_public_address(address)
-
-        # Deterministic choice: IPv4 first, then lexical order.
-        def sort_key(address: str) -> tuple[int, str]:
-            parsed = ip_address(address.split("%", maxsplit=1)[0])
-
-            return (0 if isinstance(parsed, IPv4Address) else 1, str(parsed))
-
-        return str(ip_address(min(addresses, key=sort_key).split("%", maxsplit=1)[0]))
 
     @staticmethod
     def _collect_headers(response: httpx.Response) -> dict[str, tuple[str, ...]]:
