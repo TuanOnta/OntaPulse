@@ -120,3 +120,15 @@ def test_execute_converts_network_error_to_safe_domain_error() -> None:
         captured.value.__cause__,
         httpx.ConnectError,
     )
+
+
+def test_default_client_timeouts() -> None:
+    from ontapulse_worker.modules.scans.adapters.http.http_scan_executor import HttpScanExecutor
+
+    executor = HttpScanExecutor()
+
+    try:
+        timeout = executor._client.timeout
+        assert (timeout.connect, timeout.read, timeout.write, timeout.pool) == (5.0, 30.0, 5.0, 5.0)
+    finally:
+        executor.close()

@@ -1287,6 +1287,7 @@ export const ScanScalarFieldEnum = {
   statusCode: 'statusCode',
   responseTimeMs: 'responseTimeMs',
   errorMessage: 'errorMessage',
+  subChecks: 'subChecks',
   startedAt: 'startedAt',
   finishedAt: 'finishedAt',
   createdAt: 'createdAt'
@@ -1479,20 +1480,6 @@ export type ListEnumScanStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$P
 
 
 /**
- * Reference to a field of type 'OutboxEventStatus'
- */
-export type EnumOutboxEventStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'OutboxEventStatus'>
-    
-
-
-/**
- * Reference to a field of type 'OutboxEventStatus[]'
- */
-export type ListEnumOutboxEventStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'OutboxEventStatus[]'>
-    
-
-
-/**
  * Reference to a field of type 'Json'
  */
 export type JsonFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Json'>
@@ -1503,6 +1490,20 @@ export type JsonFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'J
  * Reference to a field of type 'QueryMode'
  */
 export type EnumQueryModeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'QueryMode'>
+    
+
+
+/**
+ * Reference to a field of type 'OutboxEventStatus'
+ */
+export type EnumOutboxEventStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'OutboxEventStatus'>
+    
+
+
+/**
+ * Reference to a field of type 'OutboxEventStatus[]'
+ */
+export type ListEnumOutboxEventStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'OutboxEventStatus[]'>
     
 
 

@@ -48,7 +48,7 @@ Direction: `domain <- application <- adapters`; `bootstrap` wires them.
 
 `HTTP_PROBE` (the existing check):
 
-- Job: one HTTP GET. Only `http`/`https`; reject URLs with userinfo; resolve DNS; every resolved address must be public (no private, loopback, link-local, multicast, reserved). Redirects are not followed. Response bodies are not read or stored. Timeouts: connect 5 s, read 10 s, write 5 s, pool 5 s.
+- Job: one HTTP GET. Only `http`/`https`; reject URLs with userinfo; resolve DNS; every resolved address must be public (no private, loopback, link-local, multicast, reserved). Redirects are not followed. Response bodies are not read or stored. Timeouts: connect 5 s, read 30 s, write 5 s, pool 5 s.
 - Findings: `HTTP_CLIENT_ERROR` (`MEDIUM`), `HTTP_SERVER_ERROR` (`HIGH`), `SLOW_RESPONSE` (`MEDIUM`, response time >= 2000 ms). One scan may have several.
 - HTTP 4xx/5xx is `SUCCEEDED` with findings. Timeout, DNS failure, connection failure, and non-public target are terminal `FAILED`, with no broker retry.
 - Its tests must pass unchanged after every phase.

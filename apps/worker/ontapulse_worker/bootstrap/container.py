@@ -8,6 +8,13 @@ from ontapulse_worker.modules.scans.adapters.http.http_scan_executor import (
 )
 from ontapulse_worker.modules.scans.adapters.rabbitmq.consumer import RabbitMqScanConsumer
 from ontapulse_worker.modules.scans.application.scan_lifecycle import ScanLifecycleService
+from ontapulse_worker.modules.scans.domain.models import ScanKind
+from ontapulse_worker.modules.security_posture.adapters.http.pinned_httpx_client import (
+    PinnedHttpxClient,
+)
+from ontapulse_worker.modules.security_posture.application.posture_scan import (
+    PostureScanExecutor,
+)
 from ontapulse_worker.platform.config import Settings
 from ontapulse_worker.platform.database import (
     check_database,
@@ -23,6 +30,7 @@ class Container:
         self._settings = settings
         self.engine: Engine | None = None
         self.executor: HttpScanExecutor | None = None
+        self.posture_client: PinnedHttpxClient | None = None
         self._lifecycle: ScanLifecycleService | None = None
 
     def build_consumer(self) -> RabbitMqScanConsumer:
@@ -38,7 +46,14 @@ class Container:
             sessions = create_session_factory(self.engine)
             repository = sqlalchemy_scan_repository.SqlAlchemyScanRepository(sessions)
             self.executor = HttpScanExecutor()
-            self._lifecycle = ScanLifecycleService(repository, self.executor)
+            self.posture_client = PinnedHttpxClient()
+            self._lifecycle = ScanLifecycleService(
+                repository,
+                self.executor,
+                executors={
+                    ScanKind.SECURITY_POSTURE: PostureScanExecutor(self.posture_client),
+                },
+            )
 
         return RabbitMqScanConsumer(
             url=str(self._settings.rabbitmq_url),
@@ -48,5 +63,7 @@ class Container:
     def close(self) -> None:
         if self.executor is not None:
             self.executor.close()
+        if self.posture_client is not None:
+            self.posture_client.close()
         if self.engine is not None:
             self.engine.dispose()

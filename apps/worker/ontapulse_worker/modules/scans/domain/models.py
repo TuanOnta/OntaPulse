@@ -63,8 +63,22 @@ class ScanFinding:
     confidence: FindingConfidence | None = None
 
 
+class SubCheckState(StrEnum):
+    RAN = "ran"
+    SKIPPED = "skipped"
+
+
+@dataclass(frozen=True)
+class SubCheckResult:
+    name: str
+    state: SubCheckState
+    reason: str | None = None
+
+
 @dataclass(frozen=True)
 class ScanResult:
-    status_code: int
-    response_time_ms: int
+    # None only for kinds whose request never produced a response (see SECURITY_POSTURE).
+    status_code: int | None
+    response_time_ms: int | None
     findings: tuple[ScanFinding, ...] = ()
+    sub_checks: tuple[SubCheckResult, ...] = ()

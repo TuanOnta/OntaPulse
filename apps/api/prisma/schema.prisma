@@ -153,6 +153,7 @@ model Scan {
   statusCode     Int?
   responseTimeMs Int?
   errorMessage   String?
+  subChecks      Json?
   startedAt      DateTime?
   finishedAt     DateTime?
   createdAt      DateTime   @default(now())

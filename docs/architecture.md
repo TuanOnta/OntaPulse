@@ -75,6 +75,9 @@ Refer to `apps/api/prisma/schema.prisma` for exact fields, enums, relations, ind
 Existing rows keep working: new columns are nullable or defaulted, and enums are extended, never renamed.
 Names are final only once they appear in `schema.prisma`.
 
+Phase 2 makes `SECURITY_POSTURE` runnable (headers, cookies, CORS, and the HTTP to HTTPS redirect). TLS, edge
+detection, path probes, DNS watch, and recurring runs are later phases.
+
 Implemented so far (scan kind plumbing): `Scan.kind`, `ScanFinding.checkId`, `category`, and `confidence`, and the
 `MonitorCheckSettings` table. Only `HTTP_PROBE` is runnable; the worker dispatches by kind through a registry and
 the API rejects other kinds on trigger until their checks ship. The edge profile and DNS baseline tables are added

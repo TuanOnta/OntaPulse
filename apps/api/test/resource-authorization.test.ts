@@ -179,7 +179,7 @@ describe("resource authorization", () => {
     const fixture = await createFixture();
     const scanCount = await prisma.scan.count();
     const url = `/api/monitors/${fixture.monitorId}/scans`;
-    const payload = { kind: "SECURITY_POSTURE" };
+    const payload = { kind: "DNS_WATCH" };
     const memberResponse = await app.inject({
       method: "POST",
       url,

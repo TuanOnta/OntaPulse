@@ -108,6 +108,10 @@ the same, with these additions:
 - Findings, observations, the DNS baseline update, and the terminal status are written in one transaction. A
   duplicate delivery of a terminal Scan writes no second set of findings and no second DNS baseline.
 - Retry rules, topology, and the `x-scan-retry-count` header are unchanged.
+- `SECURITY_POSTURE` is implemented: it makes at most two requests (one HTTPS GET and one HTTP GET, redirects not
+  followed, bodies not read), each connecting to the single validated address. Its result is persisted as returned
+  (the `HTTP_PROBE` status and latency policy does not apply), together with `Scan.subChecks`. The scan is `FAILED`
+  only when the target is not public or does not resolve, or when neither request could connect.
 
 ## Delivery and failure rules
 

@@ -142,3 +142,22 @@ def test_unregistered_kind_fails_the_scan_and_is_dead_lettered(kind: str) -> Non
     executor.execute.assert_not_called()
     repository.fail.assert_called_once_with(SCAN_ID, "Unsupported scan kind.")
     repository.succeed.assert_not_called()
+
+
+def test_posture_results_are_persisted_as_returned_without_http_policy() -> None:
+    repository = Mock()
+    repository.claim.return_value = ClaimedScan(
+        scan_id=SCAN_ID,
+        target_url="https://example.com",
+        kind=ScanKind.SECURITY_POSTURE.value,
+    )
+    posture_executor = Mock()
+    # A 404 or a slow answer would add HTTP_CLIENT_ERROR / SLOW_RESPONSE for an HTTP probe.
+    result = ScanResult(status_code=404, response_time_ms=9_999, findings=())
+    posture_executor.execute.return_value = result
+
+    ScanLifecycleService(
+        repository, Mock(), executors={ScanKind.SECURITY_POSTURE: posture_executor}
+    ).handle(JOB)
+
+    repository.succeed.assert_called_once_with(SCAN_ID, result)

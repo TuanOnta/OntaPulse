@@ -2,6 +2,7 @@ import type { FastifyReply, FastifyRequest } from "fastify";
 
 import { AppError } from "../../infrastructure/errors/app-error.js";
 import {
+  listScansQuerySchema,
   monitorIdParamsSchema,
   scanIdParamsSchema,
   triggerScanBodySchema,
@@ -66,9 +67,45 @@ export class ScanController {
       );
     }
 
-    const scans = await this.scanService.findAll(parsedParams.data.monitorId, userId);
+    const parsedQuery = listScansQuerySchema.safeParse(request.query);
+
+    if (!parsedQuery.success) {
+      throw new AppError(
+        "Request validation failed",
+        400,
+        "VALIDATION_ERROR",
+        parsedQuery.error.flatten().fieldErrors,
+      );
+    }
+
+    const scans = await this.scanService.findAll(
+      parsedParams.data.monitorId,
+      userId,
+      parsedQuery.data.kind,
+    );
 
     return reply.send(scans);
+  };
+
+  findLatestSecurityPosture = async (request: FastifyRequest, reply: FastifyReply) => {
+    const userId = getAuthenticatedUserId(request);
+    const parsedParams = monitorIdParamsSchema.safeParse(request.params);
+
+    if (!parsedParams.success) {
+      throw new AppError(
+        "Request validation failed",
+        400,
+        "VALIDATION_ERROR",
+        parsedParams.error.flatten().fieldErrors,
+      );
+    }
+
+    const scan = await this.scanService.findLatestSecurityPosture(
+      parsedParams.data.monitorId,
+      userId,
+    );
+
+    return reply.send(scan);
   };
 
   findById = async (request: FastifyRequest, reply: FastifyReply) => {

@@ -108,6 +108,7 @@ describe("Scan API", () => {
         startedAt: null,
         finishedAt: null,
         createdAt: expect.any(String),
+        subChecks: null,
       });
     });
 
@@ -246,23 +247,20 @@ describe("Scan API", () => {
       await expect(prisma.scanOutboxEvent.count({ where: { monitorId } })).resolves.toBe(1);
     });
 
-    it.each(["SECURITY_POSTURE", "DNS_WATCH"])(
-      "rejects the unavailable kind %s and queues nothing",
-      async (kind) => {
-        const monitorId = await createMonitor(await createProject());
+    it.each(["DNS_WATCH"])("rejects the unavailable kind %s and queues nothing", async (kind) => {
+      const monitorId = await createMonitor(await createProject());
 
-        const response = await app.inject({
-          method: "POST",
-          url: `/api/monitors/${monitorId}/scans`,
-          payload: { kind },
-        });
+      const response = await app.inject({
+        method: "POST",
+        url: `/api/monitors/${monitorId}/scans`,
+        payload: { kind },
+      });
 
-        expect(response.statusCode).toBe(400);
-        expect(response.json()).toMatchObject({ code: "SCAN_KIND_NOT_AVAILABLE" });
-        await expect(prisma.scan.count({ where: { monitorId } })).resolves.toBe(0);
-        await expect(prisma.scanOutboxEvent.count({ where: { monitorId } })).resolves.toBe(0);
-      },
-    );
+      expect(response.statusCode).toBe(400);
+      expect(response.json()).toMatchObject({ code: "SCAN_KIND_NOT_AVAILABLE" });
+      await expect(prisma.scan.count({ where: { monitorId } })).resolves.toBe(0);
+      await expect(prisma.scanOutboxEvent.count({ where: { monitorId } })).resolves.toBe(0);
+    });
 
     it.each([{ kind: "UNKNOWN" }, { kind: "HTTP_PROBE", extra: true }])(
       "rejects the invalid body %j",
@@ -602,6 +600,7 @@ describe("Scan API", () => {
         startedAt: null,
         finishedAt: null,
         createdAt: expect.any(String),
+        subChecks: null,
         findings: [],
       });
     });
