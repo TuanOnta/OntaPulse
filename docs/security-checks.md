@@ -3,7 +3,7 @@
 Design contract for the `SECURITY_POSTURE` and `DNS_WATCH` scan kinds and for edge (WAF, CDN, anti-bot)
 detection. `HTTP_PROBE` is the existing check and is unchanged by this document.
 
-Status: **draft, Phase 0**. Values marked _(draft)_ wait for the user's confirmation. Entries marked _(unverified)_
+Status: **draft. Phase 2 implemented the header, cookie, CORS, and redirect checks of `SECURITY_POSTURE`.** Values marked _(draft)_ wait for the user's confirmation. Entries marked _(unverified)_
 could not be checked against a primary source when this file was written and must be re-verified before the phase
 that implements them.
 
@@ -82,11 +82,11 @@ interval floor.
 | Max path-probe requests per scan           | size of the allowlist in section 8 (opt-in only)              | 0                                   |
 | Max DNS queries per scan                   | 0                                                             | 40 _(draft)_                        |
 | Redirects followed                         | 0                                                             | not applicable                      |
-| Timeouts                                   | connect 5 s, read 10 s, write 5 s, pool 5 s (as `HTTP_PROBE`) | DNS timeout 5 s per query _(draft)_ |
+| Timeouts                                   | connect 5 s, read 30 s, write 5 s, pool 5 s (as `HTTP_PROBE`) | DNS timeout 5 s per query _(draft)_ |
 | TLS handshake timeout                      | 10 s total _(draft)_                                          | not applicable                      |
 | `User-Agent`                               | `OntaPulse-SecurityScanner/<version> (+<project url>)`        | not applicable                      |
 
-`HTTP_PROBE` keeps its own constants (one GET, connect 5 s, read 10 s, write 5 s, pool 5 s). The `User-Agent`
+`HTTP_PROBE` keeps its own constants (one GET, connect 5 s, read 30 s, write 5 s, pool 5 s). The `User-Agent`
 names OntaPulse and never impersonates a browser. The project URL value is a configuration setting added in
 Phase 2 after asking.
 
@@ -113,6 +113,13 @@ Evidence is bounded JSON stored on the finding.
 
 ## 6. Check catalog: `SECURITY_POSTURE`
 
+Phase 2 verification notes: `X-Content-Type-Options` (only `nosniff` is valid, MDN), `Referrer-Policy` (valid tokens
+and the W3C default), `Permissions-Policy` (structured-field dictionary, W3C). The CSP3 text read does not define when
+`'unsafe-inline'` is ignored because of a nonce or hash, nor how `*`, `data:`, or `http:` match in `script-src`;
+therefore `'unsafe-inline'` is reported only when no nonce, hash, or `'strict-dynamic'` source is present (confidence
+`LOW`), and wildcard and `http:` sources are not evaluated. `data:` is evaluated because CSP3 says developers should not
+include it. `rfc6265bis` is still an Internet-Draft (12 October 2026 revision).
+
 Header and cookie rules apply to the final HTTPS response of the single GET and only when that response is not a
 challenge (section 9).
 
@@ -121,23 +128,23 @@ challenge (section 9).
 Semantics verified against RFC 6797 (HSTS), the W3C CSP Level 3 working draft (syntax, `default-src` fallback,
 `unsafe-eval`, `frame-ancestors` is ignored in `<meta>`), and MDN for `X-Frame-Options`.
 
-| ID                                   | Severity | Condition (observed)                                                                                                         | Confidence                                                | Remediation summary                                          |
-| ------------------------------------ | -------- | ---------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------- | ------------------------------------------------------------ |
-| `SEC_HDR_HSTS_MISSING`               | `MEDIUM` | HTTPS response has no `Strict-Transport-Security` header                                                                     | null                                                      | Send HSTS over HTTPS with a long `max-age`                   |
-| `SEC_HDR_HSTS_SHORT_MAX_AGE`         | `LOW`    | `max-age` is present and below 15552000 s (180 days) _(draft)_ and not `0`                                                   | null                                                      | Raise `max-age` (31536000 s is common)                       |
-| `SEC_HDR_HSTS_DISABLED`              | `MEDIUM` | `max-age=0` (policy removal, RFC 6797)                                                                                       | null                                                      | Remove `max-age=0` unless intentionally retiring HSTS        |
-| `SEC_HDR_HSTS_INVALID`               | `LOW`    | Header present but does not match the RFC 6797 grammar, has no `max-age`, or repeats a directive                             | null                                                      | Fix header syntax; browsers ignore an invalid header         |
-| `SEC_HDR_HSTS_NO_SUBDOMAINS`         | `LOW`    | Valid HSTS without `includeSubDomains` _(informational advice; may be intentional)_                                          | `LOW`                                                     | Consider `includeSubDomains` if all subdomains support HTTPS |
-| `SEC_HDR_CSP_MISSING`                | `MEDIUM` | No `Content-Security-Policy` header (a `-Report-Only` header alone does not count as enforcing)                              | null                                                      | Add a CSP, start with report-only if needed                  |
-| `SEC_HDR_CSP_REPORT_ONLY`            | `LOW`    | Only `Content-Security-Policy-Report-Only` is sent                                                                           | null                                                      | Promote the report-only policy to enforcing                  |
-| `SEC_HDR_CSP_UNSAFE_INLINE`          | `MEDIUM` | Effective `script-src` (or `default-src` fallback) contains `'unsafe-inline'` without a nonce or hash                        | `MEDIUM` _(unverified: section 6.7.3.2 of CSP3 not read)_ | Use nonces or hashes instead of `'unsafe-inline'`            |
-| `SEC_HDR_CSP_UNSAFE_EVAL`            | `LOW`    | Effective `script-src` (or `default-src` fallback) contains `'unsafe-eval'`                                                  | null                                                      | Remove string-to-code evaluation from scripts                |
-| `SEC_HDR_CSP_WILDCARD_SOURCE`        | `MEDIUM` | Effective `script-src` allows `*`, `data:`, or `http:` sources _(unverified: matching rules in CSP3 section 6.7.2 not read)_ | `MEDIUM`                                                  | Restrict script sources to specific hosts                    |
-| `SEC_HDR_FRAME_PROTECTION_MISSING`   | `MEDIUM` | Neither `X-Frame-Options` (`DENY` or `SAMEORIGIN`) nor a CSP `frame-ancestors` directive is present                          | null                                                      | Add `frame-ancestors` (preferred) or `X-Frame-Options`       |
-| `SEC_HDR_XFO_INVALID`                | `LOW`    | `X-Frame-Options` value is not `DENY` or `SAMEORIGIN` (`ALLOW-FROM` is obsolete) and no `frame-ancestors` is present         | null                                                      | Use `DENY`/`SAMEORIGIN` or CSP `frame-ancestors`             |
-| `SEC_HDR_XCTO_MISSING`               | `LOW`    | `X-Content-Type-Options` absent or not `nosniff` _(unverified: Fetch spec text not read)_                                    | null                                                      | Send `X-Content-Type-Options: nosniff`                       |
-| `SEC_HDR_REFERRER_POLICY_MISSING`    | `LOW`    | No `Referrer-Policy` header _(unverified)_                                                                                   | null                                                      | Set an explicit `Referrer-Policy`                            |
-| `SEC_HDR_PERMISSIONS_POLICY_MISSING` | `LOW`    | No `Permissions-Policy` header _(unverified)_                                                                                | null                                                      | Set a `Permissions-Policy` that disables unused features     |
+| ID                                   | Severity | Condition (observed)                                                                                                                                    | Confidence | Remediation summary                                          |
+| ------------------------------------ | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- | ------------------------------------------------------------ |
+| `SEC_HDR_HSTS_MISSING`               | `MEDIUM` | HTTPS response has no `Strict-Transport-Security` header                                                                                                | null       | Send HSTS over HTTPS with a long `max-age`                   |
+| `SEC_HDR_HSTS_SHORT_MAX_AGE`         | `LOW`    | `max-age` is present and below 15552000 s (180 days) _(draft)_ and not `0`                                                                              | null       | Raise `max-age` (31536000 s is common)                       |
+| `SEC_HDR_HSTS_DISABLED`              | `MEDIUM` | `max-age=0` (policy removal, RFC 6797)                                                                                                                  | null       | Remove `max-age=0` unless intentionally retiring HSTS        |
+| `SEC_HDR_HSTS_INVALID`               | `LOW`    | Header present but does not match the RFC 6797 grammar, has no `max-age`, or repeats a directive                                                        | null       | Fix header syntax; browsers ignore an invalid header         |
+| `SEC_HDR_HSTS_NO_SUBDOMAINS`         | `LOW`    | Valid HSTS without `includeSubDomains` _(informational advice; may be intentional)_                                                                     | `LOW`      | Consider `includeSubDomains` if all subdomains support HTTPS |
+| `SEC_HDR_CSP_MISSING`                | `MEDIUM` | Neither `Content-Security-Policy` nor `Content-Security-Policy-Report-Only` is present                                                                  | null       | Add a CSP, start with report-only if needed                  |
+| `SEC_HDR_CSP_REPORT_ONLY`            | `LOW`    | Only `Content-Security-Policy-Report-Only` is present (nothing is enforced; reported instead of `SEC_HDR_CSP_MISSING`)                                  | null       | Promote the report-only policy to enforcing                  |
+| `SEC_HDR_CSP_UNSAFE_INLINE`          | `MEDIUM` | Effective `script-src` (or `default-src` fallback) contains `'unsafe-inline'` and the same source list has no nonce, hash, or `'strict-dynamic'` source | `LOW`      | Use nonces or hashes instead of `'unsafe-inline'`            |
+| `SEC_HDR_CSP_UNSAFE_EVAL`            | `LOW`    | Effective `script-src` (or `default-src` fallback) contains `'unsafe-eval'`                                                                             | null       | Remove string-to-code evaluation from scripts                |
+| `SEC_HDR_CSP_DATA_SOURCE`            | `MEDIUM` | Effective `script-src` (or `default-src` fallback) contains the `data:` scheme source (CSP3 says developers should not include it)                      | `MEDIUM`   | Remove `data:` from script sources                           |
+| `SEC_HDR_FRAME_PROTECTION_MISSING`   | `MEDIUM` | Neither `X-Frame-Options` (`DENY` or `SAMEORIGIN`) nor a CSP `frame-ancestors` directive is present                                                     | null       | Add `frame-ancestors` (preferred) or `X-Frame-Options`       |
+| `SEC_HDR_XFO_INVALID`                | `LOW`    | `X-Frame-Options` value is not `DENY` or `SAMEORIGIN` (`ALLOW-FROM` is obsolete) and no `frame-ancestors` is present                                    | null       | Use `DENY`/`SAMEORIGIN` or CSP `frame-ancestors`             |
+| `SEC_HDR_XCTO_MISSING`               | `LOW`    | `X-Content-Type-Options` is absent, or its value is not `nosniff` (the only valid value)                                                                | null       | Send `X-Content-Type-Options: nosniff`                       |
+| `SEC_HDR_REFERRER_POLICY_MISSING`    | `LOW`    | No `Referrer-Policy` header (the W3C default without it is `no-referrer-when-downgrade`)                                                                | null       | Set an explicit `Referrer-Policy`                            |
+| `SEC_HDR_PERMISSIONS_POLICY_MISSING` | `LOW`    | No `Permissions-Policy` header (value is a structured-field dictionary; presence only is evaluated)                                                     | null       | Set a `Permissions-Policy` that disables unused features     |
 
 HSTS parsing rules: directive names are case-insensitive; `max-age` may be a quoted string; the value is a
 non-negative integer; directives appear at most once; only the first `Strict-Transport-Security` header counts.
@@ -184,14 +191,15 @@ a closed HTTP port is not a defect. A challenge response on HTTP skips the sub-c
 Read from the headers of the single HTTPS GET with no `Origin` request header sent, so reflected-origin
 behavior cannot be observed in the first version. The request carries no credentials.
 
-> _(unverified)_ The WHATWG Fetch standard section on the CORS protocol and credentials was not read when this
-> file was written. Re-verify the wildcard-with-credentials rule against the Fetch standard before implementing.
+Verified against the WHATWG Fetch standard (CORS protocol and credentials): with credentials mode `include`,
+`Access-Control-Allow-Origin` cannot be `*`; the only valid `Access-Control-Allow-Credentials` value is the
+case-sensitive `true`; `null` is a valid `Access-Control-Allow-Origin` value.
 
-| ID                                   | Severity | Condition (observed)                                                                    | Confidence | Remediation summary                      |
-| ------------------------------------ | -------- | --------------------------------------------------------------------------------------- | ---------- | ---------------------------------------- |
-| `SEC_CORS_WILDCARD_ORIGIN`           | `LOW`    | `Access-Control-Allow-Origin: *` on the monitored URL                                   | `LOW`      | Restrict to the origins that need access |
-| `SEC_CORS_WILDCARD_WITH_CREDENTIALS` | `MEDIUM` | `Access-Control-Allow-Origin: *` together with `Access-Control-Allow-Credentials: true` | `MEDIUM`   | Never combine; list explicit origins     |
-| `SEC_CORS_NULL_ORIGIN`               | `MEDIUM` | `Access-Control-Allow-Origin: null`                                                     | `MEDIUM`   | Do not allow the `null` origin           |
+| ID                                   | Severity | Condition (observed)                                                                                                                                                                                            | Confidence | Remediation summary                      |
+| ------------------------------------ | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- | ---------------------------------------- |
+| `SEC_CORS_WILDCARD_ORIGIN`           | `LOW`    | `Access-Control-Allow-Origin: *` on the monitored URL                                                                                                                                                           | `LOW`      | Restrict to the origins that need access |
+| `SEC_CORS_WILDCARD_WITH_CREDENTIALS` | `LOW`    | `Access-Control-Allow-Origin: *` together with `Access-Control-Allow-Credentials: true` (Fetch: a credentialed request cannot use `*`, so browsers will not share the response; observed as a misconfiguration) | `MEDIUM`   | Never combine; list explicit origins     |
+| `SEC_CORS_NULL_ORIGIN`               | `MEDIUM` | `Access-Control-Allow-Origin: null`                                                                                                                                                                             | `MEDIUM`   | Do not allow the `null` origin           |
 
 A wildcard origin on a public, unauthenticated resource is often intentional; hence `LOW` and `LOW` confidence.
 Reflected-origin detection needs a second request with a crafted `Origin` header and is out of scope for the
@@ -265,10 +273,13 @@ Rules:
 
 A response is classified as a **challenge** when any of the following holds (signals are fingerprints, section 10):
 
-1. Status 403, 429, 503, or 202 together with a vendor challenge marker (a challenge-specific header such as
-   `cf-mitigated: challenge`, or a vendor challenge cookie name). _(unverified: exact markers per vendor must be
-   checked against vendor documentation before Phase 4)_
-2. A known anti-bot challenge cookie name is set on a non-2xx response.
+1. A verified vendor challenge marker. Phase 2 implements one, verified against Cloudflare documentation: the
+   response header `cf-mitigated` with the value `challenge` (the documented only value; set for all Challenge
+   Page types; the documentation names no status code). Other vendors are added in Phase 4 after the same
+   verification. _(unverified: markers for other vendors)_
+2. Heuristic, low certainty: status 403, 429, or 503 without a verified marker. Findings from such a response are
+   kept with `confidence = LOW` and `possible_challenge = true` in the evidence.
+3. A known anti-bot challenge cookie name is set on a non-2xx response.
 
 Effects:
 
@@ -405,7 +416,10 @@ SPF and DMARC absence is not reported (a domain that sends no mail has no obliga
 | DNS baseline      | new table                    | One current baseline per host plus bounded history; worker is the only writer         |
 | Monitor settings  | new table or monitor columns | Enabled kinds; path-probe flag, acknowledging user, acknowledgment time               |
 
-Phase 1 added `Scan.kind`, the finding columns `checkId`, `category`, and `confidence`, and the
+Phase 2 added `Scan.subChecks` (nullable JSON list of `{ name, state, reason }`; `NULL` for `HTTP_PROBE`),
+the `GET`/`PATCH` `/api/monitors/:monitorId/check-settings` routes, the trigger rules for `SECURITY_POSTURE`
+(enabled per monitor, 3600 s minimum interval per monitor, 60 scans per hour per workspace), and
+`GET /api/monitors/:monitorId/security-posture/latest`. Phase 1 added `Scan.kind`, the finding columns `checkId`, `category`, and `confidence`, and the
 `MonitorCheckSettings` table (`securityPostureEnabled`, `dnsWatchEnabled`, `pathProbesEnabled`,
 `pathProbesAcknowledgedById`, `pathProbesAcknowledgedAt`; no row means all disabled). `HTTP_PROBE` findings keep
 `checkId`, `category`, and `confidence` as `NULL`. Sub-check results, edge observations, and the DNS baseline are
