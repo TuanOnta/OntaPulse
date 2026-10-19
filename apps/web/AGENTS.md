@@ -1,13 +1,13 @@
 # OntaPulse web (`apps/web`)
 
-React 19 + React Router 7 + Vite 8 + Tailwind CSS 4 + Motion 13. The full rules for this app (reference-prototype porting, FSD layering, landing scene maintenance, API usage, parity checks, domain and permission rules) live in the root [AGENTS.md](../../AGENTS.md), sections 11 to 13. **Read it first. It applies here in full and is not repeated below.**
+React 19 + React Router 7 + Vite 8 + Tailwind CSS 4 + Motion 13. The full rules for this app (design-system and prototype rules, FSD layering, landing scene maintenance, API usage, parity checks, domain and permission rules) live in the root [AGENTS.md](../../AGENTS.md), sections 11 to 13. **Read it first. It applies here in full and is not repeated below.**
 
 This file is a short local index so an agent working inside `apps/web` does not miss the essentials.
 
 ## Hard rules (see root sections in brackets)
 
-- Port approved prototypes from `../../reference/*.html` (read-only). No prototype, no screen. Do not redesign. [§2, §11]
-- Screens for the security features (monitor security tab, domain and DNS panel, edge profile card) are **blocked until their prototypes exist** in `reference/`. Do not start them from the API shape alone. [§9, §11]
+- Build screens from the existing design system (tokens, shared primitives, neighbouring screens). When the user provides a prototype in `../../reference/*.html` (read-only), match it. Do not redesign screens that already exist. [§2, §11]
+- Screens for the security features (domain and DNS panel, edge profile card) need no prototype: write the visual interpretation in the prompt file, build from the design system, and verify in a browser at 360, 768, 1024, and 1440 px. Do not start from the API shape alone; read the neighbouring screens first. [§9, §11]
 - Layers: `app -> pages -> widgets -> features -> entities -> shared`. Import only from the right; use `@/`. [§11]
 - All API calls go through `src/shared/api/client.ts`. No raw `fetch`. Keep `/api` prefix and `credentials: "include"`. New endpoints and types go to the client and `shared/types/domain.ts`. [§13]
 - Tokens live in `src/app/styles/globals.css` (`@theme`). No `tailwind.config.*`, no hardcoded colors. [§6, §12]
@@ -26,7 +26,7 @@ src/
   app/       providers, router (app/router/app-router.tsx), layouts, styles
   pages/     route composition only, lazy() loaded
   widgets/   screen sections (landing-scene, scan-detail; later: security-posture,
-             dns-watch, edge-profile, after their prototypes are approved)
+             dns-watch, edge-profile)
   features/  user actions (auth, forms, mutations; later: enable-security-checks,
              acknowledge-path-probes)
   entities/  workspace, project, monitor, scan, finding, edge-profile, dns-baseline, user
@@ -62,4 +62,4 @@ Coverage thresholds are in `vite.config.ts`; do not lower them. Keep Playwright 
 
 ## Language
 
-Reply to the user in Bahasa Indonesia. Code, comments, commits, and prompt files in English. UI copy follows the reference prototype.
+Reply to the user in Bahasa Indonesia. Code, comments, commits, and prompt files in English. UI copy follows the reference prototype when there is one, otherwise `README.md` and `docs/display-content-mapping.md`.
