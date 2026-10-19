@@ -132,3 +132,71 @@ def test_default_client_timeouts() -> None:
         assert (timeout.connect, timeout.read, timeout.write, timeout.pool) == (5.0, 30.0, 5.0, 5.0)
     finally:
         executor.close()
+
+
+class AllowAllTargets:
+    def validate(self, target_url: str) -> None:
+        return None
+
+
+def certificate_error(code: int) -> httpx.ConnectError:
+    import ssl
+
+    cause = ssl.SSLCertVerificationError(1, "certificate verify failed")
+    cause.verify_code = code
+    error = httpx.ConnectError("[SSL: CERTIFICATE_VERIFY_FAILED]")
+    error.__cause__ = cause
+
+    return error
+
+
+@pytest.mark.parametrize(
+    ("verify_code", "message"),
+    [
+        (62, "Certificate does not match the host name"),
+        (10, "Certificate has expired"),
+        (9, "Certificate is not yet valid"),
+        (18, "Certificate is not trusted"),
+        (20, "Certificate is not trusted"),
+        (0, "Certificate is not trusted"),
+    ],
+)
+def test_certificate_failures_are_reported_with_a_specific_message(
+    verify_code: int, message: str
+) -> None:
+    def respond(request: httpx.Request) -> httpx.Response:
+        raise certificate_error(verify_code)
+
+    with httpx.Client(transport=httpx.MockTransport(respond)) as client:
+        executor = HttpScanExecutor(client, target_validator=AllowAllTargets())
+
+        with pytest.raises(ScanExecutionError) as error:
+            executor.execute("https://example.com")
+
+    assert error.value.safe_message == message
+
+
+def test_other_connection_errors_keep_the_generic_message() -> None:
+    def respond(request: httpx.Request) -> httpx.Response:
+        raise httpx.ConnectError("connection refused")
+
+    with httpx.Client(transport=httpx.MockTransport(respond)) as client:
+        executor = HttpScanExecutor(client, target_validator=AllowAllTargets())
+
+        with pytest.raises(ScanExecutionError) as error:
+            executor.execute("https://example.com")
+
+    assert error.value.safe_message == "Scan target is unavailable"
+
+
+def test_a_timeout_keeps_its_own_message() -> None:
+    def respond(request: httpx.Request) -> httpx.Response:
+        raise httpx.ReadTimeout("slow")
+
+    with httpx.Client(transport=httpx.MockTransport(respond)) as client:
+        executor = HttpScanExecutor(client, target_validator=AllowAllTargets())
+
+        with pytest.raises(ScanExecutionError) as error:
+            executor.execute("https://example.com")
+
+    assert error.value.safe_message == "Scan request timed out"

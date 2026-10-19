@@ -73,18 +73,19 @@ A duplicate delivery of a terminal scan writes nothing.
 All values are named constants, one location per check family. They are not derived from the 60 s `HTTP_PROBE`
 interval floor.
 
-| Constant _(draft)_                         | `SECURITY_POSTURE`                                            | `DNS_WATCH`                         |
-| ------------------------------------------ | ------------------------------------------------------------- | ----------------------------------- |
-| Minimum interval between scans per monitor | 3600 s                                                        | 3600 s                              |
-| Per-workspace scan limit                   | to be set by the user (no default assumed)                    | to be set by the user               |
-| Max HTTP requests per scan, without probes | 2 (one HTTPS GET, one HTTP GET)                               | 0                                   |
-| Max TLS handshakes per scan                | 1                                                             | 0                                   |
-| Max path-probe requests per scan           | size of the allowlist in section 8 (opt-in only)              | 0                                   |
-| Max DNS queries per scan                   | 0                                                             | 40 _(draft)_                        |
-| Redirects followed                         | 0                                                             | not applicable                      |
-| Timeouts                                   | connect 5 s, read 30 s, write 5 s, pool 5 s (as `HTTP_PROBE`) | DNS timeout 5 s per query _(draft)_ |
-| TLS handshake timeout                      | 10 s per socket operation                                     | not applicable                      |
-| `User-Agent`                               | `OntaPulse-SecurityScanner/<version> (+<project url>)`        | not applicable                      |
+| Constant _(draft)_                                   | `SECURITY_POSTURE`                                            | `DNS_WATCH`                         |
+| ---------------------------------------------------- | ------------------------------------------------------------- | ----------------------------------- |
+| Manual re-run cooldown per monitor                   | 60 s                                                          | not applicable                      |
+| Minimum interval between scheduled scans per monitor | 3600 s                                                        | 3600 s                              |
+| Per-workspace scan limit                             | to be set by the user (no default assumed)                    | to be set by the user               |
+| Max HTTP requests per scan, without probes           | 2 (one HTTPS GET, one HTTP GET)                               | 0                                   |
+| Max TLS handshakes per scan                          | 1                                                             | 0                                   |
+| Max path-probe requests per scan                     | size of the allowlist in section 8 (opt-in only)              | 0                                   |
+| Max DNS queries per scan                             | 0                                                             | 40 _(draft)_                        |
+| Redirects followed                                   | 0                                                             | not applicable                      |
+| Timeouts                                             | connect 5 s, read 30 s, write 5 s, pool 5 s (as `HTTP_PROBE`) | DNS timeout 5 s per query _(draft)_ |
+| TLS handshake timeout                                | 10 s per socket operation                                     | not applicable                      |
+| `User-Agent`                                         | `OntaPulse-SecurityScanner/<version> (+<project url>)`        | not applicable                      |
 
 `HTTP_PROBE` keeps its own constants (one GET, connect 5 s, read 30 s, write 5 s, pool 5 s). The `User-Agent`
 names OntaPulse and never impersonates a browser. The project URL value is a configuration setting added in
@@ -242,6 +243,10 @@ Implemented in Phase 3 as the `tls` sub-check of `SECURITY_POSTURE`:
 - **Expiry bands:** exactly 14 days left is the 14-day band, exactly 30 days is the 30-day band, zero seconds left is
   expired. Days are computed in UTC with an injected clock.
 - **Timeouts:** TCP connect 5 s; 10 s applies to each socket operation of the handshake (not a total deadline).
+- **`HTTP_PROBE` and certificates:** a probe whose target certificate does not verify still ends `FAILED`, but its stored
+  message now says why: "Certificate does not match the host name" (verify code 62), "Certificate has expired" (10),
+  "Certificate is not yet valid" (9), or "Certificate is not trusted" (any other). The full TLS findings come only from a
+  security scan.
 - **Port:** the port of the derived HTTPS URL. The scan is `FAILED` only when neither request nor the handshake could
   connect; a TLS result alone keeps a scan alive (an HTTPS GET that fails on a bad certificate is explained by the
   TLS finding).
@@ -441,7 +446,7 @@ SPF and DMARC absence is not reported (a domain that sends no mail has no obliga
 
 Phase 2 added `Scan.subChecks` (nullable JSON list of `{ name, state, reason }`; `NULL` for `HTTP_PROBE`),
 the `GET`/`PATCH` `/api/monitors/:monitorId/check-settings` routes, the trigger rules for `SECURITY_POSTURE`
-(enabled per monitor, 3600 s minimum interval per monitor, 60 scans per hour per workspace), and
+(enabled per monitor, 60 s manual cooldown per monitor, 60 scans per hour per workspace; the 3600 s minimum applies to scheduled runs), and
 `GET /api/monitors/:monitorId/security-posture/latest`. Phase 1 added `Scan.kind`, the finding columns `checkId`, `category`, and `confidence`, and the
 `MonitorCheckSettings` table (`securityPostureEnabled`, `dnsWatchEnabled`, `pathProbesEnabled`,
 `pathProbesAcknowledgedById`, `pathProbesAcknowledgedAt`; no row means all disabled). `HTTP_PROBE` findings keep

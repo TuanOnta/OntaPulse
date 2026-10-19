@@ -2,6 +2,7 @@ import { splitUrl } from "@/entities/monitor";
 import { canManageWorkspace, workspaceLook } from "@/entities/workspace";
 import { useMonitorScans } from "@/features/monitors/model/use-monitor-scans";
 import { useNow } from "@/shared/lib/use-now";
+import { SecurityPosture } from "@/widgets/security-posture";
 import type { Monitor, Project, Workspace } from "@/shared/types/domain";
 
 import { MonitorCrumbs } from "./ui/monitor-crumbs";
@@ -52,6 +53,7 @@ export function MonitorDetail({
         targetUrl={monitor.targetUrl}
       />
       <ResponseChart freshId={scans.freshId} scans={scans.scans} />
+      <SecurityPosture host={host} monitor={monitor} project={project} workspace={workspace} />
       <ScanHistory
         busy={scans.busy}
         canRun={canRun}

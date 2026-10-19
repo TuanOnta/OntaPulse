@@ -270,6 +270,52 @@ array `findings`, yang diurutkan dari `createdAt` paling awal.
 Tidak ada aksi acknowledge, resolve, assign, komentar, atau riwayat perubahan
 finding pada API saat ini.
 
+## 7a. Pemeriksaan keamanan (security posture)
+
+Pemeriksaan keamanan adalah scan terpisah dari scan HTTP (`kind` =
+`SECURITY_POSTURE`). Scan HTTP menjawab apakah target hidup dan seberapa cepat;
+pemeriksaan keamanan mengamati header, cookie, CORS, redirect HTTP ke HTTPS,
+serta sertifikat dan protokol TLS. Pemeriksaan ini pasif: hanya dua permintaan
+GET dan satu handshake TLS ke host monitor.
+
+### Informasi — tersedia
+
+| Informasi              | Sumber API                                  | Keterangan                                                                            |
+| ---------------------- | ------------------------------------------- | ------------------------------------------------------------------------------------- |
+| Status pengaturan      | `GET /monitors/:id/check-settings`          | `securityPostureEnabled`; monitor tanpa pengaturan dianggap nonaktif.                 |
+| Hasil terakhir         | `GET /monitors/:id/security-posture/latest` | Scan keamanan selesai terbaru. `404 NO_SECURITY_SCAN` berarti belum ada, bukan error. |
+| Jenis scan             | `kind` pada scan                            | Tandai scan keamanan pada riwayat; grafik waktu respons hanya memakai scan HTTP.      |
+| Temuan keamanan        | `findings[]` pada detail scan               | Tambahan: `checkId`, `category`, `confidence` (boleh `null`).                         |
+| Pemeriksaan yang jalan | `subChecks[]`                               | `name`, `state` (`ran` atau `skipped`), `reason`. Tampilkan alasan jika dilewati.     |
+
+### Aksi dan visibilitas
+
+| Aksi                         | OWNER | ADMIN | MEMBER | Catatan                                                                                          |
+| ---------------------------- | :---: | :---: | :----: | ------------------------------------------------------------------------------------------------ |
+| Melihat hasil dan pengaturan |  Ya   |  Ya   |   Ya   | `MEMBER` melihat status aktif/nonaktif sebagai teks.                                             |
+| Mengaktifkan/menonaktifkan   |  Ya   |  Ya   | Tidak  | `PATCH /monitors/:id/check-settings`. Backend yang memutuskan; UI menyembunyikan untuk `MEMBER`. |
+| Menjalankan scan keamanan    |  Ya   |  Ya   | Tidak  | `POST /monitors/:id/scans` dengan `{"kind":"SECURITY_POSTURE"}`.                                 |
+
+Batasan yang harus ditampilkan: `409 SECURITY_CHECKS_DISABLED` (pemeriksaan
+belum diaktifkan) dan `429 SCAN_RATE_LIMITED` dengan `details.retryAfterSeconds`
+(tampilkan sisa waktu, jangan hanya pesan error).
+
+### Aturan penyajian
+
+- Gunakan kata "teramati" (_observed_), bukan "rentan". Hasil pasif adalah
+  pengamatan satu respons.
+- Tampilkan `confidence` bila ada. Temuan deterministik tidak memilikinya.
+- Severity dan status pemeriksaan selalu disertai teks atau ikon, tidak hanya
+  warna.
+- Teks dari target (nilai header, bukti) ditampilkan sebagai teks biasa, tidak
+  pernah sebagai HTML.
+- Keadaan kosong menjelaskan cara memulai scan, bukan skor nol. Bedakan "belum
+  ada scan" dari "pemeriksaan nonaktif".
+- Kegagalan sertifikat pada scan HTTP menampilkan pesan spesifik di
+  `errorMessage` (hostname tidak cocok, kedaluwarsa, belum berlaku, atau tidak
+  tepercaya); scan tetap `FAILED`. Temuan sertifikat lengkap ada pada scan
+  keamanan.
+
 ## 8. Keadaan kosong, loading, dan error
 
 ### Keadaan kosong yang perlu dibedakan

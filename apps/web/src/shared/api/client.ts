@@ -1,5 +1,6 @@
 import type {
   ApiErrorShape,
+  CheckSettings,
   Monitor,
   Project,
   Scan,
@@ -108,6 +109,20 @@ export const api = {
     }),
   triggerScan: (monitorId: string) =>
     request<Scan>(`/monitors/${monitorId}/scans`, { method: "POST" }),
+  triggerSecurityScan: (monitorId: string) =>
+    request<Scan>(`/monitors/${monitorId}/scans`, {
+      method: "POST",
+      body: JSON.stringify({ kind: "SECURITY_POSTURE" }),
+    }),
+  checkSettings: (monitorId: string) =>
+    request<CheckSettings>(`/monitors/${monitorId}/check-settings`),
+  updateCheckSettings: (monitorId: string, input: { securityPostureEnabled: boolean }) =>
+    request<CheckSettings>(`/monitors/${monitorId}/check-settings`, {
+      method: "PATCH",
+      body: JSON.stringify(input),
+    }),
+  latestSecurityScan: (monitorId: string) =>
+    request<ScanDetail>(`/monitors/${monitorId}/security-posture/latest`),
   scans: (monitorId: string) => request<Scan[]>(`/monitors/${monitorId}/scans`),
   scan: (scanId: string) => request<ScanDetail>(`/scans/${scanId}`),
   queueHealth: (workspaceId: string) =>

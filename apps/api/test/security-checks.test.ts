@@ -5,7 +5,11 @@ import { buildApp } from "../src/app.js";
 import { prisma } from "../src/infrastructure/database/prisma.js";
 import type { ScanJob, ScanQueue } from "../src/infrastructure/queue/scan-queue.js";
 import type { SessionStore } from "../src/infrastructure/session/session-store.js";
-import { SECURITY_POSTURE_WORKSPACE_LIMIT_PER_HOUR } from "../src/modules/scans/scan-kinds.js";
+import {
+  SECURITY_POSTURE_MANUAL_COOLDOWN_SECONDS,
+  SECURITY_POSTURE_SCHEDULE_MIN_INTERVAL_SECONDS,
+  SECURITY_POSTURE_WORKSPACE_LIMIT_PER_HOUR,
+} from "../src/modules/scans/scan-kinds.js";
 import { resetDatabase } from "./helpers/database.js";
 
 const SESSION_COOKIE_NAME = "ontapulse_session";
@@ -287,7 +291,7 @@ describe("security posture API", () => {
       await expect(prisma.scan.count()).resolves.toBe(0);
     });
 
-    it("rejects a second scan inside the minimum interval with a retry hint", async () => {
+    it("rejects a second scan inside the manual cooldown with a retry hint", async () => {
       const fixture = await createFixture();
       await enable(fixture.monitorId, fixture.adminCookie);
 
@@ -297,11 +301,14 @@ describe("security posture API", () => {
       expect(first.statusCode).toBe(202);
       expect(second.statusCode).toBe(429);
       expect(second.json()).toMatchObject({ code: "SCAN_RATE_LIMITED" });
-      expect(second.json().details.retryAfterSeconds).toBeGreaterThan(3_500);
+      expect(second.json().details.retryAfterSeconds).toBeGreaterThan(0);
+      expect(second.json().details.retryAfterSeconds).toBeLessThanOrEqual(
+        SECURITY_POSTURE_MANUAL_COOLDOWN_SECONDS,
+      );
       await expect(prisma.scan.count({ where: { kind: "SECURITY_POSTURE" } })).resolves.toBe(1);
     });
 
-    it("accepts a new scan once the minimum interval has passed", async () => {
+    it("accepts a manual scan again once the cooldown has passed, well before an hour", async () => {
       const fixture = await createFixture();
       await enable(fixture.monitorId, fixture.adminCookie);
       await prisma.scan.create({
@@ -309,13 +316,20 @@ describe("security posture API", () => {
           monitorId: fixture.monitorId,
           kind: "SECURITY_POSTURE",
           status: "SUCCEEDED",
-          createdAt: new Date(Date.now() - 3_601_000),
+          createdAt: new Date(Date.now() - (SECURITY_POSTURE_MANUAL_COOLDOWN_SECONDS + 5) * 1_000),
         },
       });
 
       const response = await trigger(fixture, fixture.adminCookie);
 
       expect(response.statusCode).toBe(202);
+    });
+
+    it("keeps the hourly minimum for scheduled runs only, not for manual ones", () => {
+      expect(SECURITY_POSTURE_SCHEDULE_MIN_INTERVAL_SECONDS).toBe(3_600);
+      expect(SECURITY_POSTURE_MANUAL_COOLDOWN_SECONDS).toBeLessThan(
+        SECURITY_POSTURE_SCHEDULE_MIN_INTERVAL_SECONDS,
+      );
     });
 
     it("rejects a scan when the workspace reached its hourly limit", async () => {

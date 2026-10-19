@@ -30,16 +30,20 @@ export const FINDING_CONFIDENCES = ["LOW", "MEDIUM", "HIGH"] as const;
 /**
  * Rate limits for kinds other than HTTP_PROBE (docs/security-checks.md section 4). They are
  * independent of the 60 s HTTP_PROBE interval floor.
+ *
+ * A person may run a security scan again after a short cooldown (to check a fix). The hourly
+ * minimum is for the scheduler (recurring runs, a later phase) and is not enforced on manual runs.
  */
-export const SECURITY_POSTURE_MIN_INTERVAL_SECONDS = 3_600;
+export const SECURITY_POSTURE_MANUAL_COOLDOWN_SECONDS = 60;
+export const SECURITY_POSTURE_SCHEDULE_MIN_INTERVAL_SECONDS = 3_600;
 export const SECURITY_POSTURE_WORKSPACE_LIMIT_PER_HOUR = 60;
 export const WORKSPACE_LIMIT_WINDOW_SECONDS = 3_600;
 
 export const SCAN_KIND_LIMITS: Partial<
-  Record<ScanKind, { minIntervalSeconds: number; workspaceLimitPerWindow: number }>
+  Record<ScanKind, { manualCooldownSeconds: number; workspaceLimitPerWindow: number }>
 > = {
   SECURITY_POSTURE: {
-    minIntervalSeconds: SECURITY_POSTURE_MIN_INTERVAL_SECONDS,
+    manualCooldownSeconds: SECURITY_POSTURE_MANUAL_COOLDOWN_SECONDS,
     workspaceLimitPerWindow: SECURITY_POSTURE_WORKSPACE_LIMIT_PER_HOUR,
   },
 };

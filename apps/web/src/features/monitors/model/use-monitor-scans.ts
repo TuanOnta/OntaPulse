@@ -18,6 +18,14 @@ type State =
 const GENERIC_ERROR = "Check your connection and try again.";
 
 function finishedMessage(scan: Scan): { ok: boolean; text: string } {
+  if (scan.kind === "SECURITY_POSTURE") {
+    return scan.status === "FAILED"
+      ? {
+          ok: false,
+          text: `Security scan failed: ${scan.errorMessage || "the target did not respond."}`,
+        }
+      : { ok: true, text: "Security scan finished." };
+  }
   if (scan.status === "FAILED") {
     return {
       ok: false,

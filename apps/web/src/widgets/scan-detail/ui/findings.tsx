@@ -1,16 +1,8 @@
-import { findingCopy, sortFindings } from "@/entities/scan";
+import { FindingCard, SEVERITY_TONE, SeverityPill } from "@/entities/finding";
+import { SubCheckList, findingCopy, isSecurityScan, sortFindings } from "@/entities/scan";
 import { riseStyle } from "@/shared/lib/rise";
 import type { ScanDetail } from "@/shared/types/domain";
 import { cn } from "cn";
-
-import { SeverityPill } from "./metric-tiles";
-
-const SEVERITY_TONE = {
-  LOW: "[--s:147,165,156]",
-  MEDIUM: "[--s:255,180,84]",
-  HIGH: "[--s:255,122,107]",
-  CRITICAL: "[--s:255,92,120]",
-} as const;
 
 const CODE_CHIP =
   "mt-2.5 inline-block rounded-[7px] border border-landing-border bg-landing-bg px-[9px] py-[3px] font-mono text-[13px] leading-[normal] text-landing-muted";
@@ -92,6 +84,7 @@ function FindingsBody({ scan }: { scan: ScanDetail }) {
     );
   }
   if (scan.status === "FAILED") {
+    const certificateFailure = (scan.errorMessage ?? "").startsWith("Certificate ");
     return (
       <>
         <Head>Not evaluated</Head>
@@ -102,15 +95,16 @@ function FindingsBody({ scan }: { scan: ScanDetail }) {
               {scan.errorMessage || "The check could not complete."}
             </h3>
             <p className="mt-1.5 max-w-[66ch] text-landing-text-2">
-              A scan fails on timeouts, DNS errors and connection failures. There is no HTTP result
-              to evaluate, and failed scans are not retried automatically. Check the target is
-              reachable from the public internet, then run the scan again.
+              {certificateFailure
+                ? "The target’s certificate could not be verified, so the request did not complete and there is no HTTP result to evaluate. Failed scans are not retried automatically. Fix the certificate, or run a security scan to see the certificate findings."
+                : "A scan fails on timeouts, DNS errors and connection failures. There is no HTTP result to evaluate, and failed scans are not retried automatically. Check the target is reachable from the public internet, then run the scan again."}
             </p>
           </div>
         </div>
       </>
     );
   }
+  if (isSecurityScan(scan)) return <SecurityFindings scan={scan} />;
   if (scan.findings.length === 0) {
     return (
       <>
@@ -158,5 +152,54 @@ function FindingsBody({ scan }: { scan: ScanDetail }) {
         })}
       </div>
     </>
+  );
+}
+
+/** Findings of a security scan: the API text for each finding, with what was observed. */
+function SecurityFindings({ scan }: { scan: ScanDetail }) {
+  if (scan.findings.length === 0) {
+    return (
+      <>
+        <Head>0 findings from this scan</Head>
+        <div className="flex items-center gap-[18px] rounded-[22px] border border-landing-accent/30 bg-landing-accent/5 p-7 max-[640px]:flex-col max-[640px]:items-start">
+          <CheckIcon />
+          <div>
+            <h3 className="font-display text-[21px] font-bold">No findings</h3>
+            <p className="mt-1 text-landing-text-2">
+              Nothing was flagged in the checks that ran. Checks that were skipped are listed below.
+            </p>
+          </div>
+        </div>
+        <ChecksInScan scan={scan} />
+      </>
+    );
+  }
+  const list = sortFindings(scan.findings);
+  return (
+    <>
+      <Head>{`${list.length} finding${list.length > 1 ? "s" : ""} observed, most severe first`}</Head>
+      <ul className="m-0 flex list-none flex-col gap-3 p-0">
+        {list.map((finding, index) => (
+          <FindingCard finding={finding} index={index} key={finding.id} />
+        ))}
+      </ul>
+      <ChecksInScan scan={scan} />
+    </>
+  );
+}
+
+function ChecksInScan({ scan }: { scan: ScanDetail }) {
+  if (!scan.subChecks || scan.subChecks.length === 0) return null;
+
+  return (
+    <section
+      aria-labelledby="checks-title"
+      className="mt-3.5 rounded-[22px] border border-landing-border bg-landing-surface/[.72] p-[22px]"
+    >
+      <h2 className="mb-3.5 font-display text-[19px] font-bold tracking-[-.01em]" id="checks-title">
+        Checks in this scan
+      </h2>
+      <SubCheckList subChecks={scan.subChecks} />
+    </section>
   );
 }

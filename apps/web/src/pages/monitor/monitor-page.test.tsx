@@ -12,6 +12,8 @@ const mocks = vi.hoisted(() => ({
   monitors: vi.fn(),
   scans: vi.fn(),
   triggerScan: vi.fn(),
+  checkSettings: vi.fn(),
+  latestSecurityScan: vi.fn(),
   logout: vi.fn(),
 }));
 
@@ -26,6 +28,8 @@ vi.mock("@/shared/api/client", async (importOriginal) => {
       monitors: mocks.monitors,
       scans: mocks.scans,
       triggerScan: mocks.triggerScan,
+      checkSettings: mocks.checkSettings,
+      latestSecurityScan: mocks.latestSecurityScan,
     },
   };
 });
@@ -101,6 +105,17 @@ beforeEach(() => {
   mocks.projects.mockResolvedValue([project]);
   mocks.monitors.mockResolvedValue([monitor]);
   mocks.scans.mockResolvedValue(HISTORY);
+  // The Security section loads its own data; these tests are about the rest of the page.
+  mocks.checkSettings.mockResolvedValue({
+    monitorId: "m1",
+    securityPostureEnabled: false,
+    dnsWatchEnabled: false,
+    pathProbesEnabled: false,
+    pathProbesAcknowledgedAt: null,
+  });
+  mocks.latestSecurityScan.mockRejectedValue(
+    new ApiError({ statusCode: 404, code: "NO_SECURITY_SCAN", message: "No security scan found" }),
+  );
 });
 
 describe("MonitorPage", () => {
@@ -227,6 +242,25 @@ describe("MonitorPage", () => {
     expect(
       await main().findByRole("heading", { level: 1, name: /api\.example\.com/ }),
     ).toBeVisible();
+  });
+
+  it("marks security scans in the history and keeps them out of the response chart", async () => {
+    mocks.scans.mockResolvedValue([
+      makeScan("sec1", "SUCCEEDED", {
+        kind: "SECURITY_POSTURE",
+        statusCode: 200,
+        responseTimeMs: 4000,
+      }),
+      ...HISTORY,
+    ]);
+    renderPage();
+
+    const table = await main().findByRole("table", { name: "Scan history" });
+    expect(within(table).getByText("Security")).toBeVisible();
+    expect(within(table).getByRole("link", { name: /Open security scan/ })).toBeVisible();
+    // The chart still has only the three probes, and the 4 s security scan does not stretch it.
+    expect(await main().findByText("Last 3 finished scans, oldest to newest")).toBeVisible();
+    expect(main().getAllByRole("img").length).toBe(3);
   });
 
   it("offers a retry when only the scan history fails", async () => {

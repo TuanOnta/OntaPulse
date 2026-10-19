@@ -1,4 +1,15 @@
 export type ScanStatus = "QUEUED" | "RUNNING" | "SUCCEEDED" | "FAILED";
+export type ScanKind = "HTTP_PROBE" | "SECURITY_POSTURE" | "DNS_WATCH";
+export type FindingCategory =
+  | "HEADERS"
+  | "COOKIES"
+  | "CORS"
+  | "REDIRECT"
+  | "TLS"
+  | "EXPOSED_FILES"
+  | "DNS"
+  | "EMAIL_AUTH";
+export type FindingConfidence = "LOW" | "MEDIUM" | "HIGH";
 export type FindingSeverity = "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
 export type WorkspaceRole = "OWNER" | "ADMIN" | "MEMBER";
 
@@ -44,6 +55,8 @@ export interface Monitor {
 export interface Scan {
   id: string;
   monitorId: string;
+  /** Absent in responses of an older API; treat as `HTTP_PROBE`. */
+  kind?: ScanKind;
   status: ScanStatus;
   statusCode?: number | null;
   responseTimeMs?: number | null;
@@ -61,16 +74,32 @@ export interface Finding {
   description: string;
   recommendation?: string | null;
   evidence?: unknown;
+  checkId?: string | null;
+  category?: FindingCategory | null;
+  confidence?: FindingConfidence | null;
   createdAt: string;
+}
+export interface SubCheck {
+  name: string;
+  state: "ran" | "skipped";
+  reason: string | null;
 }
 export interface ScanDetail extends Scan {
   findings: Finding[];
+  subChecks?: SubCheck[] | null;
+}
+export interface CheckSettings {
+  monitorId: string;
+  securityPostureEnabled: boolean;
+  dnsWatchEnabled: boolean;
+  pathProbesEnabled: boolean;
+  pathProbesAcknowledgedAt: string | null;
 }
 export interface ApiErrorShape {
   statusCode: number;
   code: string;
   message: string;
-  details?: Record<string, string[] | undefined>;
+  details?: Record<string, unknown>;
   requestId?: string;
 }
 

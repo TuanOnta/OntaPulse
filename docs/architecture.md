@@ -122,7 +122,8 @@ emits the structured `Scan scheduler run completed` event with `dueMonitorCount`
 `scheduledCount`, and `durationMs` for log-derived metrics.
 
 The scheduler and the manual trigger create a Scan with its kind (default `HTTP_PROBE`). Security and DNS scan
-kinds use their own minimum interval from the catalog, not the 60 second `HTTP_PROBE` floor. How the scheduler
+kinds use their own limits from the catalog, not the 60 second `HTTP_PROBE` floor: a short cooldown for manual runs and an hourly
+minimum for scheduled runs. How the scheduler
 selects kinds is decided in the recurring-runs phase after inspecting the scheduler code.
 
 RabbitMQ delivery is at-least-once. The worker must therefore treat `scanId` as an idempotency key and avoid processing a completed scan twice.
