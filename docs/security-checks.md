@@ -83,7 +83,7 @@ interval floor.
 | Max DNS queries per scan                   | 0                                                             | 40 _(draft)_                        |
 | Redirects followed                         | 0                                                             | not applicable                      |
 | Timeouts                                   | connect 5 s, read 30 s, write 5 s, pool 5 s (as `HTTP_PROBE`) | DNS timeout 5 s per query _(draft)_ |
-| TLS handshake timeout                      | 10 s total _(draft)_                                          | not applicable                      |
+| TLS handshake timeout                      | 10 s per socket operation                                     | not applicable                      |
 | `User-Agent`                               | `OntaPulse-SecurityScanner/<version> (+<project url>)`        | not applicable                      |
 
 `HTTP_PROBE` keeps its own constants (one GET, connect 5 s, read 30 s, write 5 s, pool 5 s). The `User-Agent`
@@ -222,10 +222,33 @@ domain view only displays it. Time uses UTC and an injected clock. Protocol rule
 | `SEC_TLS_PROTOCOL_DEPRECATED`  | `HIGH`     | Handshake negotiates TLS 1.0 or 1.1 (RFC 8996), or SSL 3.0                     | null       | Disable TLS 1.1 and below                |
 | `SEC_TLS_NO_HTTPS`             | `HIGH`     | The TLS handshake to port 443 fails because the host does not speak TLS        | `MEDIUM`   | Serve the site over HTTPS                |
 
-The handshake client offers its own supported protocol range, so only the negotiated version is observable.
-Whether a server also accepts older versions is not tested: that needs extra handshakes and is out of scope.
-Evidence: subject CN, issuer, `notBefore`, `notAfter`, negotiated protocol name, days remaining. Public keys,
-serial numbers, and the raw certificate are not stored.
+Implemented in Phase 3 as the `tls` sub-check of `SECURITY_POSTURE`:
+
+- **One handshake with full verification** (`CERT_REQUIRED`, hostname check on). After a verified handshake the
+  certificate subject, issuer, `notBefore`, `notAfter`, and the negotiated protocol are read. When verification
+  fails the certificate is **not** parsed (the standard library cannot read an unverified certificate in the same
+  handshake), so the finding carries the OpenSSL verify code and message, not an expiry date.
+- **Verify code mapping** (values from OpenSSL 3.0 `x509_vfy.h`, confirmed by live handshakes in the tests): 10 expired
+  -> `SEC_TLS_CERT_EXPIRED`; 9 not yet valid -> `SEC_TLS_CERT_NOT_YET_VALID`; 62 hostname mismatch ->
+  `SEC_TLS_HOSTNAME_MISMATCH`; every other failure (18 self-signed, 19, 20, 21, ...) -> `SEC_TLS_CHAIN_INVALID`. OpenSSL
+  reports the first error it finds, so a certificate with two defects yields one finding.
+- **Protocol observation:** the scanner's probe context accepts TLS 1.0 and later (`minimum_version = TLSv1`,
+  `DEFAULT:@SECLEVEL=0`) while still verifying the certificate, so a server whose best version is TLS 1.0 or 1.1 is
+  observed. A server that also supports TLS 1.2 or 1.3 negotiates the better version and is not flagged. SSL 3.0 cannot
+  be negotiated by this runtime and is therefore never observed. Nothing is sent after the handshake.
+- **`SEC_TLS_NO_HTTPS`:** the TCP connection succeeded but the handshake failed with a non-certificate SSL error (for
+  example `WRONG_VERSION_NUMBER`). A refused or timed-out connection is not a finding; the sub-check is
+  `skipped: connection_failed`.
+- **Expiry bands:** exactly 14 days left is the 14-day band, exactly 30 days is the 30-day band, zero seconds left is
+  expired. Days are computed in UTC with an injected clock.
+- **Timeouts:** TCP connect 5 s; 10 s applies to each socket operation of the handshake (not a total deadline).
+- **Port:** the port of the derived HTTPS URL. The scan is `FAILED` only when neither request nor the handshake could
+  connect; a TLS result alone keeps a scan alive (an HTTPS GET that fails on a bad certificate is explained by the
+  TLS finding).
+
+Evidence: subject CN, issuer organization or CN, `notBefore`, `notAfter`, negotiated protocol name, days remaining, and
+for verification failures the verify code and message (200 characters at most). Public keys, serial numbers, and the raw
+certificate are not stored or logged.
 
 ### 6.6 Challenge-aware suppression
 
