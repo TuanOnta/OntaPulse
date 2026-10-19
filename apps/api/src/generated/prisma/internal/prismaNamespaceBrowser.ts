@@ -161,6 +161,7 @@ export const ScanScalarFieldEnum = {
   statusCode: 'statusCode',
   responseTimeMs: 'responseTimeMs',
   errorMessage: 'errorMessage',
+  subChecks: 'subChecks',
   startedAt: 'startedAt',
   finishedAt: 'finishedAt',
   createdAt: 'createdAt'

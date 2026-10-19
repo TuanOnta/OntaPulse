@@ -70,6 +70,7 @@ export type ScanCountAggregateOutputType = {
   statusCode: number
   responseTimeMs: number
   errorMessage: number
+  subChecks: number
   startedAt: number
   finishedAt: number
   createdAt: number
@@ -121,6 +122,7 @@ export type ScanCountAggregateInputType = {
   statusCode?: true
   responseTimeMs?: true
   errorMessage?: true
+  subChecks?: true
   startedAt?: true
   finishedAt?: true
   createdAt?: true
@@ -221,6 +223,7 @@ export type ScanGroupByOutputType = {
   statusCode: number | null
   responseTimeMs: number | null
   errorMessage: string | null
+  subChecks: runtime.JsonValue | null
   startedAt: Date | null
   finishedAt: Date | null
   createdAt: Date
@@ -257,6 +260,7 @@ export type ScanWhereInput = {
   statusCode?: Prisma.IntNullableFilter<"Scan"> | number | null
   responseTimeMs?: Prisma.IntNullableFilter<"Scan"> | number | null
   errorMessage?: Prisma.StringNullableFilter<"Scan"> | string | null
+  subChecks?: Prisma.JsonNullableFilter<"Scan">
   startedAt?: Prisma.DateTimeNullableFilter<"Scan"> | Date | string | null
   finishedAt?: Prisma.DateTimeNullableFilter<"Scan"> | Date | string | null
   createdAt?: Prisma.DateTimeFilter<"Scan"> | Date | string
@@ -273,6 +277,7 @@ export type ScanOrderByWithRelationInput = {
   statusCode?: Prisma.SortOrderInput | Prisma.SortOrder
   responseTimeMs?: Prisma.SortOrderInput | Prisma.SortOrder
   errorMessage?: Prisma.SortOrderInput | Prisma.SortOrder
+  subChecks?: Prisma.SortOrderInput | Prisma.SortOrder
   startedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   finishedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -292,6 +297,7 @@ export type ScanWhereUniqueInput = Prisma.AtLeast<{
   statusCode?: Prisma.IntNullableFilter<"Scan"> | number | null
   responseTimeMs?: Prisma.IntNullableFilter<"Scan"> | number | null
   errorMessage?: Prisma.StringNullableFilter<"Scan"> | string | null
+  subChecks?: Prisma.JsonNullableFilter<"Scan">
   startedAt?: Prisma.DateTimeNullableFilter<"Scan"> | Date | string | null
   finishedAt?: Prisma.DateTimeNullableFilter<"Scan"> | Date | string | null
   createdAt?: Prisma.DateTimeFilter<"Scan"> | Date | string
@@ -308,6 +314,7 @@ export type ScanOrderByWithAggregationInput = {
   statusCode?: Prisma.SortOrderInput | Prisma.SortOrder
   responseTimeMs?: Prisma.SortOrderInput | Prisma.SortOrder
   errorMessage?: Prisma.SortOrderInput | Prisma.SortOrder
+  subChecks?: Prisma.SortOrderInput | Prisma.SortOrder
   startedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   finishedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -329,6 +336,7 @@ export type ScanScalarWhereWithAggregatesInput = {
   statusCode?: Prisma.IntNullableWithAggregatesFilter<"Scan"> | number | null
   responseTimeMs?: Prisma.IntNullableWithAggregatesFilter<"Scan"> | number | null
   errorMessage?: Prisma.StringNullableWithAggregatesFilter<"Scan"> | string | null
+  subChecks?: Prisma.JsonNullableWithAggregatesFilter<"Scan">
   startedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"Scan"> | Date | string | null
   finishedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"Scan"> | Date | string | null
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Scan"> | Date | string
@@ -341,6 +349,7 @@ export type ScanCreateInput = {
   statusCode?: number | null
   responseTimeMs?: number | null
   errorMessage?: string | null
+  subChecks?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   startedAt?: Date | string | null
   finishedAt?: Date | string | null
   createdAt?: Date | string
@@ -357,6 +366,7 @@ export type ScanUncheckedCreateInput = {
   statusCode?: number | null
   responseTimeMs?: number | null
   errorMessage?: string | null
+  subChecks?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   startedAt?: Date | string | null
   finishedAt?: Date | string | null
   createdAt?: Date | string
@@ -371,6 +381,7 @@ export type ScanUpdateInput = {
   statusCode?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   responseTimeMs?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   errorMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  subChecks?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   startedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   finishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -387,6 +398,7 @@ export type ScanUncheckedUpdateInput = {
   statusCode?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   responseTimeMs?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   errorMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  subChecks?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   startedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   finishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -402,6 +414,7 @@ export type ScanCreateManyInput = {
   statusCode?: number | null
   responseTimeMs?: number | null
   errorMessage?: string | null
+  subChecks?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   startedAt?: Date | string | null
   finishedAt?: Date | string | null
   createdAt?: Date | string
@@ -414,6 +427,7 @@ export type ScanUpdateManyMutationInput = {
   statusCode?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   responseTimeMs?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   errorMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  subChecks?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   startedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   finishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -427,6 +441,7 @@ export type ScanUncheckedUpdateManyInput = {
   statusCode?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   responseTimeMs?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   errorMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  subChecks?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   startedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   finishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -450,6 +465,7 @@ export type ScanCountOrderByAggregateInput = {
   statusCode?: Prisma.SortOrder
   responseTimeMs?: Prisma.SortOrder
   errorMessage?: Prisma.SortOrder
+  subChecks?: Prisma.SortOrder
   startedAt?: Prisma.SortOrder
   finishedAt?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -589,6 +605,7 @@ export type ScanCreateWithoutMonitorInput = {
   statusCode?: number | null
   responseTimeMs?: number | null
   errorMessage?: string | null
+  subChecks?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   startedAt?: Date | string | null
   finishedAt?: Date | string | null
   createdAt?: Date | string
@@ -603,6 +620,7 @@ export type ScanUncheckedCreateWithoutMonitorInput = {
   statusCode?: number | null
   responseTimeMs?: number | null
   errorMessage?: string | null
+  subChecks?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   startedAt?: Date | string | null
   finishedAt?: Date | string | null
   createdAt?: Date | string
@@ -647,6 +665,7 @@ export type ScanScalarWhereInput = {
   statusCode?: Prisma.IntNullableFilter<"Scan"> | number | null
   responseTimeMs?: Prisma.IntNullableFilter<"Scan"> | number | null
   errorMessage?: Prisma.StringNullableFilter<"Scan"> | string | null
+  subChecks?: Prisma.JsonNullableFilter<"Scan">
   startedAt?: Prisma.DateTimeNullableFilter<"Scan"> | Date | string | null
   finishedAt?: Prisma.DateTimeNullableFilter<"Scan"> | Date | string | null
   createdAt?: Prisma.DateTimeFilter<"Scan"> | Date | string
@@ -659,6 +678,7 @@ export type ScanCreateWithoutOutboxEventsInput = {
   statusCode?: number | null
   responseTimeMs?: number | null
   errorMessage?: string | null
+  subChecks?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   startedAt?: Date | string | null
   finishedAt?: Date | string | null
   createdAt?: Date | string
@@ -674,6 +694,7 @@ export type ScanUncheckedCreateWithoutOutboxEventsInput = {
   statusCode?: number | null
   responseTimeMs?: number | null
   errorMessage?: string | null
+  subChecks?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   startedAt?: Date | string | null
   finishedAt?: Date | string | null
   createdAt?: Date | string
@@ -703,6 +724,7 @@ export type ScanUpdateWithoutOutboxEventsInput = {
   statusCode?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   responseTimeMs?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   errorMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  subChecks?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   startedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   finishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -718,6 +740,7 @@ export type ScanUncheckedUpdateWithoutOutboxEventsInput = {
   statusCode?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   responseTimeMs?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   errorMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  subChecks?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   startedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   finishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -731,6 +754,7 @@ export type ScanCreateWithoutFindingsInput = {
   statusCode?: number | null
   responseTimeMs?: number | null
   errorMessage?: string | null
+  subChecks?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   startedAt?: Date | string | null
   finishedAt?: Date | string | null
   createdAt?: Date | string
@@ -746,6 +770,7 @@ export type ScanUncheckedCreateWithoutFindingsInput = {
   statusCode?: number | null
   responseTimeMs?: number | null
   errorMessage?: string | null
+  subChecks?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   startedAt?: Date | string | null
   finishedAt?: Date | string | null
   createdAt?: Date | string
@@ -775,6 +800,7 @@ export type ScanUpdateWithoutFindingsInput = {
   statusCode?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   responseTimeMs?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   errorMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  subChecks?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   startedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   finishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -790,6 +816,7 @@ export type ScanUncheckedUpdateWithoutFindingsInput = {
   statusCode?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   responseTimeMs?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   errorMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  subChecks?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   startedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   finishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -803,6 +830,7 @@ export type ScanCreateManyMonitorInput = {
   statusCode?: number | null
   responseTimeMs?: number | null
   errorMessage?: string | null
+  subChecks?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   startedAt?: Date | string | null
   finishedAt?: Date | string | null
   createdAt?: Date | string
@@ -815,6 +843,7 @@ export type ScanUpdateWithoutMonitorInput = {
   statusCode?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   responseTimeMs?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   errorMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  subChecks?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   startedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   finishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -829,6 +858,7 @@ export type ScanUncheckedUpdateWithoutMonitorInput = {
   statusCode?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   responseTimeMs?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   errorMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  subChecks?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   startedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   finishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -843,6 +873,7 @@ export type ScanUncheckedUpdateManyWithoutMonitorInput = {
   statusCode?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   responseTimeMs?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   errorMessage?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  subChecks?: Prisma.NullableJsonNullValueInput | runtime.InputJsonValue
   startedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   finishedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -896,6 +927,7 @@ export type ScanSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   statusCode?: boolean
   responseTimeMs?: boolean
   errorMessage?: boolean
+  subChecks?: boolean
   startedAt?: boolean
   finishedAt?: boolean
   createdAt?: boolean
@@ -913,6 +945,7 @@ export type ScanSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   statusCode?: boolean
   responseTimeMs?: boolean
   errorMessage?: boolean
+  subChecks?: boolean
   startedAt?: boolean
   finishedAt?: boolean
   createdAt?: boolean
@@ -927,6 +960,7 @@ export type ScanSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   statusCode?: boolean
   responseTimeMs?: boolean
   errorMessage?: boolean
+  subChecks?: boolean
   startedAt?: boolean
   finishedAt?: boolean
   createdAt?: boolean
@@ -941,12 +975,13 @@ export type ScanSelectScalar = {
   statusCode?: boolean
   responseTimeMs?: boolean
   errorMessage?: boolean
+  subChecks?: boolean
   startedAt?: boolean
   finishedAt?: boolean
   createdAt?: boolean
 }
 
-export type ScanOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "monitorId" | "kind" | "status" | "statusCode" | "responseTimeMs" | "errorMessage" | "startedAt" | "finishedAt" | "createdAt", ExtArgs["result"]["scan"]>
+export type ScanOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "monitorId" | "kind" | "status" | "statusCode" | "responseTimeMs" | "errorMessage" | "subChecks" | "startedAt" | "finishedAt" | "createdAt", ExtArgs["result"]["scan"]>
 export type ScanInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   monitor?: boolean | Prisma.MonitorDefaultArgs<ExtArgs>
   findings?: boolean | Prisma.Scan$findingsArgs<ExtArgs>
@@ -975,6 +1010,7 @@ export type $ScanPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     statusCode: number | null
     responseTimeMs: number | null
     errorMessage: string | null
+    subChecks: runtime.JsonValue | null
     startedAt: Date | null
     finishedAt: Date | null
     createdAt: Date
@@ -1411,6 +1447,7 @@ export interface ScanFieldRefs {
   readonly statusCode: Prisma.FieldRef<"Scan", 'Int'>
   readonly responseTimeMs: Prisma.FieldRef<"Scan", 'Int'>
   readonly errorMessage: Prisma.FieldRef<"Scan", 'String'>
+  readonly subChecks: Prisma.FieldRef<"Scan", 'Json'>
   readonly startedAt: Prisma.FieldRef<"Scan", 'DateTime'>
   readonly finishedAt: Prisma.FieldRef<"Scan", 'DateTime'>
   readonly createdAt: Prisma.FieldRef<"Scan", 'DateTime'>
