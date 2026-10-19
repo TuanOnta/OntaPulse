@@ -108,6 +108,7 @@ def test_a_clean_target_has_no_findings_and_every_sub_check_ran() -> None:
         "cors": ("ran", None),
         "redirect": ("ran", None),
         "tls": ("ran", None),
+        "edge": ("ran", None),
     }
 
 
@@ -164,6 +165,7 @@ def test_a_failed_https_request_skips_header_cookie_and_cors_checks() -> None:
         "cors": ("skipped", "connection_failed"),
         "redirect": ("ran", None),
         "tls": ("ran", None),
+        "edge": ("ran", None),
     }
 
 
@@ -283,6 +285,7 @@ def test_a_confirmed_challenge_suppresses_the_findings_of_that_response() -> Non
         "cors": ("skipped", "challenge_response"),
         "redirect": ("ran", None),
         "tls": ("ran", None),
+        "edge": ("ran", None),
     }
 
 
@@ -320,3 +323,97 @@ def test_the_request_budget_rejects_a_third_request() -> None:
 
 def test_sub_check_states_use_the_documented_enum() -> None:
     assert {state.value for state in SubCheckState} == {"ran", "skipped"}
+
+
+def test_a_successful_scan_returns_the_edge_profile_from_both_responses() -> None:
+    client = FakeClient(
+        reply("https://example.com/", headers={**GOOD_HTTPS_HEADERS, "cf-ray": ("8c1-AMS",)}),
+        reply("http://example.com/", 301, {"x-vercel-id": ("iad1::a",)}),
+    )
+
+    result = executor(client).execute("https://example.com")
+
+    assert result.edge_profile is not None
+    assert [(item.vendor, item.layer.value) for item in result.edge_profile.detections] == [
+        ("CLOUDFLARE", "CDN"),
+        ("VERCEL", "CDN"),
+    ]
+    assert result.edge_profile.challenge_observed is False
+    assert states(result)["edge"] == ("ran", None)
+
+
+def test_an_unknown_site_gets_an_empty_profile_not_none() -> None:
+    client = FakeClient(
+        reply("https://example.com/", headers=GOOD_HTTPS_HEADERS),
+        reply("http://example.com/", 301, {"location": ("https://example.com/",)}),
+    )
+
+    result = executor(client).execute("https://example.com")
+
+    assert result.edge_profile is not None
+    assert result.edge_profile.detections == ()
+
+
+def test_a_confirmed_vendor_challenge_is_recorded_in_the_profile() -> None:
+    client = FakeClient(
+        reply("https://example.com/", 202, {"x-amzn-waf-action": ("challenge",)}),
+        reply("http://example.com/", 301, {"location": ("https://example.com/",)}),
+    )
+
+    result = executor(client).execute("https://example.com")
+
+    assert result.edge_profile is not None
+    assert result.edge_profile.challenge_observed is True
+    assert states(result)["headers"] == ("skipped", "challenge_response")
+
+
+def test_an_anti_bot_cookie_on_a_403_suppresses_posture_findings() -> None:
+    client = FakeClient(
+        reply("https://example.com/", 403, cookies=(CookieInfo(name="datadome"),)),
+        reply("http://example.com/", 301, {"location": ("https://example.com/",)}),
+    )
+
+    result = executor(client).execute("https://example.com")
+
+    assert result.findings == ()
+    assert states(result)["cookies"] == ("skipped", "challenge_response")
+    assert result.edge_profile is not None
+    assert result.edge_profile.challenge_observed is True
+
+
+def test_the_edge_check_is_skipped_without_a_response_and_leaves_no_profile() -> None:
+    client = FakeClient(PostureConnectionError("down"), PostureConnectionError("down"))
+
+    result = executor(client).execute("https://example.com")
+
+    assert result.edge_profile is None
+    assert states(result)["edge"] == ("skipped", "connection_failed")
+
+
+def test_an_edge_failure_never_fails_the_scan(monkeypatch) -> None:
+    from ontapulse_worker.modules.security_posture.application import posture_scan
+
+    def broken(_data):
+        raise RuntimeError("bug")
+
+    monkeypatch.setattr(posture_scan, "detect_edge", broken)
+    client = FakeClient(
+        reply("https://example.com/", headers=GOOD_HTTPS_HEADERS),
+        reply("http://example.com/", 301, {"location": ("https://example.com/",)}),
+    )
+
+    result = executor(client).execute("https://example.com")
+
+    assert result.edge_profile is None
+    assert states(result)["edge"] == ("skipped", "prerequisite_failed")
+    assert states(result)["headers"] == ("ran", None)
+
+
+def test_the_edge_check_adds_no_request_or_handshake() -> None:
+    tls = FakeTls()
+    client = FakeClient(reply("https://example.com/"), reply("http://example.com/", 301))
+
+    executor(client, tls).execute("https://example.com")
+
+    assert len(client.urls) == 2
+    assert len(tls.calls) == 1

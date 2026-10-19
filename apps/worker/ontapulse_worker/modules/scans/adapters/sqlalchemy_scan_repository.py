@@ -9,6 +9,7 @@ from uuid import UUID, uuid4
 from sqlalchemy import text
 from sqlalchemy.orm import Session, sessionmaker
 
+from ontapulse_worker.modules.edge_detection.domain.fingerprints import MAX_EDGE_PROFILE_BYTES
 from ontapulse_worker.modules.scans.domain.errors import (
     PermanentScanJobError,
     ScanJobInProgressError,
@@ -16,6 +17,7 @@ from ontapulse_worker.modules.scans.domain.errors import (
 )
 from ontapulse_worker.modules.scans.domain.models import (
     ClaimedScan,
+    EdgeProfile,
     ScanFinding,
     ScanJob,
     ScanKind,
@@ -72,6 +74,40 @@ SET_SCAN_SUB_CHECKS = text(
     UPDATE "Scan"
     SET "subChecks" = CAST(:sub_checks AS JSONB)
     WHERE id = :scan_id AND status = 'SUCCEEDED'
+    """
+)
+# One current profile per monitor; an older scan never overwrites a newer observation. The monitor
+# id comes from the scan row, so the lifecycle port needs no new argument.
+UPSERT_EDGE_PROFILE = text(
+    """
+    INSERT INTO "MonitorEdgeProfile" (
+        id,
+        "monitorId",
+        "scanId",
+        "challengeObserved",
+        detections,
+        "observedAt",
+        "createdAt",
+        "updatedAt"
+    )
+    SELECT
+        :id,
+        scan."monitorId",
+        scan.id,
+        :challenge_observed,
+        CAST(:detections AS JSONB),
+        :observed_at,
+        :observed_at,
+        :observed_at
+    FROM "Scan" AS scan
+    WHERE scan.id = :scan_id
+    ON CONFLICT ("monitorId") DO UPDATE
+    SET "scanId" = EXCLUDED."scanId",
+        "challengeObserved" = EXCLUDED."challengeObserved",
+        detections = EXCLUDED.detections,
+        "observedAt" = EXCLUDED."observedAt",
+        "updatedAt" = EXCLUDED."updatedAt"
+    WHERE "MonitorEdgeProfile"."observedAt" <= EXCLUDED."observedAt"
     """
 )
 INSERT_SCAN_FINDING = text(
@@ -195,6 +231,12 @@ class SqlAlchemyScanRepository:
                     },
                 )
 
+            if result.edge_profile is not None:
+                session.execute(
+                    UPSERT_EDGE_PROFILE,
+                    self._edge_profile_params(scan_id, result.edge_profile, finished_at),
+                )
+
             if result.findings:
                 session.execute(
                     INSERT_SCAN_FINDING,
@@ -248,6 +290,40 @@ class SqlAlchemyScanRepository:
             "evidence": evidence,
             "created_at": created_at,
         }
+
+    @staticmethod
+    def _edge_profile_params(
+        scan_id: UUID,
+        profile: EdgeProfile,
+        observed_at: datetime,
+    ) -> dict[str, object]:
+        return {
+            "id": uuid4(),
+            "scan_id": scan_id,
+            "challenge_observed": profile.challenge_observed,
+            "detections": SqlAlchemyScanRepository._serialize_detections(profile),
+            "observed_at": observed_at,
+        }
+
+    @staticmethod
+    def _serialize_detections(profile: EdgeProfile) -> str:
+        """Names and levels only, bounded: drop trailing detections until the JSON fits."""
+        items = [
+            {
+                "vendor": detection.vendor,
+                "layer": detection.layer.value,
+                "confidence": detection.confidence.value,
+                "signals": [
+                    {"type": signal.type.value, "name": signal.name} for signal in detection.signals
+                ],
+            }
+            for detection in profile.detections
+        ]
+
+        while items and len(json.dumps(items).encode()) > MAX_EDGE_PROFILE_BYTES:
+            items.pop()
+
+        return json.dumps(items)
 
     @staticmethod
     def _serialize_evidence(finding: ScanFinding) -> str | None:

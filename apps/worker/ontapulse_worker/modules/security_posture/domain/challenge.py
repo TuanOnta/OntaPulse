@@ -7,12 +7,9 @@ or marked low confidence. Nothing here solves or evades a challenge.
 from dataclasses import replace
 from enum import StrEnum
 
+from ontapulse_worker.modules.edge_detection.domain.detector import is_confirmed_challenge
 from ontapulse_worker.modules.scans.domain.models import FindingConfidence, ScanFinding
-from ontapulse_worker.modules.security_posture.domain.catalog import (
-    CHALLENGE_HEADER,
-    CHALLENGE_HEADER_VALUE,
-    CHALLENGE_STATUS_CODES,
-)
+from ontapulse_worker.modules.security_posture.domain.catalog import CHALLENGE_STATUS_CODES
 from ontapulse_worker.modules.security_posture.domain.models import PostureResponse
 
 
@@ -23,10 +20,10 @@ class ChallengeKind(StrEnum):
 
 
 def classify_challenge(response: PostureResponse) -> ChallengeKind:
-    # Verified against Cloudflare documentation: `cf-mitigated: challenge`.
-    marker = response.header(CHALLENGE_HEADER)
+    # Verified vendor markers and anti-bot challenge cookies live with the fingerprints.
+    cookie_names = tuple(cookie.name for cookie in response.cookies)
 
-    if marker is not None and marker.strip().lower() == CHALLENGE_HEADER_VALUE:
+    if is_confirmed_challenge(response.status_code, response.headers, cookie_names):
         return ChallengeKind.CONFIRMED
 
     if response.status_code in CHALLENGE_STATUS_CODES:
