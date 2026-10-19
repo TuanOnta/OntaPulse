@@ -1,11 +1,14 @@
+import { SeverityPill } from "@/entities/finding";
 import {
   METER_TICK_PERCENT,
   SLOW_MS,
   codeClass,
   httpStatusText,
+  isSecurityScan,
   isSlow,
   meterPercent,
   severityCounts,
+  subCheckCounts,
   type CodeClass,
 } from "@/entities/scan";
 import { riseStyle } from "@/shared/lib/rise";
@@ -27,37 +30,77 @@ const CODE_COLOR: Record<CodeClass, string> = {
   cnone: "text-landing-muted",
 };
 
-const SEVERITY_TONE = {
-  LOW: "[--s:147,165,156]",
-  MEDIUM: "[--s:255,180,84]",
-  HIGH: "[--s:255,122,107]",
-  CRITICAL: "[--s:255,92,120]",
-} as const;
+function FindingsTile({ scan }: { scan: ScanDetail }) {
+  const counts = severityCounts(scan.findings);
+  const finished = scan.status === "SUCCEEDED";
 
-export function SeverityPill({
-  severity,
-  children,
-}: {
-  severity: keyof typeof SEVERITY_TONE;
-  children: React.ReactNode;
-}) {
   return (
-    <span
-      className={cn(
-        "inline-flex min-h-7 items-center self-start rounded-full border border-[rgba(var(--s),0.6)] bg-[rgba(var(--s),0.1)] px-3 font-mono text-[12px] leading-[normal] font-semibold tracking-[.08em] whitespace-nowrap text-[rgb(var(--s))] uppercase",
-        SEVERITY_TONE[severity],
+    <div className={TILE}>
+      <div className={KEY}>Findings</div>
+      <div className={VALUE}>{finished ? scan.findings.length : "—"}</div>
+      {counts.length > 0 ? (
+        <div className="mt-3 flex flex-wrap gap-2">
+          {counts.map(({ severity, count }) => (
+            <SeverityPill key={severity} severity={severity}>
+              {count} {severity.toLowerCase()}
+            </SeverityPill>
+          ))}
+        </div>
+      ) : (
+        <div className={SUB}>
+          {finished
+            ? "Nothing to report"
+            : scan.status === "FAILED"
+              ? "No result to evaluate"
+              : "Evaluated when the scan finishes"}
+        </div>
       )}
+    </div>
+  );
+}
+
+/** Security scan: how many checks ran, the HTTPS status, and the finding count per severity. */
+function SecurityTiles({ scan }: { scan: ScanDetail }) {
+  const { ran, skipped, total } = subCheckCounts(scan.subChecks);
+  const finished = scan.status === "SUCCEEDED";
+
+  return (
+    <div
+      className="mt-[18px] grid animate-dash-rise grid-cols-3 gap-3.5 max-[1099px]:grid-cols-1 motion-reduce:animate-none"
+      style={riseStyle(2)}
     >
-      {children}
-    </span>
+      <div className={TILE}>
+        <div className={KEY}>Checks run</div>
+        <div className={VALUE}>{finished && total > 0 ? `${ran}/${total}` : "—"}</div>
+        <div className={SUB}>
+          {finished
+            ? skipped > 0
+              ? `${skipped} skipped, see below`
+              : "Every check ran"
+            : scan.status === "FAILED"
+              ? "No check could run"
+              : "Known when the scan finishes"}
+        </div>
+      </div>
+      <div className={TILE}>
+        <div className={KEY}>HTTPS status</div>
+        <div className={cn(VALUE, CODE_COLOR[codeClass(scan.statusCode)])}>
+          {scan.statusCode ?? "—"}
+        </div>
+        <div className={SUB}>
+          {scan.statusCode != null ? httpStatusText(scan.statusCode, scan.status) : "Not available"}
+        </div>
+      </div>
+      <FindingsTile scan={scan} />
+    </div>
   );
 }
 
 /** HTTP status, response time with the 2 s meter, and the finding count per severity. */
 export function MetricTiles({ scan }: { scan: ScanDetail }) {
+  if (isSecurityScan(scan)) return <SecurityTiles scan={scan} />;
+
   const ms = scan.responseTimeMs;
-  const counts = severityCounts(scan.findings);
-  const finished = scan.status === "SUCCEEDED";
 
   return (
     <div
@@ -110,27 +153,7 @@ export function MetricTiles({ scan }: { scan: ScanDetail }) {
         </div>
       </div>
 
-      <div className={TILE}>
-        <div className={KEY}>Findings</div>
-        <div className={VALUE}>{finished ? scan.findings.length : "—"}</div>
-        {counts.length > 0 ? (
-          <div className="mt-3 flex flex-wrap gap-2">
-            {counts.map(({ severity, count }) => (
-              <SeverityPill key={severity} severity={severity}>
-                {count} {severity.toLowerCase()}
-              </SeverityPill>
-            ))}
-          </div>
-        ) : (
-          <div className={SUB}>
-            {finished
-              ? "Nothing to report"
-              : scan.status === "FAILED"
-                ? "No result to evaluate"
-                : "Evaluated when the scan finishes"}
-          </div>
-        )}
-      </div>
+      <FindingsTile scan={scan} />
     </div>
   );
 }

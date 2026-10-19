@@ -1,4 +1,4 @@
-import { scanTimeline, type TimelineState } from "@/entities/scan";
+import { isSecurityScan, scanTimeline, type TimelineState } from "@/entities/scan";
 import { copyToClipboard } from "@/shared/lib/copy-to-clipboard";
 import { formatClockSeconds, formatFull } from "@/shared/lib/format";
 import { riseStyle } from "@/shared/lib/rise";
@@ -102,9 +102,17 @@ export function LifecycleAndRequest({
                   </div>
                   <div className="mt-0.5 text-[14px] text-landing-muted">{step.sub}</div>
                 </div>
-                <span className="text-right font-mono text-[13px] leading-[normal] whitespace-nowrap text-landing-muted max-[640px]:col-start-2 max-[640px]:text-left">
-                  {step.at ? formatClockSeconds(step.at) : ""}
-                </span>
+                {step.at ? (
+                  <time
+                    className="text-right font-mono text-[13px] leading-[normal] whitespace-nowrap text-landing-muted max-[640px]:col-start-2 max-[640px]:text-left"
+                    dateTime={step.at}
+                    title={formatFull(step.at)}
+                  >
+                    at {formatClockSeconds(step.at)}
+                  </time>
+                ) : (
+                  <span />
+                )}
               </li>
             );
           })}
@@ -128,7 +136,11 @@ export function LifecycleAndRequest({
             )}
           </dd>
           <dt className={DT}>Method</dt>
-          <dd className={DD}>GET, redirects are not followed</dd>
+          <dd className={DD}>
+            {isSecurityScan(scan)
+              ? "2 GET requests and 1 TLS handshake, redirects are not followed"
+              : "GET, redirects are not followed"}
+          </dd>
           <dt className={DT}>Scan ID</dt>
           <dd className={cn(DD, "font-mono text-[14px]")}>
             {scan.id}
