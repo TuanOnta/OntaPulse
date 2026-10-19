@@ -393,8 +393,14 @@ Secrets and logs:
 
 Git:
 
-- One branch per phase (for example `security/phase-2-posture-headers`). Never commit to `main` directly.
-- Do not commit, push, or open PRs unless the user asks.
+- **Every new feature, fix, refactor, or doc change gets its own branch before any file is edited.** Never work or commit on `main` directly.
+- Branch name format: `<type>/<short-kebab-case-description>`
+  - `<type>` matches the conventional commit types: `feat`, `fix`, `refactor`, `docs`, `chore`, `test`, `perf`, `style`, `build`, `ci`.
+  - Description: lowercase, words separated by hyphens, 2 to 5 words, English, no spaces, underscores, or uppercase. Name the thing changed, not the task ("add-scan-detail-page", not "update-stuff").
+  - Examples: `feat/monitor-security-tab`, `feat/auth-page`, `fix/scan-retry-header`, `refactor/dashboard-page`, `docs/security-checks-catalog`.
+- Branch from an up-to-date `main` (`git switch main && git pull`, then `git switch -c <type>/<description>`). If the working tree is dirty or the current branch is not `main`, stop and ask before switching.
+- Create the branch locally right after the user approves the prompt file (section 2, step 9) and before the first code change. Tell the user the branch name. Creating a branch is not a commit or push: still do not commit, push, or open PRs unless asked.
+- The branch name used goes into the prompt file's "Result" section.
 - Conventional commits in English (`feat(worker): ...`, `fix(api): ...`, `docs: ...`).
 - Never rewrite published history or force-push without explicit approval. Keep `reference/` untouched.
 
