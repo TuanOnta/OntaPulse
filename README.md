@@ -880,7 +880,7 @@ Use the RabbitMQ Management UI to inspect queues, connections, channels, and del
 
 ## License
 
-This repository does not currently include a `LICENSE` file. Until a license is added explicitly, do not assume that the source code may be used, modified, or distributed as open-source software.
+This project is licensed under the [MIT License](LICENSE). Copyright (c) 2026 Muhammad Dzaki Arta.
 
 ## Author
 
