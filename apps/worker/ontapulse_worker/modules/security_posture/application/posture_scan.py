@@ -2,7 +2,9 @@
 
 import logging
 from collections.abc import Callable
+from datetime import UTC, datetime
 from time import perf_counter
+from urllib.parse import urlsplit
 
 from ontapulse_worker.modules.scans.domain.errors import ScanExecutionError
 from ontapulse_worker.modules.scans.domain.models import (
@@ -14,15 +16,19 @@ from ontapulse_worker.modules.scans.domain.models import (
 from ontapulse_worker.modules.security_posture.application.ports import (
     PostureConnectionError,
     PostureHttpClient,
+    TlsConnectionError,
+    TlsInspector,
 )
 from ontapulse_worker.modules.security_posture.domain.catalog import (
     MAX_REQUESTS_PER_SCAN,
+    MAX_TLS_HANDSHAKES_PER_SCAN,
     REASON_CHALLENGE_RESPONSE,
     REASON_CONNECTION_FAILED,
     SUB_CHECK_COOKIES,
     SUB_CHECK_CORS,
     SUB_CHECK_HEADERS,
     SUB_CHECK_REDIRECT,
+    SUB_CHECK_TLS,
 )
 from ontapulse_worker.modules.security_posture.domain.challenge import (
     ChallengeKind,
@@ -32,8 +38,12 @@ from ontapulse_worker.modules.security_posture.domain.challenge import (
 from ontapulse_worker.modules.security_posture.domain.cookie_rules import evaluate_cookies
 from ontapulse_worker.modules.security_posture.domain.cors_rules import evaluate_cors
 from ontapulse_worker.modules.security_posture.domain.header_rules import evaluate_headers
-from ontapulse_worker.modules.security_posture.domain.models import PostureResponse
+from ontapulse_worker.modules.security_posture.domain.models import (
+    PostureResponse,
+    TlsObservation,
+)
 from ontapulse_worker.modules.security_posture.domain.redirect_rules import evaluate_redirect
+from ontapulse_worker.modules.security_posture.domain.tls_rules import evaluate_tls
 from ontapulse_worker.modules.security_posture.domain.urls import derive_posture_urls
 
 logger = logging.getLogger(__name__)
@@ -44,8 +54,11 @@ class RequestBudgetExceededError(RuntimeError):
 
 
 class RequestBudget:
-    def __init__(self, limit: int = MAX_REQUESTS_PER_SCAN) -> None:
+    def __init__(
+        self, limit: int = MAX_REQUESTS_PER_SCAN, handshakes: int = MAX_TLS_HANDSHAKES_PER_SCAN
+    ) -> None:
         self._remaining = limit
+        self._handshakes = handshakes
 
     def consume(self) -> None:
         if self._remaining <= 0:
@@ -53,18 +66,32 @@ class RequestBudget:
 
         self._remaining -= 1
 
+    def consume_handshake(self) -> None:
+        if self._handshakes <= 0:
+            raise RequestBudgetExceededError("posture handshake budget exhausted")
+
+        self._handshakes -= 1
+
+
+def utc_now() -> datetime:
+    return datetime.now(UTC)
+
 
 class PostureScanExecutor:
-    """Run the response-based posture checks with at most two requests."""
+    """Run the posture checks with at most two requests and one TLS handshake."""
 
     def __init__(
         self,
         client: PostureHttpClient,
+        tls_inspector: TlsInspector,
         *,
         clock: Callable[[], float] = perf_counter,
+        now: Callable[[], datetime] = utc_now,
     ) -> None:
         self._client = client
+        self._tls_inspector = tls_inspector
         self._clock = clock
+        self._now = now
 
     def execute(self, target_url: str) -> ScanResult:
         https_url, http_url = derive_posture_urls(target_url)
@@ -74,8 +101,9 @@ class PostureScanExecutor:
         # ScanExecutionError (non-public or unresolvable target) ends the scan right away.
         https_response = self._fetch(budget, https_url)
         http_response = self._fetch(budget, http_url)
+        observation = self._handshake(budget, https_url)
 
-        if https_response is None and http_response is None:
+        if https_response is None and http_response is None and observation is None:
             raise ScanExecutionError("Scan target is unavailable")
 
         findings: list[ScanFinding] = []
@@ -83,6 +111,7 @@ class PostureScanExecutor:
 
         findings.extend(self._https_checks(https_response, sub_checks))
         findings.extend(self._redirect_check(http_response, sub_checks))
+        findings.extend(self._tls_check(observation, sub_checks))
 
         elapsed_ms = max(0, round((self._clock() - started_at) * 1_000))
         logger.info(
@@ -107,6 +136,29 @@ class PostureScanExecutor:
             return self._client.fetch(url)
         except PostureConnectionError:
             return None
+
+    def _handshake(self, budget: RequestBudget, https_url: str) -> TlsObservation | None:
+        parts = urlsplit(https_url)
+        host = parts.hostname or ""
+        budget.consume_handshake()
+
+        try:
+            return self._tls_inspector.inspect(host, parts.port or 443)
+        except TlsConnectionError:
+            return None
+
+    def _tls_check(
+        self,
+        observation: TlsObservation | None,
+        sub_checks: list[SubCheckResult],
+    ) -> list[ScanFinding]:
+        if observation is None:
+            sub_checks.append(_skipped(SUB_CHECK_TLS, REASON_CONNECTION_FAILED))
+            return []
+
+        sub_checks.append(SubCheckResult(SUB_CHECK_TLS, SubCheckState.RAN))
+
+        return evaluate_tls(observation, self._now())
 
     @staticmethod
     def _https_checks(

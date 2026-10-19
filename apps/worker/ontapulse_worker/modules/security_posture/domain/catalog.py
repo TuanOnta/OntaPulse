@@ -14,6 +14,7 @@ from ontapulse_worker.modules.scans.domain.models import (
 
 # Budget (docs/security-checks.md section 4).
 MAX_REQUESTS_PER_SCAN = 2
+MAX_TLS_HANDSHAKES_PER_SCAN = 1
 USER_AGENT_PRODUCT = "OntaPulse-SecurityScanner"
 USER_AGENT_PROJECT_URL = "https://github.com/TuanOnta/OntaPulse"
 
@@ -22,6 +23,7 @@ SUB_CHECK_HEADERS = "headers"
 SUB_CHECK_COOKIES = "cookies"
 SUB_CHECK_CORS = "cors"
 SUB_CHECK_REDIRECT = "redirect"
+SUB_CHECK_TLS = "tls"
 REASON_CONNECTION_FAILED = "connection_failed"
 REASON_CHALLENGE_RESPONSE = "challenge_response"
 
@@ -35,6 +37,19 @@ SESSION_COOKIE_NAME_HINTS = ("session", "sess", "sid", "auth", "token", "jwt")
 CHALLENGE_STATUS_CODES = frozenset({403, 429, 503})
 CHALLENGE_HEADER = "cf-mitigated"
 CHALLENGE_HEADER_VALUE = "challenge"
+
+# TLS (docs/security-checks.md section 6.5).
+TLS_CONNECT_TIMEOUT_SECONDS = 5.0
+TLS_HANDSHAKE_TIMEOUT_SECONDS = 10.0
+TLS_EXPIRY_HIGH_DAYS = 14
+TLS_EXPIRY_MEDIUM_DAYS = 30
+MAX_VERIFY_MESSAGE_CHARS = 200
+# Protocol names as reported by ssl.SSLSocket.version(); RFC 8996 forbids TLS 1.0 and 1.1.
+DEPRECATED_TLS_PROTOCOLS = frozenset({"SSLv3", "TLSv1", "TLSv1.1"})
+# OpenSSL X509_V_ERR_* values (include/openssl/x509_vfy.h, OpenSSL 3.0).
+VERIFY_CODE_CERT_NOT_YET_VALID = 9
+VERIFY_CODE_CERT_HAS_EXPIRED = 10
+VERIFY_CODE_HOSTNAME_MISMATCH = 62
 
 
 @dataclass(frozen=True)
@@ -50,9 +65,11 @@ HDR = FindingCategory.HEADERS
 COOKIE = FindingCategory.COOKIES
 CORS = FindingCategory.CORS
 REDIRECT = FindingCategory.REDIRECT
+TLS = FindingCategory.TLS
 LOW = FindingSeverity.LOW
 MEDIUM = FindingSeverity.MEDIUM
 HIGH = FindingSeverity.HIGH
+CRITICAL = FindingSeverity.CRITICAL
 
 CATALOG: dict[str, CatalogEntry] = {
     "SEC_HDR_HSTS_MISSING": CatalogEntry(
@@ -244,6 +261,62 @@ CATALOG: dict[str, CatalogEntry] = {
         "HTTP redirect points to another host",
         "The redirect to HTTPS targets a different host. This may be intentional.",
         "Confirm the target host is expected.",
+    ),
+    "SEC_TLS_CERT_EXPIRED": CatalogEntry(
+        TLS,
+        CRITICAL,
+        "TLS certificate has expired",
+        "The server certificate is past its notAfter date.",
+        "Renew the certificate.",
+    ),
+    "SEC_TLS_CERT_EXPIRES_SOON_14": CatalogEntry(
+        TLS,
+        HIGH,
+        "TLS certificate expires within 14 days",
+        "The server certificate expires within 14 days.",
+        "Renew the certificate now.",
+    ),
+    "SEC_TLS_CERT_EXPIRES_SOON_30": CatalogEntry(
+        TLS,
+        MEDIUM,
+        "TLS certificate expires within 30 days",
+        "The server certificate expires within 30 days.",
+        "Plan the certificate renewal.",
+    ),
+    "SEC_TLS_CERT_NOT_YET_VALID": CatalogEntry(
+        TLS,
+        HIGH,
+        "TLS certificate is not yet valid",
+        "The server certificate notBefore date is in the future.",
+        "Check the certificate and the server clock.",
+    ),
+    "SEC_TLS_HOSTNAME_MISMATCH": CatalogEntry(
+        TLS,
+        HIGH,
+        "TLS certificate does not match the host",
+        "The monitored host is not covered by the names in the server certificate.",
+        "Issue a certificate that covers this host name.",
+    ),
+    "SEC_TLS_CHAIN_INVALID": CatalogEntry(
+        TLS,
+        HIGH,
+        "TLS certificate chain is not trusted",
+        "The certificate chain did not validate against the trust store.",
+        "Install the full chain from a trusted certificate authority.",
+    ),
+    "SEC_TLS_PROTOCOL_DEPRECATED": CatalogEntry(
+        TLS,
+        HIGH,
+        "Deprecated TLS protocol version negotiated",
+        "The server negotiated TLS 1.0 or 1.1, which RFC 8996 says must not be used.",
+        "Disable TLS 1.1 and below and require TLS 1.2 or newer.",
+    ),
+    "SEC_TLS_NO_HTTPS": CatalogEntry(
+        TLS,
+        HIGH,
+        "HTTPS was not available",
+        "A connection to the HTTPS port succeeded but the server did not complete a TLS handshake.",
+        "Serve the site over HTTPS.",
     ),
 }
 

@@ -12,6 +12,9 @@ from ontapulse_worker.modules.scans.domain.models import ScanKind
 from ontapulse_worker.modules.security_posture.adapters.http.pinned_httpx_client import (
     PinnedHttpxClient,
 )
+from ontapulse_worker.modules.security_posture.adapters.tls.ssl_tls_inspector import (
+    SslTlsInspector,
+)
 from ontapulse_worker.modules.security_posture.application.posture_scan import (
     PostureScanExecutor,
 )
@@ -51,7 +54,9 @@ class Container:
                 repository,
                 self.executor,
                 executors={
-                    ScanKind.SECURITY_POSTURE: PostureScanExecutor(self.posture_client),
+                    ScanKind.SECURITY_POSTURE: PostureScanExecutor(
+                        self.posture_client, SslTlsInspector()
+                    ),
                 },
             )
 
