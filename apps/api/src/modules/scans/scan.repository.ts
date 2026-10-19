@@ -34,7 +34,7 @@ export class ScanRepository {
     monitorId: string,
     workspaceId: string,
     kind: ScanKind,
-    limits: { minIntervalSeconds: number; workspaceLimitPerWindow: number },
+    limits: { manualCooldownSeconds: number; workspaceLimitPerWindow: number },
     now = new Date(),
   ) {
     return prisma.$transaction(async (transaction) => {
@@ -48,7 +48,7 @@ export class ScanRepository {
 
       if (lastScan) {
         const retryAfterSeconds = Math.ceil(
-          (lastScan.createdAt.getTime() + limits.minIntervalSeconds * 1_000 - now.getTime()) /
+          (lastScan.createdAt.getTime() + limits.manualCooldownSeconds * 1_000 - now.getTime()) /
             1_000,
         );
 
