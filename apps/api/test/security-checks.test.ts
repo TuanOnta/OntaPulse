@@ -442,6 +442,66 @@ describe("security posture API", () => {
       });
     });
 
+    it("serializes TLS findings and the tls sub-check", async () => {
+      const fixture = await createFixture();
+      const scan = await prisma.scan.create({
+        data: {
+          monitorId: fixture.monitorId,
+          kind: "SECURITY_POSTURE",
+          status: "SUCCEEDED",
+          subChecks: [
+            { name: "tls", state: "ran", reason: null },
+            { name: "headers", state: "skipped", reason: "connection_failed" },
+          ],
+        },
+      });
+      await prisma.scanFinding.create({
+        data: {
+          scanId: scan.id,
+          code: "SEC_TLS_CERT_EXPIRES_SOON_14",
+          checkId: "SEC_TLS_CERT_EXPIRES_SOON_14",
+          category: "TLS",
+          title: "TLS certificate expires within 14 days",
+          severity: "HIGH",
+          description: "The server certificate expires within 14 days.",
+          evidence: { subjectCn: "example.com", daysRemaining: 9 },
+        },
+      });
+      await prisma.scanFinding.create({
+        data: {
+          scanId: scan.id,
+          code: "SEC_TLS_CHAIN_INVALID",
+          checkId: "SEC_TLS_CHAIN_INVALID",
+          category: "TLS",
+          confidence: "MEDIUM",
+          title: "TLS certificate chain is not trusted",
+          severity: "HIGH",
+          description: "The certificate chain did not validate against the trust store.",
+        },
+      });
+
+      const response = await app.inject({
+        method: "GET",
+        url: `/api/monitors/${fixture.monitorId}/security-posture/latest`,
+        headers: { cookie: fixture.memberCookie },
+      });
+
+      expect(response.statusCode).toBe(200);
+      expect(response.json().subChecks[0]).toEqual({ name: "tls", state: "ran", reason: null });
+      expect(response.json().findings).toHaveLength(2);
+      expect(response.json().findings[0]).toMatchObject({
+        checkId: "SEC_TLS_CERT_EXPIRES_SOON_14",
+        category: "TLS",
+        severity: "HIGH",
+        confidence: null,
+        evidence: { subjectCn: "example.com", daysRemaining: 9 },
+      });
+      expect(response.json().findings[1]).toMatchObject({
+        category: "TLS",
+        confidence: "MEDIUM",
+      });
+    });
+
     it("returns 404 to a user outside the workspace", async () => {
       const fixture = await createFixture();
 
