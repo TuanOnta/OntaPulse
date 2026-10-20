@@ -237,3 +237,96 @@ def test_default_client_timeouts() -> None:
         assert client._client.follow_redirects is False
     finally:
         client.close()
+
+
+def test_a_probe_is_pinned_like_a_fetch_and_asks_for_the_identity_encoding() -> None:
+    seen: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen.append(request)
+        return httpx.Response(200, content=b"APP_KEY=x\n")
+
+    resolver = RecordingResolver({PUBLIC_IP})
+
+    response = client_with(handler, resolver).probe("https://example.com/.env")
+
+    (request,) = seen
+    assert request.url.host == PUBLIC_IP
+    assert request.url.path == "/.env"
+    assert request.headers["host"] == "example.com"
+    assert request.headers["accept-encoding"] == "identity"
+    assert request.extensions["sni_hostname"] == "example.com"
+    assert request.headers["user-agent"].startswith("OntaPulse-SecurityScanner/")
+    assert resolver.calls == [("example.com", 443)]
+    assert response.status_code == 200
+    assert response.body_prefix == b"APP_KEY=x\n"
+
+
+def test_a_probe_reads_at_most_4_kb_of_the_body() -> None:
+    def handler(_request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, content=b"a" * 50_000)
+
+    response = client_with(handler, RecordingResolver({PUBLIC_IP})).probe(
+        "https://example.com/.env"
+    )
+
+    assert len(response.body_prefix) == 4096
+
+
+def test_a_probe_does_not_follow_a_redirect_and_keeps_no_secret_header() -> None:
+    calls: list[str] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        calls.append(str(request.url))
+        return httpx.Response(
+            302,
+            headers=[("location", "https://other.example/"), ("set-cookie", "sid=SECRET; Secure")],
+        )
+
+    response = client_with(handler, RecordingResolver({PUBLIC_IP})).probe(
+        "https://example.com/.env"
+    )
+
+    assert response.status_code == 302
+    assert len(calls) == 1
+    assert response.cookie_names == ("sid",)
+    assert "SECRET" not in repr(response)
+    assert "set-cookie" not in response.headers
+
+
+def test_a_probe_to_a_non_public_address_is_rejected_without_a_request() -> None:
+    called = False
+
+    def handler(_request: httpx.Request) -> httpx.Response:
+        nonlocal called
+        called = True
+        return httpx.Response(200)
+
+    with pytest.raises(ScanExecutionError):
+        client_with(handler, RecordingResolver({"10.0.0.5"})).probe("https://example.com/.env")
+
+    assert called is False
+
+
+def test_a_dns_answer_that_changes_after_validation_cannot_redirect_a_probe() -> None:
+    seen: list[httpx.Request] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        seen.append(request)
+        return httpx.Response(404)
+
+    resolver = RecordingResolver({PUBLIC_IP}, {"10.0.0.5"})
+    client = client_with(handler, resolver)
+
+    client.probe("https://example.com/.env")
+
+    assert seen[0].url.host == PUBLIC_IP
+    assert resolver.calls == [("example.com", 443)]
+
+
+def test_probe_transport_failures_become_connection_errors() -> None:
+    def handler(_request: httpx.Request) -> httpx.Response:
+        raise httpx.ConnectError("refused")
+
+    with pytest.raises(PostureConnectionError):
+        client_with(handler, RecordingResolver({PUBLIC_IP})).probe("https://example.com/.env")

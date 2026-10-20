@@ -30,9 +30,14 @@ MAX_EVIDENCE_BYTES = 4096
 
 LOAD_SCAN_FOR_UPDATE = text(
     """
-    SELECT scan.id, scan.status, scan.kind, monitor."targetUrl"
+    SELECT scan.id, scan.status, scan.kind, monitor."targetUrl",
+        COALESCE(
+            settings."pathProbesEnabled" AND settings."pathProbesAcknowledgedAt" IS NOT NULL,
+            FALSE
+        ) AS "pathProbesEnabled"
     FROM "Scan" AS scan
     INNER JOIN "Monitor" AS monitor ON monitor.id = scan."monitorId"
+    LEFT JOIN "MonitorCheckSettings" AS settings ON settings."monitorId" = monitor.id
     WHERE scan.id = :scan_id AND scan."monitorId" = :monitor_id
     FOR UPDATE OF scan
     """
@@ -196,6 +201,7 @@ class SqlAlchemyScanRepository:
                 scan_id=job.scan_id,
                 target_url=str(row["targetUrl"]),
                 kind=str(row.get("kind") or ScanKind.HTTP_PROBE.value),
+                path_probes_enabled=bool(row.get("pathProbesEnabled")),
             )
 
     def succeed(self, scan_id: UUID, result: ScanResult) -> None:

@@ -7,7 +7,7 @@ from ontapulse_worker.modules.scans.domain.errors import (
     PermanentScanJobError,
     ScanExecutionError,
 )
-from ontapulse_worker.modules.scans.domain.models import ScanJob, ScanKind
+from ontapulse_worker.modules.scans.domain.models import ScanJob, ScanKind, ScanOptions
 from ontapulse_worker.modules.scans.domain.policies import evaluate_scan_result
 
 logger = logging.getLogger(__name__)
@@ -57,7 +57,13 @@ class ScanLifecycleService:
 
             try:
                 logger.info("scan.started", extra=fields)
-                raw_result = executor.execute(claimed_scan.target_url)
+                if claimed_scan.kind == ScanKind.HTTP_PROBE:
+                    raw_result = executor.execute(claimed_scan.target_url)
+                else:
+                    raw_result = executor.execute(
+                        claimed_scan.target_url,
+                        options=ScanOptions(path_probes_enabled=claimed_scan.path_probes_enabled),
+                    )
                 # Only the HTTP probe uses the status/latency policy. Other kinds return findings
                 # that are already final.
                 result = (
