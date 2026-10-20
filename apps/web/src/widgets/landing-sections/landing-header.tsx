@@ -1,5 +1,4 @@
 import { cn } from "cn";
-import { Link } from "react-router-dom";
 
 import { AUTH_ROUTES, Container, LinkButton, PAGE_INSET } from "./landing-ui";
 
@@ -52,18 +51,12 @@ export function LandingHeader() {
               {link.label}
             </a>
           ))}
-          <Link
-            className="inline-flex min-h-11 items-center text-landing-text hover:text-landing-text"
-            to={AUTH_ROUTES.login}
-          >
-            Sign in
-          </Link>
           <LinkButton
             className="min-h-11 px-5 text-[16px]"
-            to={AUTH_ROUTES.register}
+            to={AUTH_ROUTES.login}
             variant="primary"
           >
-            Get started
+            Sign in
           </LinkButton>
         </nav>
       </Container>
