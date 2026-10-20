@@ -46,6 +46,7 @@ describe("security scan helpers", () => {
 
   it("labels checks and falls back to the raw name", () => {
     expect(subCheckLabel("tls")).toBe("TLS and certificate");
+    expect(subCheckLabel("edge")).toBe("Edge detection");
     expect(subCheckLabel("cors")).toBe("CORS");
     expect(subCheckLabel("dns_records")).toBe("dns_records");
   });

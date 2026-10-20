@@ -316,6 +316,53 @@ belum diaktifkan) dan `429 SCAN_RATE_LIMITED` dengan `details.retryAfterSeconds`
   tepercaya); scan tetap `FAILED`. Temuan sertifikat lengkap ada pada scan
   keamanan.
 
+## 7b. Lapisan edge (CDN, WAF, anti-bot)
+
+Profil edge adalah pengamatan, bukan temuan: lapisan CDN, WAF, atau anti-bot
+yang teramati di depan host monitor. Hasilnya diturunkan dari data yang sudah
+dikumpulkan scan keamanan (nama header, nama cookie, status, penanda
+challenge); tidak ada permintaan tambahan. Satu profil terkini per monitor.
+Tampilan berbahasa Inggris, seperti seluruh aplikasi web.
+
+### Informasi — tersedia
+
+| Informasi           | Sumber API                       | Keterangan                                                                                                              |
+| ------------------- | -------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| Profil edge terkini | `GET /monitors/:id/edge-profile` | `404 NO_EDGE_PROFILE` berarti belum ada profil (bukan error). `detections: []` berarti tidak ada lapisan yang teramati. |
+| Vendor dan lapisan  | `detections[].vendor`, `.layer`  | `layer`: `CDN`, `WAF`, `ANTI_BOT`. Vendor tak dikenal ditampilkan sebagai teks yang terbaca.                            |
+| Keyakinan           | `detections[].confidence`        | `HIGH`, `MEDIUM`, `LOW`; selalu ditampilkan sebagai kata.                                                               |
+| Sinyal pendukung    | `detections[].signals[]`         | `type` dan `name` saja (nama header atau cookie); nilai tidak pernah dikirim.                                           |
+| Challenge           | `challengeObserved`              | Beri catatan bahwa halaman challenge dilayani ke scanner dan temuan dari respons itu dilewati.                          |
+| Waktu pengamatan    | `observedAt`, `scanId`           | Waktu di zona waktu user; tautan "Open the scan" ke scan penghasil. UUID bukan konten utama.                            |
+| Label sub-check     | `subChecks[].name` = `edge`      | Ditampilkan sebagai "Edge detection".                                                                                   |
+
+Kartu tampil di dua tempat dan hanya dibaca: di bagian Security pada halaman
+monitor (di bawah hasil scan terbaru, dengan tautan "Open the scan") dan di
+halaman scan keamanan yang sudah selesai (di bawah daftar temuan, tanpa tautan
+karena akan menunjuk ke halaman yang sama). Profil edge adalah profil terkini
+per monitor, jadi halaman scan hanya menampilkannya bila scan itu yang
+menghasilkannya; halaman scan yang lebih lama tidak menampilkan kartu. Semua peran (`OWNER`, `ADMIN`, `MEMBER`) melihat hal
+yang sama; tidak ada aksi di kartu.
+
+### Aturan penyajian
+
+- Edge adalah informasi, bukan cacat: jangan memakai warna atau gaya severity
+  (merah/kuning) dan jangan menulis "terlindungi oleh". Gunakan kata
+  "teramati" (_observed_).
+- Lapisan dan keyakinan ditampilkan sebagai teks, tidak hanya warna.
+- Urutan tetap: CDN, WAF, anti-bot, lalu nama vendor, agar scan ulang tidak
+  mengacak daftar.
+- Nama sinyal dari API ditampilkan sebagai teks biasa, tidak pernah sebagai HTML.
+- Tiga keadaan berbeda: belum ada profil ("No edge profile yet"), profil kosong
+  ("No CDN, WAF, or anti-bot layer was observed in the last scan"), dan error
+  (banner dengan `requestId` dan tombol coba lagi). Kegagalan kartu tidak
+  menyembunyikan hasil scan keamanan, dan sebaliknya.
+- Tidak ada teks penjelasan umum di bawah judul kartu. Catatan cakupan hanya
+  muncul pada hasil kosong: hanya vendor yang punya sidik jari terverifikasi
+  yang dapat dikenali (saat ini Cloudflare, Amazon CloudFront, AWS WAF, Vercel,
+  Fastly, DataDome, HUMAN), sehingga hasil kosong tidak berarti tidak ada
+  layanan edge.
+
 ## 8. Keadaan kosong, loading, dan error
 
 ### Keadaan kosong yang perlu dibedakan

@@ -11,6 +11,7 @@ const SUB_CHECK_LABELS: Record<string, string> = {
   cors: "CORS",
   redirect: "HTTP to HTTPS redirect",
   tls: "TLS and certificate",
+  edge: "Edge detection",
 };
 
 const SKIP_REASONS: Record<string, string> = {

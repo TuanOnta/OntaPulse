@@ -95,6 +95,25 @@ export interface CheckSettings {
   pathProbesEnabled: boolean;
   pathProbesAcknowledgedAt: string | null;
 }
+export type EdgeLayer = "CDN" | "WAF" | "ANTI_BOT";
+export type EdgeConfidence = "LOW" | "MEDIUM" | "HIGH";
+export interface EdgeSignal {
+  type: string;
+  name: string;
+}
+export interface EdgeDetection {
+  vendor: string;
+  layer: EdgeLayer;
+  confidence: EdgeConfidence;
+  signals: EdgeSignal[];
+}
+export interface EdgeProfile {
+  monitorId: string;
+  scanId: string;
+  challengeObserved: boolean;
+  observedAt: string;
+  detections: EdgeDetection[];
+}
 export interface ApiErrorShape {
   statusCode: number;
   code: string;

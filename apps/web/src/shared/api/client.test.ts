@@ -91,11 +91,13 @@ describe("API client", () => {
     await api.checkSettings("m1");
     await api.updateCheckSettings("m1", { securityPostureEnabled: true });
     await api.latestSecurityScan("m1");
+    await api.edgeProfile("m1");
 
     expect(fetchMock.mock.calls.map(([url, init]) => [url, init.method ?? "GET"])).toEqual([
       ["/api/monitors/m1/check-settings", "GET"],
       ["/api/monitors/m1/check-settings", "PATCH"],
       ["/api/monitors/m1/security-posture/latest", "GET"],
+      ["/api/monitors/m1/edge-profile", "GET"],
     ]);
     expect(fetchMock.mock.calls[1]?.[1].body).toBe(
       JSON.stringify({ securityPostureEnabled: true }),

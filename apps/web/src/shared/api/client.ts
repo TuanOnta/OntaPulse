@@ -1,6 +1,7 @@
 import type {
   ApiErrorShape,
   CheckSettings,
+  EdgeProfile,
   Monitor,
   Project,
   Scan,
@@ -123,6 +124,7 @@ export const api = {
     }),
   latestSecurityScan: (monitorId: string) =>
     request<ScanDetail>(`/monitors/${monitorId}/security-posture/latest`),
+  edgeProfile: (monitorId: string) => request<EdgeProfile>(`/monitors/${monitorId}/edge-profile`),
   scans: (monitorId: string) => request<Scan[]>(`/monitors/${monitorId}/scans`),
   scan: (scanId: string) => request<ScanDetail>(`/scans/${scanId}`),
   queueHealth: (workspaceId: string) =>

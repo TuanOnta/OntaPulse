@@ -6,6 +6,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ApiError } from "@/shared/api/client";
 import type {
   CheckSettings,
+  EdgeProfile,
   Finding,
   Monitor,
   Project,
@@ -18,6 +19,7 @@ const mocks = vi.hoisted(() => ({
   checkSettings: vi.fn(),
   updateCheckSettings: vi.fn(),
   latestSecurityScan: vi.fn(),
+  edgeProfile: vi.fn(),
   triggerSecurityScan: vi.fn(),
   toastSuccess: vi.fn(),
   toastError: vi.fn(),
@@ -32,6 +34,7 @@ vi.mock("@/shared/api/client", async (importOriginal) => {
       checkSettings: mocks.checkSettings,
       updateCheckSettings: mocks.updateCheckSettings,
       latestSecurityScan: mocks.latestSecurityScan,
+      edgeProfile: mocks.edgeProfile,
       triggerSecurityScan: mocks.triggerSecurityScan,
     },
   };
@@ -77,6 +80,18 @@ const settings = (enabled: boolean): CheckSettings => ({
 });
 const noScan = () =>
   new ApiError({ statusCode: 404, code: "NO_SECURITY_SCAN", message: "No security scan found" });
+
+const noEdgeProfile = () =>
+  new ApiError({ statusCode: 404, code: "NO_EDGE_PROFILE", message: "No edge profile found" });
+
+const edgeProfile = (overrides: Partial<EdgeProfile> = {}): EdgeProfile => ({
+  monitorId: "m1",
+  scanId: "scn-9",
+  challengeObserved: false,
+  observedAt: "2026-10-20T10:00:03Z",
+  detections: [],
+  ...overrides,
+});
 
 const finding = (overrides: Partial<Finding>): Finding => ({
   id: "f1",
@@ -141,6 +156,7 @@ beforeEach(() => {
   Object.values(mocks).forEach((mock) => mock.mockReset());
   mocks.checkSettings.mockResolvedValue(settings(true));
   mocks.latestSecurityScan.mockRejectedValue(noScan());
+  mocks.edgeProfile.mockRejectedValue(noEdgeProfile());
 });
 
 describe("SecurityPosture", () => {
@@ -382,5 +398,157 @@ describe("SecurityPosture", () => {
     await user.click(await screen.findByRole("button", { name: /Run security scan/ }));
 
     expect(mocks.toastError).toHaveBeenCalledWith("Queue is down");
+  });
+});
+
+describe("Edge layers card", () => {
+  beforeEach(() => {
+    mocks.latestSecurityScan.mockResolvedValue(scan());
+  });
+
+  it("lists each observed layer with words for layer and confidence, and the signals as text", async () => {
+    mocks.edgeProfile.mockResolvedValue(
+      edgeProfile({
+        detections: [
+          {
+            vendor: "AWS_WAF",
+            layer: "WAF",
+            confidence: "MEDIUM",
+            signals: [{ type: "STATUS_MARKER", name: "x-amzn-waf-action" }],
+          },
+          {
+            vendor: "CLOUDFLARE",
+            layer: "CDN",
+            confidence: "HIGH",
+            signals: [
+              { type: "HEADER_NAME", name: "cf-ray" },
+              { type: "COOKIE_NAME", name: "<b>x</b>" },
+            ],
+          },
+        ],
+      }),
+    );
+    renderSection();
+
+    const list = await screen.findByRole("list", { name: "Observed edge layers" });
+    const rows = within(list).getAllByRole("listitem");
+    // Layers are ordered CDN, WAF, anti-bot.
+    expect(rows).toHaveLength(2);
+    expect(within(rows[0] as HTMLElement).getByText("Cloudflare")).toBeVisible();
+    expect(within(rows[0] as HTMLElement).getByText("CDN")).toBeVisible();
+    expect(within(rows[0] as HTMLElement).getByText("High confidence")).toBeVisible();
+    expect(
+      within(rows[0] as HTMLElement).getByText("Signals: Header: cf-ray · Cookie: <b>x</b>"),
+    ).toBeVisible();
+    expect(within(rows[1] as HTMLElement).getByText("AWS WAF")).toBeVisible();
+    expect(within(rows[1] as HTMLElement).getByText("WAF")).toBeVisible();
+    expect(within(rows[1] as HTMLElement).getByText("Medium confidence")).toBeVisible();
+    expect(
+      within(rows[1] as HTMLElement).getByText("Signals: Challenge marker: x-amzn-waf-action"),
+    ).toBeVisible();
+    expect(screen.queryByText(/Recognised services/)).not.toBeInTheDocument();
+    // API text is never turned into markup.
+    expect(document.querySelector("b")).toBeNull();
+    expect(mocks.edgeProfile).toHaveBeenCalledWith("m1");
+  });
+
+  it("says when no layer was observed, which is a result and not a missing profile", async () => {
+    mocks.edgeProfile.mockResolvedValue(edgeProfile());
+    renderSection();
+
+    expect(
+      await screen.findByText("No CDN, WAF, or anti-bot layer was observed in the last scan."),
+    ).toBeVisible();
+    expect(
+      screen.getByText(/Recognised services: Cloudflare, Amazon CloudFront.*shows nothing here\./),
+    ).toBeVisible();
+    expect(screen.queryByRole("list", { name: "Observed edge layers" })).not.toBeInTheDocument();
+  });
+
+  it("explains a monitor with a security scan but no edge profile yet", async () => {
+    renderSection();
+
+    expect(
+      await screen.findByText("No edge profile yet. The next security scan records one."),
+    ).toBeVisible();
+  });
+
+  it("notes a served challenge and that findings from it were skipped", async () => {
+    mocks.edgeProfile.mockResolvedValue(edgeProfile({ challengeObserved: true }));
+    renderSection();
+
+    expect(
+      await screen.findByText(
+        "A challenge page was served to the scanner. Security findings from that response were skipped.",
+      ),
+    ).toBeVisible();
+  });
+
+  it("shows when it was observed and links to the scan that produced it", async () => {
+    mocks.edgeProfile.mockResolvedValue(edgeProfile({ scanId: "scn-3" }));
+    renderSection();
+
+    await screen.findByText(/Observed/);
+    const links = screen.getAllByRole("link", { name: "Open the scan" });
+    expect(links.at(-1)).toHaveAttribute(
+      "href",
+      "/workspaces/w1/projects/p1/monitors/m1/scans/scn-3",
+    );
+  });
+
+  it("shows unknown values from a newer API as readable text instead of failing", async () => {
+    mocks.edgeProfile.mockResolvedValue(
+      edgeProfile({
+        detections: [
+          {
+            vendor: "NEW_VENDOR",
+            layer: "EDGE_FUNCTION" as never,
+            confidence: "VERY_HIGH" as never,
+            signals: [{ type: "TLS_FINGERPRINT", name: "abc" }],
+          },
+        ],
+      }),
+    );
+    renderSection();
+
+    expect(await screen.findByText("new vendor")).toBeVisible();
+    expect(screen.getByText("edge function")).toBeVisible();
+    expect(screen.getByText("very high confidence")).toBeVisible();
+    expect(screen.getByText("Signals: tls fingerprint: abc")).toBeVisible();
+  });
+
+  it("keeps the security result when only the edge request fails, and retries on its own", async () => {
+    const user = userEvent.setup();
+    mocks.edgeProfile.mockRejectedValueOnce(
+      new ApiError({ statusCode: 500, code: "BOOM", message: "Down", requestId: "req-edge" }),
+    );
+    mocks.edgeProfile.mockResolvedValueOnce(edgeProfile());
+    renderSection();
+
+    expect(await screen.findByText("Couldn’t load the edge layers.")).toBeVisible();
+    expect(screen.getByText("Request ID: req-edge")).toBeVisible();
+    expect(screen.getByText("Nothing was flagged in the checks that ran.")).toBeVisible();
+
+    await user.click(screen.getByRole("button", { name: "Try again" }));
+
+    expect(
+      await screen.findByText("No CDN, WAF, or anti-bot layer was observed in the last scan."),
+    ).toBeVisible();
+  });
+
+  it("is read only for every role: a member sees the same card", async () => {
+    mocks.edgeProfile.mockResolvedValue(edgeProfile());
+    renderSection("MEMBER");
+
+    expect(await screen.findByRole("heading", { name: "Edge layers" })).toBeVisible();
+  });
+
+  it("does not ask for an edge profile before there is a security scan", async () => {
+    mocks.latestSecurityScan.mockRejectedValue(noScan());
+    renderSection();
+
+    await screen.findByText("No security scan yet. Run one to see what is observed on this host.");
+    expect(mocks.edgeProfile).not.toHaveBeenCalled();
+    expect(screen.queryByRole("heading", { name: "Edge layers" })).not.toBeInTheDocument();
   });
 });
