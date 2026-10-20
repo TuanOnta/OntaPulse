@@ -281,11 +281,16 @@ doctype or `<html`.
 
 Adding a path to this list needs review. Request budget in section 4 equals the size of this list.
 
-| Path           | Signature name | Signature (matched in at most the first 4 KB, in memory)              |
-| -------------- | -------------- | --------------------------------------------------------------------- |
-| `/.env`        | `dotenv`       | At least one line matching `^[A-Z][A-Z0-9_]*=` at line start          |
-| `/.git/HEAD`   | `git_head`     | Body begins with `ref: refs/` or is exactly a 40-character hex string |
-| `/.git/config` | `git_config`   | Contains the text `[core]`                                            |
+Signature sources (read 2026-10-20): the `ref: refs/some/thing` symref format is from the git glossary (`symref`), and
+a detached HEAD holds an object name directly; object names are 40 hex digits (SHA-1) or 64 (SHA-256) per the git
+hash function transition document, so both lengths match. `[core]` is the section syntax of the git config file
+(`git-config`). The `dotenv` signature is a heuristic: no specification of `.env` files exists.
+
+| Path           | Signature name | Signature (matched in at most the first 4 KB, in memory)                                                            |
+| -------------- | -------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `/.env`        | `dotenv`       | At least one line matching `^[A-Z][A-Z0-9_]*=` at line start                                                        |
+| `/.git/HEAD`   | `git_head`     | Body begins with `ref: refs/` or is exactly a 40 or 64 character lowercase hex string (trailing whitespace ignored) |
+| `/.git/config` | `git_config`   | Contains the text `[core]`                                                                                          |
 
 Rules:
 
@@ -293,9 +298,20 @@ Rules:
 - The body is read at most 4 KB, matched in memory, and discarded. It is never persisted or logged.
 - Runs only when an `OWNER` or `ADMIN` enabled path probes for the monitor and acknowledged that they are
   authorized to test the target. The acknowledgment stores user and time. `MEMBER` cannot enable. Disabling does
-  not need an acknowledgment. Otherwise the sub-check is `skipped: not_enabled`.
-- Probes are not run when the `edge` evaluator already classified the main response as a challenge; each path
-  response is still checked on its own.
+  not need an acknowledgment and clears the stored acknowledgment, so re-enabling needs a fresh one. The worker runs
+  the probes only when the setting is enabled **and** an acknowledgment time is stored. Otherwise the sub-check is
+  `skipped: not_enabled`.
+- Probes are sent to `https://<monitor host>[:port]<path>` with no query string, `Accept-Encoding: identity`, and the
+  scanner `User-Agent`. Each probe resolves the host once and connects to the validated address.
+- A 200 whose body starts with an HTML doctype or `<html` is a single-page-app fallback and produces no finding.
+- Probes are not run when the main HTTPS response was a confirmed challenge (`skipped: challenge_response`); each path
+  response is still checked on its own, and a probe response that is itself a confirmed challenge is dropped for that
+  path. Probe responses are never fed to the edge evaluator.
+
+Sub-check `exposed_files` states: `ran` when at least one probe produced a usable response; `skipped: not_enabled`
+(off, or enabled without a stored acknowledgment); `skipped: challenge_response`; `skipped: prerequisite_failed` when
+the main HTTPS request could not connect; `skipped: connection_failed` when every probe failed to connect. A failing
+probe never fails the scan. With probes enabled a scan makes at most 2 requests, 3 probes, and 1 TLS handshake.
 
 ## 9. Challenge detection and suppression
 
@@ -468,7 +484,9 @@ the `GET`/`PATCH` `/api/monitors/:monitorId/check-settings` routes, the trigger 
 `MonitorCheckSettings` table (`securityPostureEnabled`, `dnsWatchEnabled`, `pathProbesEnabled`,
 `pathProbesAcknowledgedById`, `pathProbesAcknowledgedAt`; no row means all disabled). `HTTP_PROBE` findings keep
 `checkId`, `category`, and `confidence` as `NULL`. Sub-check results, edge observations, and the DNS baseline are
-added in the phases that use them. Phase 4 added the `MonitorEdgeProfile` table (`monitorId` unique, `scanId`,
+added in the phases that use them. Phase 5 made `PATCH /monitors/:id/check-settings` accept `pathProbesEnabled` with
+`pathProbesAcknowledged` (`400 PATH_PROBE_ACKNOWLEDGMENT_REQUIRED` without it) and stores `pathProbesAcknowledgedById`
+and `pathProbesAcknowledgedAt`; the worker reads the setting when it claims the scan. Phase 4 added the `MonitorEdgeProfile` table (`monitorId` unique, `scanId`,
 `challengeObserved`, `detections` JSON, `observedAt`), the sub-check name `edge`, and
 `GET /api/monitors/:monitorId/edge-profile` (any member; `404 NO_EDGE_PROFILE` before the first posture scan).
 Exact names live in `apps/api/prisma/schema.prisma`.
