@@ -22,7 +22,7 @@ export function HeroSection() {
           </h1>
           <p className="max-w-[520px] text-[19px] text-landing-text-2">{HERO.sub}</p>
           <div className="flex flex-wrap gap-3.5">
-            <LinkButton to={AUTH_ROUTES.register} variant="primary">
+            <LinkButton to={AUTH_ROUTES.login} variant="primary">
               {HERO.primaryCta}
             </LinkButton>
             <AnchorButton href="#how" variant="ghost">

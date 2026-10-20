@@ -92,7 +92,9 @@ test("registers, creates a monitor, triggers a scan, and views its result", asyn
   const response = await page.goto("/");
   expect(response?.status()).toBe(200);
   await expect(page).toHaveTitle("OntaPulse");
-  await page.getByRole("link", { name: "Get started" }).click();
+  await page.getByRole("link", { name: "Sign in" }).first().click();
+  await expect(page).toHaveURL("/login");
+  await page.getByRole("tab", { name: "Create account" }).click();
   await expect(page).toHaveURL("/register");
   const form = page.getByRole("tabpanel");
   await form.getByLabel("Name").fill("Person");
@@ -123,6 +125,6 @@ test("registers, creates a monitor, triggers a scan, and views its result", asyn
   await page.getByRole("link", { name: /^Open scan from/ }).click();
   await expect(page.getByRole("heading", { name: "Target responded normally" })).toBeVisible();
   await expect(page.getByText("HTTP 200 in 120 ms, no findings.")).toBeVisible();
-  await expect(page.getByText("No findings")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "No findings" })).toBeVisible();
   expect(pageErrors).toEqual([]);
 });

@@ -56,14 +56,13 @@ describe("LandingPage", () => {
     renderLanding();
     const nav = screen.getByRole("navigation", { name: "Primary" });
     expect(within(nav).getByRole("link", { name: "Sign in" })).toHaveAttribute("href", "/login");
-    expect(within(nav).getByRole("link", { name: "Get started" })).toHaveAttribute(
-      "href",
-      "/register",
-    );
+    // One header action: a second button to the same screen was confusing.
+    expect(within(nav).queryByRole("link", { name: "Get started" })).not.toBeInTheDocument();
+    expect(within(nav).getAllByRole("link", { name: "Sign in" })).toHaveLength(1);
     expect(within(nav).getByRole("link", { name: "How it works" })).toHaveAttribute("href", "#how");
     expect(screen.getByRole("link", { name: "Start monitoring" })).toHaveAttribute(
       "href",
-      "/register",
+      "/login",
     );
     expect(screen.getByRole("link", { name: "See how it works" })).toHaveAttribute("href", "#how");
     expect(screen.getByRole("link", { name: "Create your workspace" })).toHaveAttribute(
