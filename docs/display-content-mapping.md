@@ -363,6 +363,46 @@ yang sama; tidak ada aksi di kartu.
   Fastly, DataDome, HUMAN), sehingga hasil kosong tidak berarti tidak ada
   layanan edge.
 
+## 7c. Pemeriksaan file terekspos (path probes)
+
+Pemeriksaan opt-in yang berjalan di dalam scan keamanan: tiga permintaan GET
+ke path tetap (`/.env`, `/.git/HEAD`, `/.git/config`) pada host monitor. Body
+dibaca paling banyak 4 KB di memori untuk mencocokkan pola dan tidak pernah
+disimpan; yang tersimpan hanya path, status HTTP, dan nama pola. Tampilan
+berbahasa Inggris.
+
+### Informasi dan aksi
+
+| Informasi / aksi | Sumber API                            | Keterangan                                                                                                                              |
+| ---------------- | ------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| Status           | `GET /monitors/:id/check-settings`    | `pathProbesEnabled` dan `pathProbesAcknowledgedAt`. Teks: "Off. Not requested." atau "On. Acknowledged <waktu>."                        |
+| Mengaktifkan     | `PATCH /monitors/:id/check-settings`  | Kirim `pathProbesEnabled: true` bersama `pathProbesAcknowledged: true`. Tanpa acknowledgment: `400 PATH_PROBE_ACKNOWLEDGMENT_REQUIRED`. |
+| Menonaktifkan    | `PATCH /monitors/:id/check-settings`  | Kirim `pathProbesEnabled: false`; tidak perlu acknowledgment, dan acknowledgment yang tersimpan dihapus.                                |
+| Label sub-check  | `subChecks[].name` = `exposed_files`  | Ditampilkan sebagai "Exposed files"; jika dilewati, alasan `not_enabled` tampil sebagai "Skipped: not enabled".                         |
+| Temuan           | `findings[]` kategori `EXPOSED_FILES` | `SEC_EXPOSED_*`; bukti hanya `path`, `status`, `signature`. Tampilkan sebagai teks, tidak pernah konten file.                           |
+
+| Peran  | Kontrol                                                                      |
+| ------ | ---------------------------------------------------------------------------- |
+| OWNER  | Switch "Exposed-file checks"; mengaktifkan lewat dialog konfirmasi.          |
+| ADMIN  | Sama dengan OWNER.                                                           |
+| MEMBER | Hanya teks status; tanpa switch dan tanpa dialog (API menolak dengan `403`). |
+
+### Aturan penyajian
+
+- Panel "Exposed-file checks" berada di bagian Security pada halaman monitor,
+  di bawah baris judul dan di atas hasil scan. Panel tetap tampil walau
+  "Security checks" mati, dengan catatan bahwa belum ada yang berjalan.
+- Mengaktifkan wajib lewat dialog: menjelaskan tiga path, batas 4 KB, dan apa
+  yang disimpan, ditambah checkbox "I am authorized to test <host>." yang tidak
+  pernah tercentang di awal. Tombol "Turn on" nonaktif sampai dicentang, dan
+  tidak ada permintaan sebelum konfirmasi. Batal atau Escape tidak mengirim apa
+  pun.
+- Kegagalan saat mengaktifkan ditampilkan di dalam dialog (pesan API dan
+  `requestId`); dialog tetap terbuka dan status tidak berubah. Kegagalan saat
+  menonaktifkan membatalkan perubahan switch dan menampilkan toast.
+- Jangan memakai warna severity untuk opt-in ini; ini pilihan pengguna, bukan
+  temuan.
+
 ## 8. Keadaan kosong, loading, dan error
 
 ### Keadaan kosong yang perlu dibedakan
