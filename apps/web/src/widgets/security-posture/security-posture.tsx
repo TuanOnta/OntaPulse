@@ -3,6 +3,7 @@ import { useCheckSettings } from "@/features/security/model/use-check-settings";
 import { useLatestSecurityScan } from "@/features/security/model/use-latest-security-scan";
 import { useRunSecurityScan } from "@/features/security/model/use-run-security-scan";
 import { EdgeProfileCard } from "@/features/security/ui/edge-profile-card";
+import { PathProbesPanel } from "@/features/security/ui/path-probes-panel";
 import { RunSecurityScanButton } from "@/features/security/ui/run-security-scan-button";
 import { SecuritySwitch } from "@/features/security/ui/security-switch";
 import { riseStyle } from "@/shared/lib/rise";
@@ -78,7 +79,22 @@ export function SecurityPosture({
         ) : null}
       </div>
 
-      <div className="animate-dash-rise motion-reduce:animate-none" style={riseStyle(5)}>
+      {settings.status === "ready" ? (
+        <div className="animate-dash-rise motion-reduce:animate-none" style={riseStyle(5)}>
+          <PathProbesPanel
+            acknowledgedAt={settings.settings.pathProbesAcknowledgedAt}
+            canManage={canManage}
+            enabled={settings.settings.pathProbesEnabled}
+            host={host}
+            onDisable={() => void settings.disablePathProbes()}
+            onEnable={settings.enablePathProbes}
+            saving={settings.probesSaving}
+            securityEnabled={enabled}
+          />
+        </div>
+      ) : null}
+
+      <div className="animate-dash-rise motion-reduce:animate-none" style={riseStyle(6)}>
         {settings.status === "error" ? (
           <LoadErrorBanner
             message={settings.error.message}

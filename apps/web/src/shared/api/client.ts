@@ -1,6 +1,7 @@
 import type {
   ApiErrorShape,
   CheckSettings,
+  CheckSettingsUpdate,
   EdgeProfile,
   Monitor,
   Project,
@@ -117,7 +118,7 @@ export const api = {
     }),
   checkSettings: (monitorId: string) =>
     request<CheckSettings>(`/monitors/${monitorId}/check-settings`),
-  updateCheckSettings: (monitorId: string, input: { securityPostureEnabled: boolean }) =>
+  updateCheckSettings: (monitorId: string, input: CheckSettingsUpdate) =>
     request<CheckSettings>(`/monitors/${monitorId}/check-settings`, {
       method: "PATCH",
       body: JSON.stringify(input),

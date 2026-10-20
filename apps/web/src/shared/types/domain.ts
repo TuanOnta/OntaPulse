@@ -1,14 +1,7 @@
 export type ScanStatus = "QUEUED" | "RUNNING" | "SUCCEEDED" | "FAILED";
 export type ScanKind = "HTTP_PROBE" | "SECURITY_POSTURE" | "DNS_WATCH";
 export type FindingCategory =
-  | "HEADERS"
-  | "COOKIES"
-  | "CORS"
-  | "REDIRECT"
-  | "TLS"
-  | "EXPOSED_FILES"
-  | "DNS"
-  | "EMAIL_AUTH";
+  "HEADERS" | "COOKIES" | "CORS" | "REDIRECT" | "TLS" | "EXPOSED_FILES" | "DNS" | "EMAIL_AUTH";
 export type FindingConfidence = "LOW" | "MEDIUM" | "HIGH";
 export type FindingSeverity = "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
 export type WorkspaceRole = "OWNER" | "ADMIN" | "MEMBER";
@@ -113,6 +106,12 @@ export interface EdgeProfile {
   challengeObserved: boolean;
   observedAt: string;
   detections: EdgeDetection[];
+}
+/** Body of PATCH /monitors/:id/check-settings. Enabling path probes also needs `pathProbesAcknowledged`. */
+export interface CheckSettingsUpdate {
+  securityPostureEnabled?: boolean;
+  pathProbesEnabled?: boolean;
+  pathProbesAcknowledged?: boolean;
 }
 export interface ApiErrorShape {
   statusCode: number;
