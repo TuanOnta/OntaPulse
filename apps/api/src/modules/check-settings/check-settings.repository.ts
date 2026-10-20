@@ -1,5 +1,13 @@
 import { prisma } from "../../infrastructure/database/prisma.js";
-import type { UpdateCheckSettingsInput } from "./check-settings.schema.js";
+
+/** What the service may write: the switches and, for path probes, who acknowledged and when (or null). */
+export interface CheckSettingsWrite {
+  securityPostureEnabled?: boolean;
+  dnsWatchEnabled?: boolean;
+  pathProbesEnabled?: boolean;
+  pathProbesAcknowledgedById?: string | null;
+  pathProbesAcknowledgedAt?: Date | null;
+}
 
 const settingsSelect = {
   monitorId: true,
@@ -24,7 +32,7 @@ export class CheckSettingsRepository {
     });
   }
 
-  upsert(monitorId: string, input: UpdateCheckSettingsInput) {
+  upsert(monitorId: string, input: CheckSettingsWrite) {
     return prisma.monitorCheckSettings.upsert({
       where: { monitorId },
       create: { monitorId, ...input },
