@@ -1,10 +1,42 @@
 import { render, screen, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { Finding, ScanDetail as ScanDetailData } from "@/shared/types/domain";
+import { ApiError } from "@/shared/api/client";
+import type { EdgeProfile, Finding, ScanDetail as ScanDetailData } from "@/shared/types/domain";
+
+const mocks = vi.hoisted(() => ({ edgeProfile: vi.fn() }));
+
+vi.mock("@/shared/api/client", async (importOriginal) => {
+  const original = await importOriginal<typeof import("@/shared/api/client")>();
+  return { ...original, api: { ...original.api, edgeProfile: mocks.edgeProfile } };
+});
 
 import { ScanDetail } from "./scan-detail";
+
+const noProfile = () =>
+  new ApiError({ statusCode: 404, code: "NO_EDGE_PROFILE", message: "No edge profile found" });
+
+const profile = (overrides: Partial<EdgeProfile> = {}): EdgeProfile => ({
+  monitorId: "m1",
+  scanId: "scn-9",
+  challengeObserved: false,
+  observedAt: "2026-10-20T10:00:03Z",
+  detections: [
+    {
+      vendor: "CLOUDFLARE",
+      layer: "CDN",
+      confidence: "MEDIUM",
+      signals: [{ type: "HEADER_NAME", name: "cf-ray" }],
+    },
+  ],
+  ...overrides,
+});
+
+beforeEach(() => {
+  mocks.edgeProfile.mockReset();
+  mocks.edgeProfile.mockRejectedValue(noProfile());
+});
 
 const base: ScanDetailData = {
   id: "scn-9",
@@ -161,5 +193,54 @@ describe("ScanDetail lifecycle times", () => {
     }
     expect(times[0]?.getAttribute("datetime")).toBe("2026-10-20T10:00:00Z");
     expect(within(lifecycle).getByText("Waited 1.0 s for a worker")).toBeVisible();
+  });
+});
+
+describe("ScanDetail edge layers", () => {
+  it("shows the edge layers this scan produced, below the findings", async () => {
+    mocks.edgeProfile.mockResolvedValue(profile());
+    renderScan(base);
+
+    expect(await screen.findByRole("heading", { name: "Edge layers" })).toBeVisible();
+    expect(screen.getByText("Cloudflare")).toBeVisible();
+    expect(screen.getByText("Signals: Header: cf-ray")).toBeVisible();
+    expect(screen.getByText(/^Observed /)).toBeVisible();
+    // The scan on screen produced it, so a link back to the same page would point at itself.
+    expect(screen.queryByRole("link", { name: "Open the scan" })).not.toBeInTheDocument();
+    expect(mocks.edgeProfile).toHaveBeenCalledWith("m1");
+  });
+
+  it("shows nothing on the page of an older scan, whose profile was replaced by a later scan", async () => {
+    mocks.edgeProfile.mockResolvedValue(profile({ scanId: "scn-newer" }));
+    renderScan(base);
+
+    await vi.waitFor(() => expect(mocks.edgeProfile).toHaveBeenCalled());
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(screen.queryByRole("heading", { name: "Edge layers" })).not.toBeInTheDocument();
+  });
+
+  it("shows nothing when the monitor has no edge profile", async () => {
+    renderScan(base);
+
+    await vi.waitFor(() => expect(mocks.edgeProfile).toHaveBeenCalled());
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(screen.queryByRole("heading", { name: "Edge layers" })).not.toBeInTheDocument();
+  });
+
+  it("does not ask for it on an HTTP probe or an unfinished scan", () => {
+    renderScan({ ...base, kind: "HTTP_PROBE", findings: [], subChecks: null });
+    renderScan({ ...base, status: "RUNNING", finishedAt: null });
+
+    expect(mocks.edgeProfile).not.toHaveBeenCalled();
+  });
+
+  it("still shows a failed edge request, with its own retry", async () => {
+    mocks.edgeProfile.mockRejectedValue(
+      new ApiError({ statusCode: 500, code: "BOOM", message: "Down", requestId: "req-1" }),
+    );
+    renderScan(base);
+
+    expect(await screen.findByText("Couldn’t load the edge layers.")).toBeVisible();
+    expect(screen.getByRole("button", { name: "Try again" })).toBeVisible();
   });
 });

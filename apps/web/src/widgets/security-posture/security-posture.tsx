@@ -2,6 +2,7 @@ import { canManageWorkspace } from "@/entities/workspace";
 import { useCheckSettings } from "@/features/security/model/use-check-settings";
 import { useLatestSecurityScan } from "@/features/security/model/use-latest-security-scan";
 import { useRunSecurityScan } from "@/features/security/model/use-run-security-scan";
+import { EdgeProfileCard } from "@/features/security/ui/edge-profile-card";
 import { RunSecurityScanButton } from "@/features/security/ui/run-security-scan-button";
 import { SecuritySwitch } from "@/features/security/ui/security-switch";
 import { riseStyle } from "@/shared/lib/rise";
@@ -97,7 +98,10 @@ export function SecurityPosture({
         ) : latest.status === "empty" ? (
           <SecurityEmpty canManage={canManage} enabled={enabled} />
         ) : (
-          <SecurityResult scan={latest.scan} scanHref={scanHref(latest.scan.id)} />
+          <div className="flex flex-col gap-3.5">
+            <SecurityResult scan={latest.scan} scanHref={scanHref(latest.scan.id)} />
+            <EdgeProfileCard monitorId={monitor.id} scanHref={scanHref} scanId={latest.scan.id} />
+          </div>
         )}
       </div>
     </section>

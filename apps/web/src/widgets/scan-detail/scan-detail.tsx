@@ -1,7 +1,8 @@
 import { splitUrl } from "@/entities/monitor";
-import { isBusyScan, scanOutcome } from "@/entities/scan";
+import { isBusyScan, isSecurityScan, scanOutcome } from "@/entities/scan";
 import { canManageWorkspace } from "@/entities/workspace";
 import { useRunAgain } from "@/features/scans/model/use-run-again";
+import { EdgeProfileCard } from "@/features/security/ui/edge-profile-card";
 import { useNow } from "@/shared/lib/use-now";
 import type {
   Monitor,
@@ -68,6 +69,14 @@ export function ScanDetail({
         <MetricTiles scan={scan} />
         <LifecycleAndRequest scan={scan} targetUrl={context?.monitor.targetUrl} />
         <Findings scan={scan} />
+        {isSecurityScan(scan) && scan.status === "SUCCEEDED" ? (
+          <EdgeProfileCard
+            className="mt-3.5"
+            monitorId={scan.monitorId}
+            onlyForScan
+            scanId={scan.id}
+          />
+        ) : null}
       </div>
     </>
   );
