@@ -42,18 +42,19 @@ Keep development secrets in `.env` and test values in `.env.test`. Neither file 
 
 Maintain a committed `.env.example` containing variable names and safe placeholder values.
 
-| Variable                                                             | Purpose                                           | Required in test                             |
-| -------------------------------------------------------------------- | ------------------------------------------------- | -------------------------------------------- |
-| `NODE_ENV`                                                           | Selects development, test, or production behavior | Yes; must be `test`                          |
-| `API_PORT`                                                           | Fastify listening port                            | Yes                                          |
-| `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`, `POSTGRES_PORT` | Compose PostgreSQL configuration                  | Yes                                          |
-| `DATABASE_URL`                                                       | Prisma and worker PostgreSQL connection string    | Yes; must target the dedicated test database |
-| `REDIS_PORT`, `REDIS_URL`                                            | Redis port and application URL                    | Yes                                          |
-| `RABBITMQ_USER`, `RABBITMQ_PASSWORD`                                 | Compose RabbitMQ credentials                      | No                                           |
-| `RABBITMQ_PORT`                                                      | Host AMQP port                                    | No                                           |
-| `RABBITMQ_MANAGEMENT_PORT`                                           | Host RabbitMQ management UI port                  | No                                           |
-| `RABBITMQ_URL`                                                       | API and worker AMQP connection string             | No for unit tests                            |
-| `WORKER_INFRA_TESTS`                                                 | Explicitly enables worker infrastructure tests    | No                                           |
+| Variable                                                             | Purpose                                                                                                                   | Required in test                             |
+| -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------- |
+| `NODE_ENV`                                                           | Selects development, test, or production behavior                                                                         | Yes; must be `test`                          |
+| `API_PORT`                                                           | Fastify listening port                                                                                                    | Yes                                          |
+| `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`, `POSTGRES_PORT` | Compose PostgreSQL configuration                                                                                          | Yes                                          |
+| `DATABASE_URL`                                                       | Prisma and worker PostgreSQL connection string                                                                            | Yes; must target the dedicated test database |
+| `REDIS_PORT`, `REDIS_URL`                                            | Redis port and application URL                                                                                            | Yes                                          |
+| `RABBITMQ_USER`, `RABBITMQ_PASSWORD`                                 | Compose RabbitMQ credentials                                                                                              | No                                           |
+| `RABBITMQ_PORT`                                                      | Host AMQP port                                                                                                            | No                                           |
+| `RABBITMQ_MANAGEMENT_PORT`                                           | Host RabbitMQ management UI port                                                                                          | No                                           |
+| `RABBITMQ_URL`                                                       | API and worker AMQP connection string                                                                                     | No for unit tests                            |
+| `DNS_RESOLVERS`                                                      | Worker DNS watch: comma-separated public resolver IPs (default `1.1.1.1,8.8.8.8,9.9.9.9`); private addresses are rejected | No                                           |
+| `WORKER_INFRA_TESTS`                                                 | Explicitly enables worker infrastructure tests                                                                            | No                                           |
 
 Applications running directly on the host normally connect through `127.0.0.1`.
 

@@ -27,20 +27,20 @@ Adding or changing a check ID updates this file in the same change.
 
 ## 2. Scan kinds and sub-checks
 
-| Kind               | Sub-check ID     | Purpose                                       | Reads                               |
-| ------------------ | ---------------- | --------------------------------------------- | ----------------------------------- |
-| `HTTP_PROBE`       | (existing)       | Status code and response time                 | One GET, no body                    |
-| `SECURITY_POSTURE` | `headers`        | Security headers                              | Headers of the HTTPS GET            |
-| `SECURITY_POSTURE` | `cookies`        | Cookie flags                                  | `Set-Cookie` names and flags        |
-| `SECURITY_POSTURE` | `cors`           | CORS response headers                         | Headers of the HTTPS GET            |
-| `SECURITY_POSTURE` | `redirect`       | HTTP to HTTPS redirect                        | First response of one HTTP GET      |
-| `SECURITY_POSTURE` | `tls`            | Certificate and protocol                      | One TLS handshake                   |
-| `SECURITY_POSTURE` | `exposed_files`  | Exposed sensitive files (opt-in)              | Fixed path allowlist, bounded body  |
-| `SECURITY_POSTURE` | `edge`           | WAF, CDN, anti-bot profile                    | Data already collected by the above |
-| `DNS_WATCH`        | `dns_records`    | Record snapshot and diff against the baseline | A, AAAA, CNAME, NS, MX, TXT         |
-| `DNS_WATCH`        | `dangling_cname` | CNAME chain resolution                        | CNAME chain                         |
-| `DNS_WATCH`        | `email_auth`     | SPF, DKIM (best effort), DMARC                | TXT records                         |
-| `DNS_WATCH`        | `edge`           | WAF, CDN, anti-bot hints from CNAME and NS    | Data already collected by the above |
+| Kind               | Sub-check ID     | Purpose                                                           | Reads                               |
+| ------------------ | ---------------- | ----------------------------------------------------------------- | ----------------------------------- |
+| `HTTP_PROBE`       | (existing)       | Status code and response time                                     | One GET, no body                    |
+| `SECURITY_POSTURE` | `headers`        | Security headers                                                  | Headers of the HTTPS GET            |
+| `SECURITY_POSTURE` | `cookies`        | Cookie flags                                                      | `Set-Cookie` names and flags        |
+| `SECURITY_POSTURE` | `cors`           | CORS response headers                                             | Headers of the HTTPS GET            |
+| `SECURITY_POSTURE` | `redirect`       | HTTP to HTTPS redirect                                            | First response of one HTTP GET      |
+| `SECURITY_POSTURE` | `tls`            | Certificate and protocol                                          | One TLS handshake                   |
+| `SECURITY_POSTURE` | `exposed_files`  | Exposed sensitive files (opt-in)                                  | Fixed path allowlist, bounded body  |
+| `SECURITY_POSTURE` | `edge`           | WAF, CDN, anti-bot profile                                        | Data already collected by the above |
+| `DNS_WATCH`        | `dns_records`    | Record snapshot and diff against the baseline                     | A, AAAA, CNAME, NS, MX, TXT         |
+| `DNS_WATCH`        | `dangling_cname` | CNAME chain resolution                                            | CNAME chain                         |
+| `DNS_WATCH`        | `email_auth`     | SPF, DKIM (best effort), DMARC                                    | TXT records                         |
+| `DNS_WATCH`        | `edge`           | WAF, CDN, anti-bot hints from CNAME and NS (not built in Phase 6) | Data already collected by the above |
 
 Every sub-check records `ran` or `skipped` with a reason from this list:
 
@@ -73,19 +73,19 @@ A duplicate delivery of a terminal scan writes nothing.
 All values are named constants, one location per check family. They are not derived from the 60 s `HTTP_PROBE`
 interval floor.
 
-| Constant _(draft)_                                   | `SECURITY_POSTURE`                                            | `DNS_WATCH`                         |
-| ---------------------------------------------------- | ------------------------------------------------------------- | ----------------------------------- |
-| Manual re-run cooldown per monitor                   | 60 s                                                          | not applicable                      |
-| Minimum interval between scheduled scans per monitor | 3600 s                                                        | 3600 s                              |
-| Per-workspace scan limit                             | to be set by the user (no default assumed)                    | to be set by the user               |
-| Max HTTP requests per scan, without probes           | 2 (one HTTPS GET, one HTTP GET)                               | 0                                   |
-| Max TLS handshakes per scan                          | 1                                                             | 0                                   |
-| Max path-probe requests per scan                     | size of the allowlist in section 8 (opt-in only)              | 0                                   |
-| Max DNS queries per scan                             | 0                                                             | 40 _(draft)_                        |
-| Redirects followed                                   | 0                                                             | not applicable                      |
-| Timeouts                                             | connect 5 s, read 30 s, write 5 s, pool 5 s (as `HTTP_PROBE`) | DNS timeout 5 s per query _(draft)_ |
-| TLS handshake timeout                                | 10 s per socket operation                                     | not applicable                      |
-| `User-Agent`                                         | `OntaPulse-SecurityScanner/<version> (+<project url>)`        | not applicable                      |
+| Constant _(draft)_                                   | `SECURITY_POSTURE`                                            | `DNS_WATCH`                       |
+| ---------------------------------------------------- | ------------------------------------------------------------- | --------------------------------- |
+| Manual re-run cooldown per monitor                   | 60 s                                                          | 60 s _(Phase 6)_                  |
+| Minimum interval between scheduled scans per monitor | 3600 s                                                        | 3600 s                            |
+| Per-workspace scan limit                             | 60 per hour                                                   | 60 per hour _(Phase 6)_           |
+| Max HTTP requests per scan, without probes           | 2 (one HTTPS GET, one HTTP GET)                               | 0                                 |
+| Max TLS handshakes per scan                          | 1                                                             | 0                                 |
+| Max path-probe requests per scan                     | size of the allowlist in section 8 (opt-in only)              | 0                                 |
+| Max DNS queries per scan                             | 0                                                             | 40                                |
+| Redirects followed                                   | 0                                                             | not applicable                    |
+| Timeouts                                             | connect 5 s, read 30 s, write 5 s, pool 5 s (as `HTTP_PROBE`) | DNS 2 s per server, 5 s per query |
+| TLS handshake timeout                                | 10 s per socket operation                                     | not applicable                    |
+| `User-Agent`                                         | `OntaPulse-SecurityScanner/<version> (+<project url>)`        | not applicable                    |
 
 `HTTP_PROBE` keeps its own constants (one GET, connect 5 s, read 30 s, write 5 s, pool 5 s). The `User-Agent`
 names OntaPulse and never impersonates a browser. The project URL value is a configuration setting added in
@@ -394,8 +394,33 @@ never stored or logged. At most 16 detections and 8 signals per detection are ke
 
 ## 11. Check catalog: `DNS_WATCH`
 
-Resolver and library choice are decided in the Phase 6 prompt. Queries go through a `DnsResolver` port against
-the configured public resolvers only.
+Queries go through a `DnsResolver` port against the configured public resolvers only (Phase 6).
+
+Phase 6 decisions:
+
+- **Library and resolvers:** `dnspython` (core package only) with `configure=False`; the resolver list is the `DNS_RESOLVERS`
+  setting (default `1.1.1.1,8.8.8.8,9.9.9.9`). Every address must be public: a private, loopback, or link-local address is
+  rejected at startup, so an internal resolver can never be used. UDP with the library's TCP fallback, no DoH. The monitor host
+  name and its organizational domain are visible to those resolvers as DNS queries; no result is sent anywhere.
+- **Query plan (at most 40 per scan, a named constant):** host `A`, `AAAA`, `CNAME`, `NS`, `MX`, `TXT` (6); organizational domain `NS`,
+  `MX`, `TXT` (3); the DMARC tree walk (at most 8); the CNAME chain (at most 8 hops); SPF `include` and `redirect` lookups (at most
+  10); DKIM selectors (at most 5). When the budget is reached the remaining sub-check is `skipped: budget_exhausted`. Timeouts: 2 s per
+  server and 5 s per query. A transient failure (timeout, SERVFAIL) for one record type marks that type unknown; an unknown type is
+  never diffed, so a failed query never produces a change finding.
+- **Organizational domain without a public-suffix library:** the DMARC tree walk of RFC 9989 section 4.10: query `_dmarc.<name>`
+  walking from the host toward the root, at most 8 queries; a name with more than 8 labels has its leftmost labels removed until 7
+  remain; the organizational domain is the name with the fewest labels that holds a DMARC record (a `psd=n` record wins). When no
+  DMARC record exists on the walk the fallback is the last two labels of the host. For a multi-label public suffix (for example
+  `co.uk`) the fallback yields the suffix itself, which has no `MX` record, so the missing-record findings stay silent
+  (`not_applicable`). This limitation is accepted.
+- **Snapshot (normalized: lowercase, trailing dot stripped, TTL ignored, values sorted and deduplicated):**
+  `{ host: { name, A, AAAA, CNAME, NS, MX, TXT }, organization: { name, NS, MX } }`. `MX` values are `<preference> <host>`; a TXT
+  record made of several strings is joined.
+- **Result semantics:** the scan is `FAILED` only when the monitor host cannot be resolved at all (`NXDOMAIN` for the host itself, or
+  every resolver unreachable), with the generic message "The host name could not be resolved". Sub-check names: `dns_records`,
+  `dangling_cname`, `email_auth`.
+- **Evidence:** change findings carry the record type and the `added` and `removed` normalized values, each list capped at 20 values of
+  255 characters, 4 KB in total. TXT values can hold verification tokens; they are bounded and never logged.
 
 ### 11.1 Records and baseline (`DNS_`, category `DNS`)
 
@@ -405,7 +430,10 @@ type, ignore TTL, deduplicate.
 
 - **First snapshot is the baseline** and produces no change finding.
 - Later snapshots diff against the stored baseline. The new snapshot becomes the baseline in the same transaction
-  as the terminal status. A bounded change history keeps the latest 50 diffs per host _(draft)_.
+  as the terminal status. A bounded change history keeps the latest 50 diffs per monitor; a history row is written only when
+  something changed. A `FAILED` scan never touches the baseline, and an older scan never overwrites a newer baseline.
+  "CDN-fronted" means the monitor's current edge profile (Phase 4) has a `CDN` detection; without one the host is treated as not
+  CDN-fronted. CDN-fronted A/AAAA churn is emitted as `DNS_ADDRESS_CHANGED_EDGE` at `LOW`.
 
 | ID                         | Severity | Condition (observed)                                                                         | Confidence | Remediation summary                     |
 | -------------------------- | -------- | -------------------------------------------------------------------------------------------- | ---------- | --------------------------------------- |
@@ -439,11 +467,16 @@ DMARC rules (RFC 9989): record at `_dmarc.<domain>`, must start with `v=DMARC1` 
 tag; `p` is `none`, `quarantine`, or `reject`, and a record without `p` is treated as `p=none`; `sp`, `np`
 optional; `rua` optional; the `pct` tag was removed and is not evaluated; multiple valid DMARC records at one
 name are all discarded; the organizational domain is found by a DNS tree walk (at most 8 queries) instead of a
-public-suffix list. The tree-walk algorithm lets the worker avoid a public-suffix library; Phase 6 confirms this.
+public-suffix list. The tree-walk algorithm lets the worker avoid a public-suffix library; Phase 6 confirms this and adds the
+two-label fallback described above.
 
 DKIM rules (RFC 6376): key record is a TXT at `<selector>._domainkey.<domain>`; `v` (if present) must be
 `DKIM1` and first; `p` required, an empty `p` means revoked; `t=y` marks testing mode. Selectors cannot be
-enumerated through DNS, so discovery tests a fixed small list of common selectors and is best effort.
+enumerated through DNS, so discovery tests a fixed small list of selectors and is best effort. The list (read 2026-10-20, each
+from the provider's own documentation): `google` (Google Workspace default prefix selector), `selector1` and `selector2`
+(Microsoft 365, published as CNAME records that resolve to the key), `s1` and `s2` (Twilio SendGrid domain authentication, also
+CNAME records). Mailchimp was left out: no primary source was found. A query for the selector name is a `TXT` query; a CNAME answer
+is followed by the resolver.
 
 | ID                           | Severity | Condition (observed)                                                                       | Confidence | Remediation summary                          |
 | ---------------------------- | -------- | ------------------------------------------------------------------------------------------ | ---------- | -------------------------------------------- |
@@ -460,6 +493,8 @@ enumerated through DNS, so discovery tests a fixed small list of common selector
 | `EMAIL_DKIM_TESTING`         | `LOW`    | A discovered selector has `t=y`                                                            | `LOW`      | Remove the testing flag when ready           |
 | `EMAIL_DKIM_REVOKED`         | `LOW`    | A discovered selector has an empty `p` value (revoked key)                                 | `LOW`      | Remove the stale record or publish a new key |
 
+A revoked key (`EMAIL_DKIM_REVOKED`) is reported only for a domain that accepts mail: a domain that sends no mail legitimately
+publishes a wildcard revoked key (`*._domainkey` with `p=` empty, as `example.com` does), which found during the Phase 6 live check.
 A missing DKIM selector is never a finding by itself: discovery is best effort. When the host has no MX record,
 SPF and DMARC absence is not reported (a domain that sends no mail has no obligation, and the sub-check records
 `not_applicable` for the missing-record IDs). A subdomain inheriting the organizational policy is not a finding.
@@ -484,7 +519,10 @@ the `GET`/`PATCH` `/api/monitors/:monitorId/check-settings` routes, the trigger 
 `MonitorCheckSettings` table (`securityPostureEnabled`, `dnsWatchEnabled`, `pathProbesEnabled`,
 `pathProbesAcknowledgedById`, `pathProbesAcknowledgedAt`; no row means all disabled). `HTTP_PROBE` findings keep
 `checkId`, `category`, and `confidence` as `NULL`. Sub-check results, edge observations, and the DNS baseline are
-added in the phases that use them. Phase 5 made `PATCH /monitors/:id/check-settings` accept `pathProbesEnabled` with
+added in the phases that use them. Phase 6 made `DNS_WATCH` runnable (`dnsWatchEnabled` per monitor, 60 s manual cooldown, 60 scans per
+hour per workspace), added the tables `DnsBaseline` (one row per monitor) and `DnsChange` (history), and the routes
+`GET /api/monitors/:monitorId/dns-watch/latest` (`404 NO_DNS_SCAN`) and `GET /api/monitors/:monitorId/dns-baseline` (`404
+NO_DNS_BASELINE`); the worker is the only writer. Phase 5 made `PATCH /monitors/:id/check-settings` accept `pathProbesEnabled` with
 `pathProbesAcknowledged` (`400 PATH_PROBE_ACKNOWLEDGMENT_REQUIRED` without it) and stores `pathProbesAcknowledgedById`
 and `pathProbesAcknowledgedAt`; the worker reads the setting when it claims the scan. Phase 4 added the `MonitorEdgeProfile` table (`monitorId` unique, `scanId`,
 `challengeObserved`, `detections` JSON, `observedAt`), the sub-check name `edge`, and
@@ -493,9 +531,9 @@ Exact names live in `apps/api/prisma/schema.prisma`.
 
 ## 13. Open items for the user
 
-1. Per-workspace limits for security and DNS scans (no default assumed).
+1. Per-workspace limits: 60 scans per hour for both kinds (confirmed in Phase 6).
 2. Confirm the draft intervals, expiry thresholds (30 and 14 days), HSTS minimum `max-age` (180 days), DNS query
-   cap (40), and CNAME hop limit (8).
+   cap (40, confirmed in Phase 6), and CNAME hop limit (8).
 3. Confirm whether CDN-fronted address churn is emitted at `LOW` or suppressed.
 4. Akamai and Imperva fingerprints need a primary vendor source; until then they are not detected (section 10).
 5. `SEC_HDR_CSP_*` unsafe source semantics, `SEC_CORS_*` wildcard-with-credentials rules, and the Fetch standard
