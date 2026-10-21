@@ -14,6 +14,7 @@ const mocks = vi.hoisted(() => ({
   triggerScan: vi.fn(),
   checkSettings: vi.fn(),
   latestSecurityScan: vi.fn(),
+  latestDnsScan: vi.fn(),
   logout: vi.fn(),
 }));
 
@@ -30,6 +31,7 @@ vi.mock("@/shared/api/client", async (importOriginal) => {
       triggerScan: mocks.triggerScan,
       checkSettings: mocks.checkSettings,
       latestSecurityScan: mocks.latestSecurityScan,
+      latestDnsScan: mocks.latestDnsScan,
     },
   };
 });
@@ -115,6 +117,9 @@ beforeEach(() => {
   });
   mocks.latestSecurityScan.mockRejectedValue(
     new ApiError({ statusCode: 404, code: "NO_SECURITY_SCAN", message: "No security scan found" }),
+  );
+  mocks.latestDnsScan.mockRejectedValue(
+    new ApiError({ statusCode: 404, code: "NO_DNS_SCAN", message: "No DNS watch scan found" }),
   );
 });
 

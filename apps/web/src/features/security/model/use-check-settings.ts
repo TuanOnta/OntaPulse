@@ -60,14 +60,15 @@ export function useCheckSettings(monitorId: string) {
     setAttempt((value) => value + 1);
   }, []);
 
-  const setSecurityPosture = useCallback(
-    async (enabled: boolean) => {
+  /** One on/off switch of the settings: optimistic, rolled back with a toast when the API refuses. */
+  const setSwitch = useCallback(
+    async (field: "securityPostureEnabled" | "dnsWatchEnabled", enabled: boolean) => {
       if (state.status !== "ready") return;
       const previous = state.settings;
       setSaving(true);
-      setState({ status: "ready", settings: { ...previous, securityPostureEnabled: enabled } });
+      setState({ status: "ready", settings: { ...previous, [field]: enabled } });
       try {
-        const saved = await api.updateCheckSettings(monitorId, { securityPostureEnabled: enabled });
+        const saved = await api.updateCheckSettings(monitorId, { [field]: enabled });
         if (alive.current) setState({ status: "ready", settings: saved });
       } catch (error) {
         if (!alive.current) return;
@@ -78,6 +79,15 @@ export function useCheckSettings(monitorId: string) {
       }
     },
     [monitorId, state],
+  );
+
+  const setSecurityPosture = useCallback(
+    (enabled: boolean) => setSwitch("securityPostureEnabled", enabled),
+    [setSwitch],
+  );
+  const setDnsWatch = useCallback(
+    (enabled: boolean) => setSwitch("dnsWatchEnabled", enabled),
+    [setSwitch],
   );
 
   /**
@@ -119,6 +129,7 @@ export function useCheckSettings(monitorId: string) {
     probesSaving,
     reload,
     setSecurityPosture,
+    setDnsWatch,
     enablePathProbes,
     disablePathProbes,
   };

@@ -79,9 +79,12 @@ export function chartScans<T extends Pick<Scan, "status" | "kind">>(
   scans: readonly T[],
   limit: number = CHART_BARS,
 ): T[] {
-  // Response time is an HTTP probe measure; security scans are not charted.
+  // Response time is an HTTP probe measure; security and DNS scans are not charted.
   return scans
-    .filter((scan) => isFinishedScan(scan) && scan.kind !== "SECURITY_POSTURE")
+    .filter(
+      (scan) =>
+        isFinishedScan(scan) && scan.kind !== "SECURITY_POSTURE" && scan.kind !== "DNS_WATCH",
+    )
     .slice(0, limit)
     .reverse();
 }

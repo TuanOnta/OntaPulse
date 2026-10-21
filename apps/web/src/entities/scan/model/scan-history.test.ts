@@ -61,6 +61,17 @@ describe("scan history helpers", () => {
     expect(chartScans([scan("QUEUED")])).toEqual([]);
   });
 
+  it("charts HTTP probes only: response time is not a security or DNS measure", () => {
+    const mixed = [
+      { ...scan("SUCCEEDED", "dns"), kind: "DNS_WATCH" as const },
+      { ...scan("SUCCEEDED", "sec"), kind: "SECURITY_POSTURE" as const },
+      { ...scan("SUCCEEDED", "http"), kind: "HTTP_PROBE" as const },
+      scan("SUCCEEDED", "legacy"),
+    ];
+
+    expect(chartScans(mixed).map((item) => item.id)).toEqual(["legacy", "http"]);
+  });
+
   it("scales the chart so the 2 s line is always visible", () => {
     expect(chartMax([])).toBe(2500);
     expect(chartMax([214, 188])).toBe(2500);

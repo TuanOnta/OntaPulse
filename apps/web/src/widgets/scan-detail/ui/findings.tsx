@@ -1,5 +1,5 @@
 import { FindingCard, SEVERITY_TONE, SeverityPill } from "@/entities/finding";
-import { SubCheckList, findingCopy, isSecurityScan, sortFindings } from "@/entities/scan";
+import { SubCheckList, findingCopy, isCheckScan, isDnsScan, sortFindings } from "@/entities/scan";
 import { riseStyle } from "@/shared/lib/rise";
 import type { ScanDetail } from "@/shared/types/domain";
 import { cn } from "cn";
@@ -95,16 +95,18 @@ function FindingsBody({ scan }: { scan: ScanDetail }) {
               {scan.errorMessage || "The check could not complete."}
             </h3>
             <p className="mt-1.5 max-w-[66ch] text-landing-text-2">
-              {certificateFailure
-                ? "The target’s certificate could not be verified, so the request did not complete and there is no HTTP result to evaluate. Failed scans are not retried automatically. Fix the certificate, or run a security scan to see the certificate findings."
-                : "A scan fails on timeouts, DNS errors and connection failures. There is no HTTP result to evaluate, and failed scans are not retried automatically. Check the target is reachable from the public internet, then run the scan again."}
+              {isDnsScan(scan)
+                ? "A DNS scan fails only when the host name cannot be resolved by the public resolvers. Nothing was recorded and the baseline is unchanged. Check that the domain exists, then run the scan again."
+                : certificateFailure
+                  ? "The target’s certificate could not be verified, so the request did not complete and there is no HTTP result to evaluate. Failed scans are not retried automatically. Fix the certificate, or run a security scan to see the certificate findings."
+                  : "A scan fails on timeouts, DNS errors and connection failures. There is no HTTP result to evaluate, and failed scans are not retried automatically. Check the target is reachable from the public internet, then run the scan again."}
             </p>
           </div>
         </div>
       </>
     );
   }
-  if (isSecurityScan(scan)) return <SecurityFindings scan={scan} />;
+  if (isCheckScan(scan)) return <SecurityFindings scan={scan} />;
   if (scan.findings.length === 0) {
     return (
       <>

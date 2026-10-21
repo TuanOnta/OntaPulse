@@ -2,6 +2,7 @@ import type {
   ApiErrorShape,
   CheckSettings,
   CheckSettingsUpdate,
+  DnsBaseline,
   EdgeProfile,
   Monitor,
   Project,
@@ -116,6 +117,14 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ kind: "SECURITY_POSTURE" }),
     }),
+  triggerDnsScan: (monitorId: string) =>
+    request<Scan>(`/monitors/${monitorId}/scans`, {
+      method: "POST",
+      body: JSON.stringify({ kind: "DNS_WATCH" }),
+    }),
+  latestDnsScan: (monitorId: string) =>
+    request<ScanDetail>(`/monitors/${monitorId}/dns-watch/latest`),
+  dnsBaseline: (monitorId: string) => request<DnsBaseline>(`/monitors/${monitorId}/dns-baseline`),
   checkSettings: (monitorId: string) =>
     request<CheckSettings>(`/monitors/${monitorId}/check-settings`),
   updateCheckSettings: (monitorId: string, input: CheckSettingsUpdate) =>

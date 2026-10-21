@@ -2,6 +2,7 @@ import { splitUrl } from "@/entities/monitor";
 import { canManageWorkspace, workspaceLook } from "@/entities/workspace";
 import { useMonitorScans } from "@/features/monitors/model/use-monitor-scans";
 import { useNow } from "@/shared/lib/use-now";
+import { DnsWatch } from "@/widgets/dns-watch";
 import { SecurityPosture } from "@/widgets/security-posture";
 import type { Monitor, Project, Workspace } from "@/shared/types/domain";
 
@@ -54,6 +55,7 @@ export function MonitorDetail({
       />
       <ResponseChart freshId={scans.freshId} scans={scans.scans} />
       <SecurityPosture host={host} monitor={monitor} project={project} workspace={workspace} />
+      <DnsWatch host={host} monitor={monitor} project={project} workspace={workspace} />
       <ScanHistory
         busy={scans.busy}
         canRun={canRun}

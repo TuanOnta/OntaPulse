@@ -5,7 +5,10 @@ import type { Finding, ScanDetail } from "@/shared/types/domain";
 import { chartScans } from "./scan-history";
 import { scanOutcome } from "./scan-view";
 import {
+  checkKindName,
   formatWait,
+  isCheckScan,
+  isDnsScan,
   isSecurityScan,
   subCheckCounts,
   subCheckLabel,
@@ -49,7 +52,10 @@ describe("security scan helpers", () => {
     expect(subCheckLabel("edge")).toBe("Edge detection");
     expect(subCheckLabel("exposed_files")).toBe("Exposed files");
     expect(subCheckLabel("cors")).toBe("CORS");
-    expect(subCheckLabel("dns_records")).toBe("dns_records");
+    expect(subCheckLabel("dns_records")).toBe("DNS records");
+    expect(subCheckLabel("dangling_cname")).toBe("Dangling CNAME");
+    expect(subCheckLabel("email_auth")).toBe("Email authentication");
+    expect(subCheckLabel("something_new")).toBe("something_new");
   });
 
   it.each([
@@ -135,5 +141,62 @@ describe("chartScans", () => {
     ] as const;
 
     expect(chartScans(scans).map((scan) => scan.id)).toEqual(["c", "b"]);
+  });
+});
+
+describe("DNS scans", () => {
+  it("tells DNS scans from the other kinds and groups the two check kinds", () => {
+    expect(isDnsScan({ kind: "DNS_WATCH" })).toBe(true);
+    expect(isDnsScan({ kind: "SECURITY_POSTURE" })).toBe(false);
+    expect(isDnsScan({})).toBe(false);
+    expect(isCheckScan({ kind: "DNS_WATCH" })).toBe(true);
+    expect(isCheckScan({ kind: "SECURITY_POSTURE" })).toBe(true);
+    expect(isCheckScan({ kind: "HTTP_PROBE" })).toBe(false);
+    expect(isCheckScan({})).toBe(false);
+    expect(checkKindName({ kind: "DNS_WATCH" })).toBe("DNS");
+    expect(checkKindName({ kind: "SECURITY_POSTURE" })).toBe("Security");
+  });
+
+  const dns = { kind: "DNS_WATCH" as const, statusCode: null, responseTimeMs: null, findings: [] };
+
+  it("words the hero of a DNS scan for DNS, never as an HTTP result", () => {
+    expect(scanOutcome({ ...dns, status: "QUEUED" }).sub).toBe(
+      "The DNS check is queued and will start shortly.",
+    );
+    expect(scanOutcome({ ...dns, status: "RUNNING" }, "api.example.com")).toMatchObject({
+      title: "Running DNS checks…",
+      sub: "A worker is looking up the DNS records of api.example.com.",
+    });
+    expect(scanOutcome({ ...dns, status: "FAILED" })).toMatchObject({
+      tone: "bad",
+      title: "The DNS check could not complete",
+      sub: "No DNS record could be checked. The reason is shown below.",
+    });
+  });
+
+  it("says a finished DNS scan is complete, with or without findings", () => {
+    const subChecks = [
+      { name: "dns_records", state: "ran" as const, reason: null },
+      { name: "email_auth", state: "ran" as const, reason: null },
+    ];
+
+    expect(scanOutcome({ ...dns, status: "SUCCEEDED", subChecks })).toMatchObject({
+      tone: "ok",
+      title: "DNS check complete",
+      sub: "2 checks ran, nothing was flagged.",
+    });
+    expect(
+      scanOutcome({ ...dns, status: "SUCCEEDED", subChecks, findings: [finding("MEDIUM")] }),
+    ).toMatchObject({ tone: "warn", title: "DNS check complete, with 1 finding" });
+  });
+
+  it("keeps the security wording for security scans", () => {
+    expect(scanOutcome({ ...dns, kind: "SECURITY_POSTURE", status: "RUNNING" }).title).toBe(
+      "Running security checks…",
+    );
+  });
+
+  it("does not chart DNS scans", () => {
+    expect(chartScans([{ ...dns, status: "SUCCEEDED" as const }])).toEqual([]);
   });
 });

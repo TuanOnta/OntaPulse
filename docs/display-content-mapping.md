@@ -403,6 +403,57 @@ berbahasa Inggris.
 - Jangan memakai warna severity untuk opt-in ini; ini pilihan pengguna, bukan
   temuan.
 
+## 7d. Domain dan DNS (DNS watch)
+
+Pemantauan DNS adalah scan terpisah (`kind` = `DNS_WATCH`). Scan hanya membuat
+query DNS ke resolver publik; host monitor tidak dihubungi. Hasilnya berupa
+temuan (perubahan record, CNAME menggantung, SPF, DMARC, DKIM), snapshot
+**baseline** per monitor, dan riwayat perubahan. Tampilan berbahasa Inggris.
+
+### Informasi dan aksi
+
+| Informasi / aksi           | Sumber API                           | Keterangan                                                                                                                       |
+| -------------------------- | ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------- |
+| Status pengaturan          | `GET /monitors/:id/check-settings`   | `dnsWatchEnabled`; monitor tanpa pengaturan dianggap nonaktif.                                                                   |
+| Hasil terakhir             | `GET /monitors/:id/dns-watch/latest` | Scan DNS selesai terbaru. `404 NO_DNS_SCAN` berarti belum ada (bukan error). Scan `FAILED` menampilkan `errorMessage` yang aman. |
+| Baseline dan perubahan     | `GET /monitors/:id/dns-baseline`     | `404 NO_DNS_BASELINE` berarti belum ada scan sukses (bukan error). `snapshot` dan `changes` (terbaru dulu, paling banyak 50).    |
+| Mengaktifkan/menonaktifkan | `PATCH /monitors/:id/check-settings` | Kirim `dnsWatchEnabled`. Hanya `OWNER` dan `ADMIN`; UI menyembunyikan kontrol untuk `MEMBER`.                                    |
+| Menjalankan scan DNS       | `POST /monitors/:id/scans`           | `{"kind":"DNS_WATCH"}`. `409 SECURITY_CHECKS_DISABLED` bila nonaktif; `429 SCAN_RATE_LIMITED` dengan `retryAfterSeconds`.        |
+| Label sub-check            | `subChecks[].name`                   | `dns_records` "DNS records", `dangling_cname` "Dangling CNAME", `email_auth` "Email authentication"; alasan lewati ditampilkan.  |
+
+| Peran  | Kontrol                                                     |
+| ------ | ----------------------------------------------------------- |
+| OWNER  | Switch "DNS watch" dan tombol "Run DNS scan".               |
+| ADMIN  | Sama dengan OWNER.                                          |
+| MEMBER | Hanya teks status dan hasil; tanpa switch dan tanpa tombol. |
+
+### Aturan penyajian
+
+- Bagian "Domain and DNS" berada di halaman monitor, di bawah bagian Security,
+  dan memuat: hasil terakhir (ringkasan, severity, temuan, daftar pemeriksaan),
+  kartu **Baseline** dan kartu **Recent changes** (berdampingan mulai 1024 px,
+  menumpuk di bawahnya).
+- Baseline: waktu pengamatan, host, lalu record per tipe dengan urutan tetap
+  (A, AAAA, CNAME, NS, MX, TXT; untuk domain organisasi NS dan MX). Nilai
+  ditampilkan sebagai teks monospace yang membungkus; lebih dari 6 nilai per
+  tipe menampilkan 6 pertama dan "and N more"; tipe kosong tertulis "None
+  observed".
+- Perubahan: terbaru dulu, maksimal 10 ("Showing 10 of N changes."). Nilai
+  ditambah dan dihapus ditandai tanda (`+`, `−`) **dan** kata "Added" /
+  "Removed" untuk pembaca layar; warna hanya petunjuk tambahan.
+- Nilai record (termasuk TXT) berasal dari DNS pihak lain dan selalu
+  ditampilkan sebagai teks, tidak pernah sebagai HTML.
+- Empat keadaan yang dibedakan: belum ada scan ("No DNS scan yet" atau "DNS
+  watch is off"), belum ada baseline ("No baseline yet..."), tidak ada
+  perubahan ("No changes since the baseline was recorded."), dan error
+  (banner dengan `requestId` dan coba lagi; pengaturan, hasil, dan baseline
+  masing-masing berdiri sendiri).
+- Halaman scan untuk scan DNS: judul "DNS check complete", dua ubin (Checks run
+  dan Findings, tanpa ubin HTTP), metode "DNS queries to public resolvers, the
+  host itself is not contacted", dan "Run scan again" menjalankan scan DNS
+  (bukan HTTP probe). Riwayat scan memberi tag "DNS" dan grafik waktu respons
+  hanya memakai HTTP probe.
+
 ## 8. Keadaan kosong, loading, dan error
 
 ### Keadaan kosong yang perlu dibedakan

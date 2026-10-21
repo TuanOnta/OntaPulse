@@ -107,9 +107,42 @@ export interface EdgeProfile {
   observedAt: string;
   detections: EdgeDetection[];
 }
+export interface DnsSnapshot {
+  host: {
+    name: string;
+    A: string[];
+    AAAA: string[];
+    CNAME: string[];
+    NS: string[];
+    MX: string[];
+    TXT: string[];
+  };
+  organization: { name: string; NS: string[]; MX: string[] };
+}
+export interface DnsRecordChange {
+  scope: "host" | "organization";
+  type: string;
+  added: string[];
+  removed: string[];
+}
+export interface DnsChangeEntry {
+  scanId: string;
+  observedAt: string;
+  changes: DnsRecordChange[];
+}
+export interface DnsBaseline {
+  monitorId: string;
+  scanId: string;
+  host: string;
+  organizationDomain: string;
+  observedAt: string;
+  snapshot: DnsSnapshot;
+  changes: DnsChangeEntry[];
+}
 /** Body of PATCH /monitors/:id/check-settings. Enabling path probes also needs `pathProbesAcknowledged`. */
 export interface CheckSettingsUpdate {
   securityPostureEnabled?: boolean;
+  dnsWatchEnabled?: boolean;
   pathProbesEnabled?: boolean;
   pathProbesAcknowledged?: boolean;
 }

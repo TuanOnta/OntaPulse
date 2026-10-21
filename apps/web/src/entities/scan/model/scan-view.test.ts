@@ -186,3 +186,26 @@ describe("duration and timeline", () => {
     expect(steps[2].sub).toBe("The target answered");
   });
 });
+
+describe("scanTimeline for a DNS scan", () => {
+  const times = {
+    createdAt: "2026-10-20T10:00:00Z",
+    startedAt: "2026-10-20T10:00:01Z",
+    finishedAt: "2026-10-20T10:00:03Z",
+  };
+
+  it("talks about DNS lookups instead of an HTTP request", () => {
+    const running = scanTimeline({ kind: "DNS_WATCH", status: "RUNNING", ...times });
+    const done = scanTimeline({ kind: "DNS_WATCH", status: "SUCCEEDED", ...times });
+
+    expect(running[1]?.sub).toBe("Looking up DNS records…");
+    expect(done[1]?.sub).toBe("Worker resolved the host name and queried its DNS records");
+    expect(done[2]?.sub).toBe("Took 2.0 s end to end");
+  });
+
+  it("keeps the HTTP wording for a probe", () => {
+    const done = scanTimeline({ kind: "HTTP_PROBE", status: "SUCCEEDED", ...times });
+
+    expect(done[1]?.sub).toBe("Worker validated the URL and sent the request");
+  });
+});

@@ -54,6 +54,9 @@ export {
 } from "./model/scan-view";
 export {
   formatWait,
+  checkKindName,
+  isCheckScan,
+  isDnsScan,
   isSecurityScan,
   subCheckCounts,
   subCheckLabel,

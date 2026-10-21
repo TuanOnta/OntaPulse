@@ -4,7 +4,8 @@ import {
   SLOW_MS,
   codeClass,
   httpStatusText,
-  isSecurityScan,
+  isCheckScan,
+  isDnsScan,
   isSlow,
   meterPercent,
   severityCounts,
@@ -59,14 +60,21 @@ function FindingsTile({ scan }: { scan: ScanDetail }) {
   );
 }
 
-/** Security scan: how many checks ran, the HTTPS status, and the finding count per severity. */
+/**
+ * Security or DNS scan: how many checks ran, the HTTPS status (security only: a DNS scan has no HTTP result),
+ * and the finding count per severity.
+ */
 function SecurityTiles({ scan }: { scan: ScanDetail }) {
   const { ran, skipped, total } = subCheckCounts(scan.subChecks);
   const finished = scan.status === "SUCCEEDED";
+  const dns = isDnsScan(scan);
 
   return (
     <div
-      className="mt-[18px] grid animate-dash-rise grid-cols-3 gap-3.5 max-[1099px]:grid-cols-1 motion-reduce:animate-none"
+      className={cn(
+        "mt-[18px] grid animate-dash-rise gap-3.5 max-[1099px]:grid-cols-1 motion-reduce:animate-none",
+        dns ? "grid-cols-2" : "grid-cols-3",
+      )}
       style={riseStyle(2)}
     >
       <div className={TILE}>
@@ -82,15 +90,19 @@ function SecurityTiles({ scan }: { scan: ScanDetail }) {
               : "Known when the scan finishes"}
         </div>
       </div>
-      <div className={TILE}>
-        <div className={KEY}>HTTPS status</div>
-        <div className={cn(VALUE, CODE_COLOR[codeClass(scan.statusCode)])}>
-          {scan.statusCode ?? "—"}
+      {dns ? null : (
+        <div className={TILE}>
+          <div className={KEY}>HTTPS status</div>
+          <div className={cn(VALUE, CODE_COLOR[codeClass(scan.statusCode)])}>
+            {scan.statusCode ?? "—"}
+          </div>
+          <div className={SUB}>
+            {scan.statusCode != null
+              ? httpStatusText(scan.statusCode, scan.status)
+              : "Not available"}
+          </div>
         </div>
-        <div className={SUB}>
-          {scan.statusCode != null ? httpStatusText(scan.statusCode, scan.status) : "Not available"}
-        </div>
-      </div>
+      )}
       <FindingsTile scan={scan} />
     </div>
   );
@@ -98,7 +110,7 @@ function SecurityTiles({ scan }: { scan: ScanDetail }) {
 
 /** HTTP status, response time with the 2 s meter, and the finding count per severity. */
 export function MetricTiles({ scan }: { scan: ScanDetail }) {
-  if (isSecurityScan(scan)) return <SecurityTiles scan={scan} />;
+  if (isCheckScan(scan)) return <SecurityTiles scan={scan} />;
 
   const ms = scan.responseTimeMs;
 
