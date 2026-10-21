@@ -5,6 +5,7 @@ import { WorkspaceRepository } from "../workspaces/workspace.repository.js";
 import { ScanController } from "./scan.controller.js";
 import {
   findAllScansRouteSchema,
+  findLatestDnsWatchRouteSchema,
   findLatestSecurityPostureRouteSchema,
   findScanByIdRouteSchema,
   triggerScanRouteSchema,
@@ -47,6 +48,14 @@ export const scanRoutes: FastifyPluginAsync = async (app) => {
       schema: findScanByIdRouteSchema,
     },
     scanController.findById,
+  );
+
+  app.get(
+    "/monitors/:monitorId/dns-watch/latest",
+    {
+      schema: findLatestDnsWatchRouteSchema,
+    },
+    scanController.findLatestDnsWatch,
   );
 
   app.get(

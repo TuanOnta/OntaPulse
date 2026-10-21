@@ -53,6 +53,16 @@ export type MonitorCheckSettings = Prisma.MonitorCheckSettingsModel
  */
 export type Scan = Prisma.ScanModel
 /**
+ * Model DnsBaseline
+ * 
+ */
+export type DnsBaseline = Prisma.DnsBaselineModel
+/**
+ * Model DnsChange
+ * 
+ */
+export type DnsChange = Prisma.DnsChangeModel
+/**
  * Model MonitorEdgeProfile
  * 
  */

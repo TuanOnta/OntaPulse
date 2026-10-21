@@ -252,6 +252,8 @@ export type MonitorWhereInput = {
   scans?: Prisma.ScanListRelationFilter
   checkSettings?: Prisma.XOR<Prisma.MonitorCheckSettingsNullableScalarRelationFilter, Prisma.MonitorCheckSettingsWhereInput> | null
   edgeProfile?: Prisma.XOR<Prisma.MonitorEdgeProfileNullableScalarRelationFilter, Prisma.MonitorEdgeProfileWhereInput> | null
+  dnsBaseline?: Prisma.XOR<Prisma.DnsBaselineNullableScalarRelationFilter, Prisma.DnsBaselineWhereInput> | null
+  dnsChanges?: Prisma.DnsChangeListRelationFilter
 }
 
 export type MonitorOrderByWithRelationInput = {
@@ -268,6 +270,8 @@ export type MonitorOrderByWithRelationInput = {
   scans?: Prisma.ScanOrderByRelationAggregateInput
   checkSettings?: Prisma.MonitorCheckSettingsOrderByWithRelationInput
   edgeProfile?: Prisma.MonitorEdgeProfileOrderByWithRelationInput
+  dnsBaseline?: Prisma.DnsBaselineOrderByWithRelationInput
+  dnsChanges?: Prisma.DnsChangeOrderByRelationAggregateInput
 }
 
 export type MonitorWhereUniqueInput = Prisma.AtLeast<{
@@ -288,6 +292,8 @@ export type MonitorWhereUniqueInput = Prisma.AtLeast<{
   scans?: Prisma.ScanListRelationFilter
   checkSettings?: Prisma.XOR<Prisma.MonitorCheckSettingsNullableScalarRelationFilter, Prisma.MonitorCheckSettingsWhereInput> | null
   edgeProfile?: Prisma.XOR<Prisma.MonitorEdgeProfileNullableScalarRelationFilter, Prisma.MonitorEdgeProfileWhereInput> | null
+  dnsBaseline?: Prisma.XOR<Prisma.DnsBaselineNullableScalarRelationFilter, Prisma.DnsBaselineWhereInput> | null
+  dnsChanges?: Prisma.DnsChangeListRelationFilter
 }, "id" | "projectId_targetUrl">
 
 export type MonitorOrderByWithAggregationInput = {
@@ -335,6 +341,8 @@ export type MonitorCreateInput = {
   scans?: Prisma.ScanCreateNestedManyWithoutMonitorInput
   checkSettings?: Prisma.MonitorCheckSettingsCreateNestedOneWithoutMonitorInput
   edgeProfile?: Prisma.MonitorEdgeProfileCreateNestedOneWithoutMonitorInput
+  dnsBaseline?: Prisma.DnsBaselineCreateNestedOneWithoutMonitorInput
+  dnsChanges?: Prisma.DnsChangeCreateNestedManyWithoutMonitorInput
 }
 
 export type MonitorUncheckedCreateInput = {
@@ -350,6 +358,8 @@ export type MonitorUncheckedCreateInput = {
   scans?: Prisma.ScanUncheckedCreateNestedManyWithoutMonitorInput
   checkSettings?: Prisma.MonitorCheckSettingsUncheckedCreateNestedOneWithoutMonitorInput
   edgeProfile?: Prisma.MonitorEdgeProfileUncheckedCreateNestedOneWithoutMonitorInput
+  dnsBaseline?: Prisma.DnsBaselineUncheckedCreateNestedOneWithoutMonitorInput
+  dnsChanges?: Prisma.DnsChangeUncheckedCreateNestedManyWithoutMonitorInput
 }
 
 export type MonitorUpdateInput = {
@@ -365,6 +375,8 @@ export type MonitorUpdateInput = {
   scans?: Prisma.ScanUpdateManyWithoutMonitorNestedInput
   checkSettings?: Prisma.MonitorCheckSettingsUpdateOneWithoutMonitorNestedInput
   edgeProfile?: Prisma.MonitorEdgeProfileUpdateOneWithoutMonitorNestedInput
+  dnsBaseline?: Prisma.DnsBaselineUpdateOneWithoutMonitorNestedInput
+  dnsChanges?: Prisma.DnsChangeUpdateManyWithoutMonitorNestedInput
 }
 
 export type MonitorUncheckedUpdateInput = {
@@ -380,6 +392,8 @@ export type MonitorUncheckedUpdateInput = {
   scans?: Prisma.ScanUncheckedUpdateManyWithoutMonitorNestedInput
   checkSettings?: Prisma.MonitorCheckSettingsUncheckedUpdateOneWithoutMonitorNestedInput
   edgeProfile?: Prisma.MonitorEdgeProfileUncheckedUpdateOneWithoutMonitorNestedInput
+  dnsBaseline?: Prisma.DnsBaselineUncheckedUpdateOneWithoutMonitorNestedInput
+  dnsChanges?: Prisma.DnsChangeUncheckedUpdateManyWithoutMonitorNestedInput
 }
 
 export type MonitorCreateManyInput = {
@@ -563,6 +577,34 @@ export type MonitorUpdateOneRequiredWithoutScansNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.MonitorUpdateToOneWithWhereWithoutScansInput, Prisma.MonitorUpdateWithoutScansInput>, Prisma.MonitorUncheckedUpdateWithoutScansInput>
 }
 
+export type MonitorCreateNestedOneWithoutDnsBaselineInput = {
+  create?: Prisma.XOR<Prisma.MonitorCreateWithoutDnsBaselineInput, Prisma.MonitorUncheckedCreateWithoutDnsBaselineInput>
+  connectOrCreate?: Prisma.MonitorCreateOrConnectWithoutDnsBaselineInput
+  connect?: Prisma.MonitorWhereUniqueInput
+}
+
+export type MonitorUpdateOneRequiredWithoutDnsBaselineNestedInput = {
+  create?: Prisma.XOR<Prisma.MonitorCreateWithoutDnsBaselineInput, Prisma.MonitorUncheckedCreateWithoutDnsBaselineInput>
+  connectOrCreate?: Prisma.MonitorCreateOrConnectWithoutDnsBaselineInput
+  upsert?: Prisma.MonitorUpsertWithoutDnsBaselineInput
+  connect?: Prisma.MonitorWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.MonitorUpdateToOneWithWhereWithoutDnsBaselineInput, Prisma.MonitorUpdateWithoutDnsBaselineInput>, Prisma.MonitorUncheckedUpdateWithoutDnsBaselineInput>
+}
+
+export type MonitorCreateNestedOneWithoutDnsChangesInput = {
+  create?: Prisma.XOR<Prisma.MonitorCreateWithoutDnsChangesInput, Prisma.MonitorUncheckedCreateWithoutDnsChangesInput>
+  connectOrCreate?: Prisma.MonitorCreateOrConnectWithoutDnsChangesInput
+  connect?: Prisma.MonitorWhereUniqueInput
+}
+
+export type MonitorUpdateOneRequiredWithoutDnsChangesNestedInput = {
+  create?: Prisma.XOR<Prisma.MonitorCreateWithoutDnsChangesInput, Prisma.MonitorUncheckedCreateWithoutDnsChangesInput>
+  connectOrCreate?: Prisma.MonitorCreateOrConnectWithoutDnsChangesInput
+  upsert?: Prisma.MonitorUpsertWithoutDnsChangesInput
+  connect?: Prisma.MonitorWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.MonitorUpdateToOneWithWhereWithoutDnsChangesInput, Prisma.MonitorUpdateWithoutDnsChangesInput>, Prisma.MonitorUncheckedUpdateWithoutDnsChangesInput>
+}
+
 export type MonitorCreateNestedOneWithoutEdgeProfileInput = {
   create?: Prisma.XOR<Prisma.MonitorCreateWithoutEdgeProfileInput, Prisma.MonitorUncheckedCreateWithoutEdgeProfileInput>
   connectOrCreate?: Prisma.MonitorCreateOrConnectWithoutEdgeProfileInput
@@ -589,6 +631,8 @@ export type MonitorCreateWithoutProjectInput = {
   scans?: Prisma.ScanCreateNestedManyWithoutMonitorInput
   checkSettings?: Prisma.MonitorCheckSettingsCreateNestedOneWithoutMonitorInput
   edgeProfile?: Prisma.MonitorEdgeProfileCreateNestedOneWithoutMonitorInput
+  dnsBaseline?: Prisma.DnsBaselineCreateNestedOneWithoutMonitorInput
+  dnsChanges?: Prisma.DnsChangeCreateNestedManyWithoutMonitorInput
 }
 
 export type MonitorUncheckedCreateWithoutProjectInput = {
@@ -603,6 +647,8 @@ export type MonitorUncheckedCreateWithoutProjectInput = {
   scans?: Prisma.ScanUncheckedCreateNestedManyWithoutMonitorInput
   checkSettings?: Prisma.MonitorCheckSettingsUncheckedCreateNestedOneWithoutMonitorInput
   edgeProfile?: Prisma.MonitorEdgeProfileUncheckedCreateNestedOneWithoutMonitorInput
+  dnsBaseline?: Prisma.DnsBaselineUncheckedCreateNestedOneWithoutMonitorInput
+  dnsChanges?: Prisma.DnsChangeUncheckedCreateNestedManyWithoutMonitorInput
 }
 
 export type MonitorCreateOrConnectWithoutProjectInput = {
@@ -658,6 +704,8 @@ export type MonitorCreateWithoutCheckSettingsInput = {
   project: Prisma.ProjectCreateNestedOneWithoutMonitorsInput
   scans?: Prisma.ScanCreateNestedManyWithoutMonitorInput
   edgeProfile?: Prisma.MonitorEdgeProfileCreateNestedOneWithoutMonitorInput
+  dnsBaseline?: Prisma.DnsBaselineCreateNestedOneWithoutMonitorInput
+  dnsChanges?: Prisma.DnsChangeCreateNestedManyWithoutMonitorInput
 }
 
 export type MonitorUncheckedCreateWithoutCheckSettingsInput = {
@@ -672,6 +720,8 @@ export type MonitorUncheckedCreateWithoutCheckSettingsInput = {
   updatedAt?: Date | string
   scans?: Prisma.ScanUncheckedCreateNestedManyWithoutMonitorInput
   edgeProfile?: Prisma.MonitorEdgeProfileUncheckedCreateNestedOneWithoutMonitorInput
+  dnsBaseline?: Prisma.DnsBaselineUncheckedCreateNestedOneWithoutMonitorInput
+  dnsChanges?: Prisma.DnsChangeUncheckedCreateNestedManyWithoutMonitorInput
 }
 
 export type MonitorCreateOrConnectWithoutCheckSettingsInput = {
@@ -702,6 +752,8 @@ export type MonitorUpdateWithoutCheckSettingsInput = {
   project?: Prisma.ProjectUpdateOneRequiredWithoutMonitorsNestedInput
   scans?: Prisma.ScanUpdateManyWithoutMonitorNestedInput
   edgeProfile?: Prisma.MonitorEdgeProfileUpdateOneWithoutMonitorNestedInput
+  dnsBaseline?: Prisma.DnsBaselineUpdateOneWithoutMonitorNestedInput
+  dnsChanges?: Prisma.DnsChangeUpdateManyWithoutMonitorNestedInput
 }
 
 export type MonitorUncheckedUpdateWithoutCheckSettingsInput = {
@@ -716,6 +768,8 @@ export type MonitorUncheckedUpdateWithoutCheckSettingsInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   scans?: Prisma.ScanUncheckedUpdateManyWithoutMonitorNestedInput
   edgeProfile?: Prisma.MonitorEdgeProfileUncheckedUpdateOneWithoutMonitorNestedInput
+  dnsBaseline?: Prisma.DnsBaselineUncheckedUpdateOneWithoutMonitorNestedInput
+  dnsChanges?: Prisma.DnsChangeUncheckedUpdateManyWithoutMonitorNestedInput
 }
 
 export type MonitorCreateWithoutScansInput = {
@@ -730,6 +784,8 @@ export type MonitorCreateWithoutScansInput = {
   project: Prisma.ProjectCreateNestedOneWithoutMonitorsInput
   checkSettings?: Prisma.MonitorCheckSettingsCreateNestedOneWithoutMonitorInput
   edgeProfile?: Prisma.MonitorEdgeProfileCreateNestedOneWithoutMonitorInput
+  dnsBaseline?: Prisma.DnsBaselineCreateNestedOneWithoutMonitorInput
+  dnsChanges?: Prisma.DnsChangeCreateNestedManyWithoutMonitorInput
 }
 
 export type MonitorUncheckedCreateWithoutScansInput = {
@@ -744,6 +800,8 @@ export type MonitorUncheckedCreateWithoutScansInput = {
   updatedAt?: Date | string
   checkSettings?: Prisma.MonitorCheckSettingsUncheckedCreateNestedOneWithoutMonitorInput
   edgeProfile?: Prisma.MonitorEdgeProfileUncheckedCreateNestedOneWithoutMonitorInput
+  dnsBaseline?: Prisma.DnsBaselineUncheckedCreateNestedOneWithoutMonitorInput
+  dnsChanges?: Prisma.DnsChangeUncheckedCreateNestedManyWithoutMonitorInput
 }
 
 export type MonitorCreateOrConnectWithoutScansInput = {
@@ -774,6 +832,8 @@ export type MonitorUpdateWithoutScansInput = {
   project?: Prisma.ProjectUpdateOneRequiredWithoutMonitorsNestedInput
   checkSettings?: Prisma.MonitorCheckSettingsUpdateOneWithoutMonitorNestedInput
   edgeProfile?: Prisma.MonitorEdgeProfileUpdateOneWithoutMonitorNestedInput
+  dnsBaseline?: Prisma.DnsBaselineUpdateOneWithoutMonitorNestedInput
+  dnsChanges?: Prisma.DnsChangeUpdateManyWithoutMonitorNestedInput
 }
 
 export type MonitorUncheckedUpdateWithoutScansInput = {
@@ -788,6 +848,168 @@ export type MonitorUncheckedUpdateWithoutScansInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   checkSettings?: Prisma.MonitorCheckSettingsUncheckedUpdateOneWithoutMonitorNestedInput
   edgeProfile?: Prisma.MonitorEdgeProfileUncheckedUpdateOneWithoutMonitorNestedInput
+  dnsBaseline?: Prisma.DnsBaselineUncheckedUpdateOneWithoutMonitorNestedInput
+  dnsChanges?: Prisma.DnsChangeUncheckedUpdateManyWithoutMonitorNestedInput
+}
+
+export type MonitorCreateWithoutDnsBaselineInput = {
+  id?: string
+  name: string
+  targetUrl: string
+  intervalSeconds?: number
+  isActive?: boolean
+  nextScheduledAt?: Date | string
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  project: Prisma.ProjectCreateNestedOneWithoutMonitorsInput
+  scans?: Prisma.ScanCreateNestedManyWithoutMonitorInput
+  checkSettings?: Prisma.MonitorCheckSettingsCreateNestedOneWithoutMonitorInput
+  edgeProfile?: Prisma.MonitorEdgeProfileCreateNestedOneWithoutMonitorInput
+  dnsChanges?: Prisma.DnsChangeCreateNestedManyWithoutMonitorInput
+}
+
+export type MonitorUncheckedCreateWithoutDnsBaselineInput = {
+  id?: string
+  projectId: string
+  name: string
+  targetUrl: string
+  intervalSeconds?: number
+  isActive?: boolean
+  nextScheduledAt?: Date | string
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  scans?: Prisma.ScanUncheckedCreateNestedManyWithoutMonitorInput
+  checkSettings?: Prisma.MonitorCheckSettingsUncheckedCreateNestedOneWithoutMonitorInput
+  edgeProfile?: Prisma.MonitorEdgeProfileUncheckedCreateNestedOneWithoutMonitorInput
+  dnsChanges?: Prisma.DnsChangeUncheckedCreateNestedManyWithoutMonitorInput
+}
+
+export type MonitorCreateOrConnectWithoutDnsBaselineInput = {
+  where: Prisma.MonitorWhereUniqueInput
+  create: Prisma.XOR<Prisma.MonitorCreateWithoutDnsBaselineInput, Prisma.MonitorUncheckedCreateWithoutDnsBaselineInput>
+}
+
+export type MonitorUpsertWithoutDnsBaselineInput = {
+  update: Prisma.XOR<Prisma.MonitorUpdateWithoutDnsBaselineInput, Prisma.MonitorUncheckedUpdateWithoutDnsBaselineInput>
+  create: Prisma.XOR<Prisma.MonitorCreateWithoutDnsBaselineInput, Prisma.MonitorUncheckedCreateWithoutDnsBaselineInput>
+  where?: Prisma.MonitorWhereInput
+}
+
+export type MonitorUpdateToOneWithWhereWithoutDnsBaselineInput = {
+  where?: Prisma.MonitorWhereInput
+  data: Prisma.XOR<Prisma.MonitorUpdateWithoutDnsBaselineInput, Prisma.MonitorUncheckedUpdateWithoutDnsBaselineInput>
+}
+
+export type MonitorUpdateWithoutDnsBaselineInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  targetUrl?: Prisma.StringFieldUpdateOperationsInput | string
+  intervalSeconds?: Prisma.IntFieldUpdateOperationsInput | number
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  nextScheduledAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  project?: Prisma.ProjectUpdateOneRequiredWithoutMonitorsNestedInput
+  scans?: Prisma.ScanUpdateManyWithoutMonitorNestedInput
+  checkSettings?: Prisma.MonitorCheckSettingsUpdateOneWithoutMonitorNestedInput
+  edgeProfile?: Prisma.MonitorEdgeProfileUpdateOneWithoutMonitorNestedInput
+  dnsChanges?: Prisma.DnsChangeUpdateManyWithoutMonitorNestedInput
+}
+
+export type MonitorUncheckedUpdateWithoutDnsBaselineInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  projectId?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  targetUrl?: Prisma.StringFieldUpdateOperationsInput | string
+  intervalSeconds?: Prisma.IntFieldUpdateOperationsInput | number
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  nextScheduledAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  scans?: Prisma.ScanUncheckedUpdateManyWithoutMonitorNestedInput
+  checkSettings?: Prisma.MonitorCheckSettingsUncheckedUpdateOneWithoutMonitorNestedInput
+  edgeProfile?: Prisma.MonitorEdgeProfileUncheckedUpdateOneWithoutMonitorNestedInput
+  dnsChanges?: Prisma.DnsChangeUncheckedUpdateManyWithoutMonitorNestedInput
+}
+
+export type MonitorCreateWithoutDnsChangesInput = {
+  id?: string
+  name: string
+  targetUrl: string
+  intervalSeconds?: number
+  isActive?: boolean
+  nextScheduledAt?: Date | string
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  project: Prisma.ProjectCreateNestedOneWithoutMonitorsInput
+  scans?: Prisma.ScanCreateNestedManyWithoutMonitorInput
+  checkSettings?: Prisma.MonitorCheckSettingsCreateNestedOneWithoutMonitorInput
+  edgeProfile?: Prisma.MonitorEdgeProfileCreateNestedOneWithoutMonitorInput
+  dnsBaseline?: Prisma.DnsBaselineCreateNestedOneWithoutMonitorInput
+}
+
+export type MonitorUncheckedCreateWithoutDnsChangesInput = {
+  id?: string
+  projectId: string
+  name: string
+  targetUrl: string
+  intervalSeconds?: number
+  isActive?: boolean
+  nextScheduledAt?: Date | string
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  scans?: Prisma.ScanUncheckedCreateNestedManyWithoutMonitorInput
+  checkSettings?: Prisma.MonitorCheckSettingsUncheckedCreateNestedOneWithoutMonitorInput
+  edgeProfile?: Prisma.MonitorEdgeProfileUncheckedCreateNestedOneWithoutMonitorInput
+  dnsBaseline?: Prisma.DnsBaselineUncheckedCreateNestedOneWithoutMonitorInput
+}
+
+export type MonitorCreateOrConnectWithoutDnsChangesInput = {
+  where: Prisma.MonitorWhereUniqueInput
+  create: Prisma.XOR<Prisma.MonitorCreateWithoutDnsChangesInput, Prisma.MonitorUncheckedCreateWithoutDnsChangesInput>
+}
+
+export type MonitorUpsertWithoutDnsChangesInput = {
+  update: Prisma.XOR<Prisma.MonitorUpdateWithoutDnsChangesInput, Prisma.MonitorUncheckedUpdateWithoutDnsChangesInput>
+  create: Prisma.XOR<Prisma.MonitorCreateWithoutDnsChangesInput, Prisma.MonitorUncheckedCreateWithoutDnsChangesInput>
+  where?: Prisma.MonitorWhereInput
+}
+
+export type MonitorUpdateToOneWithWhereWithoutDnsChangesInput = {
+  where?: Prisma.MonitorWhereInput
+  data: Prisma.XOR<Prisma.MonitorUpdateWithoutDnsChangesInput, Prisma.MonitorUncheckedUpdateWithoutDnsChangesInput>
+}
+
+export type MonitorUpdateWithoutDnsChangesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  targetUrl?: Prisma.StringFieldUpdateOperationsInput | string
+  intervalSeconds?: Prisma.IntFieldUpdateOperationsInput | number
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  nextScheduledAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  project?: Prisma.ProjectUpdateOneRequiredWithoutMonitorsNestedInput
+  scans?: Prisma.ScanUpdateManyWithoutMonitorNestedInput
+  checkSettings?: Prisma.MonitorCheckSettingsUpdateOneWithoutMonitorNestedInput
+  edgeProfile?: Prisma.MonitorEdgeProfileUpdateOneWithoutMonitorNestedInput
+  dnsBaseline?: Prisma.DnsBaselineUpdateOneWithoutMonitorNestedInput
+}
+
+export type MonitorUncheckedUpdateWithoutDnsChangesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  projectId?: Prisma.StringFieldUpdateOperationsInput | string
+  name?: Prisma.StringFieldUpdateOperationsInput | string
+  targetUrl?: Prisma.StringFieldUpdateOperationsInput | string
+  intervalSeconds?: Prisma.IntFieldUpdateOperationsInput | number
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  nextScheduledAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  scans?: Prisma.ScanUncheckedUpdateManyWithoutMonitorNestedInput
+  checkSettings?: Prisma.MonitorCheckSettingsUncheckedUpdateOneWithoutMonitorNestedInput
+  edgeProfile?: Prisma.MonitorEdgeProfileUncheckedUpdateOneWithoutMonitorNestedInput
+  dnsBaseline?: Prisma.DnsBaselineUncheckedUpdateOneWithoutMonitorNestedInput
 }
 
 export type MonitorCreateWithoutEdgeProfileInput = {
@@ -802,6 +1024,8 @@ export type MonitorCreateWithoutEdgeProfileInput = {
   project: Prisma.ProjectCreateNestedOneWithoutMonitorsInput
   scans?: Prisma.ScanCreateNestedManyWithoutMonitorInput
   checkSettings?: Prisma.MonitorCheckSettingsCreateNestedOneWithoutMonitorInput
+  dnsBaseline?: Prisma.DnsBaselineCreateNestedOneWithoutMonitorInput
+  dnsChanges?: Prisma.DnsChangeCreateNestedManyWithoutMonitorInput
 }
 
 export type MonitorUncheckedCreateWithoutEdgeProfileInput = {
@@ -816,6 +1040,8 @@ export type MonitorUncheckedCreateWithoutEdgeProfileInput = {
   updatedAt?: Date | string
   scans?: Prisma.ScanUncheckedCreateNestedManyWithoutMonitorInput
   checkSettings?: Prisma.MonitorCheckSettingsUncheckedCreateNestedOneWithoutMonitorInput
+  dnsBaseline?: Prisma.DnsBaselineUncheckedCreateNestedOneWithoutMonitorInput
+  dnsChanges?: Prisma.DnsChangeUncheckedCreateNestedManyWithoutMonitorInput
 }
 
 export type MonitorCreateOrConnectWithoutEdgeProfileInput = {
@@ -846,6 +1072,8 @@ export type MonitorUpdateWithoutEdgeProfileInput = {
   project?: Prisma.ProjectUpdateOneRequiredWithoutMonitorsNestedInput
   scans?: Prisma.ScanUpdateManyWithoutMonitorNestedInput
   checkSettings?: Prisma.MonitorCheckSettingsUpdateOneWithoutMonitorNestedInput
+  dnsBaseline?: Prisma.DnsBaselineUpdateOneWithoutMonitorNestedInput
+  dnsChanges?: Prisma.DnsChangeUpdateManyWithoutMonitorNestedInput
 }
 
 export type MonitorUncheckedUpdateWithoutEdgeProfileInput = {
@@ -860,6 +1088,8 @@ export type MonitorUncheckedUpdateWithoutEdgeProfileInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   scans?: Prisma.ScanUncheckedUpdateManyWithoutMonitorNestedInput
   checkSettings?: Prisma.MonitorCheckSettingsUncheckedUpdateOneWithoutMonitorNestedInput
+  dnsBaseline?: Prisma.DnsBaselineUncheckedUpdateOneWithoutMonitorNestedInput
+  dnsChanges?: Prisma.DnsChangeUncheckedUpdateManyWithoutMonitorNestedInput
 }
 
 export type MonitorCreateManyProjectInput = {
@@ -885,6 +1115,8 @@ export type MonitorUpdateWithoutProjectInput = {
   scans?: Prisma.ScanUpdateManyWithoutMonitorNestedInput
   checkSettings?: Prisma.MonitorCheckSettingsUpdateOneWithoutMonitorNestedInput
   edgeProfile?: Prisma.MonitorEdgeProfileUpdateOneWithoutMonitorNestedInput
+  dnsBaseline?: Prisma.DnsBaselineUpdateOneWithoutMonitorNestedInput
+  dnsChanges?: Prisma.DnsChangeUpdateManyWithoutMonitorNestedInput
 }
 
 export type MonitorUncheckedUpdateWithoutProjectInput = {
@@ -899,6 +1131,8 @@ export type MonitorUncheckedUpdateWithoutProjectInput = {
   scans?: Prisma.ScanUncheckedUpdateManyWithoutMonitorNestedInput
   checkSettings?: Prisma.MonitorCheckSettingsUncheckedUpdateOneWithoutMonitorNestedInput
   edgeProfile?: Prisma.MonitorEdgeProfileUncheckedUpdateOneWithoutMonitorNestedInput
+  dnsBaseline?: Prisma.DnsBaselineUncheckedUpdateOneWithoutMonitorNestedInput
+  dnsChanges?: Prisma.DnsChangeUncheckedUpdateManyWithoutMonitorNestedInput
 }
 
 export type MonitorUncheckedUpdateManyWithoutProjectInput = {
@@ -919,10 +1153,12 @@ export type MonitorUncheckedUpdateManyWithoutProjectInput = {
 
 export type MonitorCountOutputType = {
   scans: number
+  dnsChanges: number
 }
 
 export type MonitorCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   scans?: boolean | MonitorCountOutputTypeCountScansArgs
+  dnsChanges?: boolean | MonitorCountOutputTypeCountDnsChangesArgs
 }
 
 /**
@@ -942,6 +1178,13 @@ export type MonitorCountOutputTypeCountScansArgs<ExtArgs extends runtime.Types.E
   where?: Prisma.ScanWhereInput
 }
 
+/**
+ * MonitorCountOutputType without action
+ */
+export type MonitorCountOutputTypeCountDnsChangesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.DnsChangeWhereInput
+}
+
 
 export type MonitorSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -957,6 +1200,8 @@ export type MonitorSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   scans?: boolean | Prisma.Monitor$scansArgs<ExtArgs>
   checkSettings?: boolean | Prisma.Monitor$checkSettingsArgs<ExtArgs>
   edgeProfile?: boolean | Prisma.Monitor$edgeProfileArgs<ExtArgs>
+  dnsBaseline?: boolean | Prisma.Monitor$dnsBaselineArgs<ExtArgs>
+  dnsChanges?: boolean | Prisma.Monitor$dnsChangesArgs<ExtArgs>
   _count?: boolean | Prisma.MonitorCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["monitor"]>
 
@@ -1004,6 +1249,8 @@ export type MonitorInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs
   scans?: boolean | Prisma.Monitor$scansArgs<ExtArgs>
   checkSettings?: boolean | Prisma.Monitor$checkSettingsArgs<ExtArgs>
   edgeProfile?: boolean | Prisma.Monitor$edgeProfileArgs<ExtArgs>
+  dnsBaseline?: boolean | Prisma.Monitor$dnsBaselineArgs<ExtArgs>
+  dnsChanges?: boolean | Prisma.Monitor$dnsChangesArgs<ExtArgs>
   _count?: boolean | Prisma.MonitorCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type MonitorIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1020,6 +1267,8 @@ export type $MonitorPayload<ExtArgs extends runtime.Types.Extensions.InternalArg
     scans: Prisma.$ScanPayload<ExtArgs>[]
     checkSettings: Prisma.$MonitorCheckSettingsPayload<ExtArgs> | null
     edgeProfile: Prisma.$MonitorEdgeProfilePayload<ExtArgs> | null
+    dnsBaseline: Prisma.$DnsBaselinePayload<ExtArgs> | null
+    dnsChanges: Prisma.$DnsChangePayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1429,6 +1678,8 @@ export interface Prisma__MonitorClient<T, Null = never, ExtArgs extends runtime.
   scans<T extends Prisma.Monitor$scansArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Monitor$scansArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ScanPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   checkSettings<T extends Prisma.Monitor$checkSettingsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Monitor$checkSettingsArgs<ExtArgs>>): Prisma.Prisma__MonitorCheckSettingsClient<runtime.Types.Result.GetResult<Prisma.$MonitorCheckSettingsPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   edgeProfile<T extends Prisma.Monitor$edgeProfileArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Monitor$edgeProfileArgs<ExtArgs>>): Prisma.Prisma__MonitorEdgeProfileClient<runtime.Types.Result.GetResult<Prisma.$MonitorEdgeProfilePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  dnsBaseline<T extends Prisma.Monitor$dnsBaselineArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Monitor$dnsBaselineArgs<ExtArgs>>): Prisma.Prisma__DnsBaselineClient<runtime.Types.Result.GetResult<Prisma.$DnsBaselinePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
+  dnsChanges<T extends Prisma.Monitor$dnsChangesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Monitor$dnsChangesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DnsChangePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1927,6 +2178,49 @@ export type Monitor$edgeProfileArgs<ExtArgs extends runtime.Types.Extensions.Int
    */
   include?: Prisma.MonitorEdgeProfileInclude<ExtArgs> | null
   where?: Prisma.MonitorEdgeProfileWhereInput
+}
+
+/**
+ * Monitor.dnsBaseline
+ */
+export type Monitor$dnsBaselineArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the DnsBaseline
+   */
+  select?: Prisma.DnsBaselineSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the DnsBaseline
+   */
+  omit?: Prisma.DnsBaselineOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.DnsBaselineInclude<ExtArgs> | null
+  where?: Prisma.DnsBaselineWhereInput
+}
+
+/**
+ * Monitor.dnsChanges
+ */
+export type Monitor$dnsChangesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the DnsChange
+   */
+  select?: Prisma.DnsChangeSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the DnsChange
+   */
+  omit?: Prisma.DnsChangeOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.DnsChangeInclude<ExtArgs> | null
+  where?: Prisma.DnsChangeWhereInput
+  orderBy?: Prisma.DnsChangeOrderByWithRelationInput | Prisma.DnsChangeOrderByWithRelationInput[]
+  cursor?: Prisma.DnsChangeWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.DnsChangeScalarFieldEnum | Prisma.DnsChangeScalarFieldEnum[]
 }
 
 /**

@@ -16,6 +16,7 @@ import type { SessionStore } from "./infrastructure/session/session-store.js";
 import { authRoutes } from "./modules/auth/auth.routes.js";
 import { projectRoutes } from "./modules/projects/project.routes.js";
 import { checkSettingsRoutes } from "./modules/check-settings/check-settings.routes.js";
+import { domainWatchRoutes } from "./modules/domain-watch/domain-watch.routes.js";
 import { edgeProfileRoutes } from "./modules/edge-profile/edge-profile.routes.js";
 import { monitorRoutes } from "./modules/monitors/monitor.routes.js";
 import { operationsRoutes } from "./modules/operations/operations.routes.js";
@@ -74,6 +75,7 @@ export function buildApp(options: BuildAppOptions = {}) {
   void app.register(monitorRoutes, { prefix: "/api" });
   void app.register(checkSettingsRoutes, { prefix: "/api" });
   void app.register(edgeProfileRoutes, { prefix: "/api" });
+  void app.register(domainWatchRoutes, { prefix: "/api" });
   void app.register(scanRoutes, { prefix: "/api" });
   void app.register(operationsRoutes, { prefix: "/api", queueOperations });
   void app.register(workspaceRoutes, { prefix: "/api" });

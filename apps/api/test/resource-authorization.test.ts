@@ -175,7 +175,7 @@ describe("resource authorization", () => {
     expect(scanQueue.jobs).toHaveLength(0);
   });
 
-  it("checks the role and workspace before the scan kind", async () => {
+  it("checks the role and workspace before the scan kind and the enabled check", async () => {
     const fixture = await createFixture();
     const scanCount = await prisma.scan.count();
     const url = `/api/monitors/${fixture.monitorId}/scans`;
@@ -201,8 +201,8 @@ describe("resource authorization", () => {
 
     expect(memberResponse.statusCode).toBe(403);
     expect(outsiderResponse.statusCode).toBe(404);
-    expect(adminResponse.statusCode).toBe(400);
-    expect(adminResponse.json()).toMatchObject({ code: "SCAN_KIND_NOT_AVAILABLE" });
+    expect(adminResponse.statusCode).toBe(409);
+    expect(adminResponse.json()).toMatchObject({ code: "SECURITY_CHECKS_DISABLED" });
     expect(await prisma.scan.count()).toBe(scanCount);
   });
 

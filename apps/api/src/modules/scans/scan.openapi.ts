@@ -267,8 +267,8 @@ export const triggerScanRouteSchema: FastifySchema = {
   description:
     "Creates a queued scan for the selected monitor. The optional body selects the scan kind " +
     "and defaults to HTTP_PROBE. Kinds without a worker implementation return 400 " +
-    "SCAN_KIND_NOT_AVAILABLE. SECURITY_POSTURE needs the check enabled on the monitor " +
-    "(409 SECURITY_CHECKS_DISABLED) and is rate limited (429 SCAN_RATE_LIMITED).",
+    "SCAN_KIND_NOT_AVAILABLE. SECURITY_POSTURE and DNS_WATCH need the check enabled on the monitor " +
+    "(409 SECURITY_CHECKS_DISABLED) and are rate limited (429 SCAN_RATE_LIMITED).",
 
   params: monitorIdParamsSchema,
 
@@ -318,6 +318,23 @@ export const findScanByIdRouteSchema: FastifySchema = {
   summary: "Get scan details",
 
   params: scanIdParamsSchema,
+
+  response: {
+    200: scanDetailsResponseSchema,
+    400: errorResponseSchema,
+    401: errorResponseSchema,
+    404: errorResponseSchema,
+  },
+};
+
+export const findLatestDnsWatchRouteSchema: FastifySchema = {
+  tags: ["Scans"],
+  summary: "Get the latest DNS watch scan of a monitor",
+  description:
+    "Returns the newest finished DNS_WATCH scan with its findings and sub-check results. " +
+    "Responds 404 NO_DNS_SCAN when the monitor has none.",
+
+  params: monitorIdParamsSchema,
 
   response: {
     200: scanDetailsResponseSchema,

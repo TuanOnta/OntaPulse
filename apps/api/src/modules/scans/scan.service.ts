@@ -44,8 +44,11 @@ export class ScanService {
         : monitor.checkSettings?.dnsWatchEnabled;
 
     if (!enabled) {
+      // The error code is shared by both kinds so existing clients keep working; the message says which.
       throw new AppError(
-        "Security checks are not enabled for this monitor",
+        kind === "DNS_WATCH"
+          ? "DNS watch is not enabled for this monitor"
+          : "Security checks are not enabled for this monitor",
         409,
         "SECURITY_CHECKS_DISABLED",
       );
@@ -93,6 +96,28 @@ export class ScanService {
     const { monitor: _monitor, ...authorizedScan } = scan;
 
     return authorizedScan;
+  }
+
+  async findLatestDnsWatch(monitorId: string, userId: string) {
+    const monitor = await this.scanRepository.findMonitorById(monitorId);
+
+    if (!monitor) {
+      throw new AppError("Monitor not found", 404, "MONITOR_NOT_FOUND");
+    }
+
+    await this.workspaceAccessService.requireMember(
+      monitor.project.workspaceId,
+      userId,
+      new AppError("Monitor not found", 404, "MONITOR_NOT_FOUND"),
+    );
+
+    const scan = await this.scanRepository.findLatestTerminalByKind(monitorId, "DNS_WATCH");
+
+    if (!scan) {
+      throw new AppError("No DNS watch scan found", 404, "NO_DNS_SCAN");
+    }
+
+    return scan;
   }
 
   async findLatestSecurityPosture(monitorId: string, userId: string) {
