@@ -2,6 +2,11 @@
 
 from sqlalchemy import Engine
 
+from ontapulse_worker.modules.dns_watch.adapters.dnspython_resolver import DnspythonResolver
+from ontapulse_worker.modules.dns_watch.adapters.sqlalchemy_dns_store import (
+    SqlAlchemyDnsWatchStore,
+)
+from ontapulse_worker.modules.dns_watch.application.dns_watch_scan import DnsWatchExecutor
 from ontapulse_worker.modules.scans.adapters import sqlalchemy_scan_repository
 from ontapulse_worker.modules.scans.adapters.http.http_scan_executor import (
     HttpScanExecutor,
@@ -56,6 +61,10 @@ class Container:
                 executors={
                     ScanKind.SECURITY_POSTURE: PostureScanExecutor(
                         self.posture_client, SslTlsInspector()
+                    ),
+                    ScanKind.DNS_WATCH: DnsWatchExecutor(
+                        DnspythonResolver(self._settings.dns_resolver_addresses),
+                        SqlAlchemyDnsWatchStore(sessions),
                     ),
                 },
             )

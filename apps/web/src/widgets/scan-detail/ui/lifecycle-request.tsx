@@ -1,4 +1,4 @@
-import { isSecurityScan, scanTimeline, type TimelineState } from "@/entities/scan";
+import { isDnsScan, isSecurityScan, scanTimeline, type TimelineState } from "@/entities/scan";
 import { copyToClipboard } from "@/shared/lib/copy-to-clipboard";
 import { formatClockSeconds, formatFull } from "@/shared/lib/format";
 import { riseStyle } from "@/shared/lib/rise";
@@ -137,9 +137,11 @@ export function LifecycleAndRequest({
           </dd>
           <dt className={DT}>Method</dt>
           <dd className={DD}>
-            {isSecurityScan(scan)
-              ? "2 GET requests and 1 TLS handshake, redirects are not followed"
-              : "GET, redirects are not followed"}
+            {isDnsScan(scan)
+              ? "DNS queries to public resolvers, the host itself is not contacted"
+              : isSecurityScan(scan)
+                ? "2 GET requests and 1 TLS handshake, redirects are not followed"
+                : "GET, redirects are not followed"}
           </dd>
           <dt className={DT}>Scan ID</dt>
           <dd className={cn(DD, "font-mono text-[14px]")}>

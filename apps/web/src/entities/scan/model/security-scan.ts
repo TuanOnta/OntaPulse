@@ -5,13 +5,32 @@ export function isSecurityScan(scan: Pick<Scan, "kind">): boolean {
   return scan.kind === "SECURITY_POSTURE";
 }
 
+/** True for the scans made by the DNS watch (the API calls the kind DNS_WATCH). */
+export function isDnsScan(scan: Pick<Scan, "kind">): boolean {
+  return scan.kind === "DNS_WATCH";
+}
+
+/** Security and DNS scans share the findings plus sub-checks shape and have no HTTP result of their own. */
+export function isCheckScan(scan: Pick<Scan, "kind">): boolean {
+  return isSecurityScan(scan) || isDnsScan(scan);
+}
+
+/** "Security" or "DNS": the name of the kind of check, for headings and tags. */
+export function checkKindName(scan: Pick<Scan, "kind">): "Security" | "DNS" {
+  return isDnsScan(scan) ? "DNS" : "Security";
+}
+
 const SUB_CHECK_LABELS: Record<string, string> = {
   headers: "Security headers",
   cookies: "Cookies",
   cors: "CORS",
   redirect: "HTTP to HTTPS redirect",
   tls: "TLS and certificate",
+  exposed_files: "Exposed files",
   edge: "Edge detection",
+  dns_records: "DNS records",
+  dangling_cname: "Dangling CNAME",
+  email_auth: "Email authentication",
 };
 
 const SKIP_REASONS: Record<string, string> = {

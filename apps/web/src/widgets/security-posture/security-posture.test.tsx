@@ -19,6 +19,7 @@ const mocks = vi.hoisted(() => ({
   checkSettings: vi.fn(),
   updateCheckSettings: vi.fn(),
   latestSecurityScan: vi.fn(),
+  latestDnsScan: vi.fn(),
   edgeProfile: vi.fn(),
   triggerSecurityScan: vi.fn(),
   toastSuccess: vi.fn(),
@@ -34,6 +35,7 @@ vi.mock("@/shared/api/client", async (importOriginal) => {
       checkSettings: mocks.checkSettings,
       updateCheckSettings: mocks.updateCheckSettings,
       latestSecurityScan: mocks.latestSecurityScan,
+      latestDnsScan: mocks.latestDnsScan,
       edgeProfile: mocks.edgeProfile,
       triggerSecurityScan: mocks.triggerSecurityScan,
     },
@@ -42,6 +44,9 @@ vi.mock("@/shared/api/client", async (importOriginal) => {
 vi.mock("sonner", () => ({
   toast: { success: mocks.toastSuccess, error: mocks.toastError },
 }));
+
+import { useMonitorChecks } from "@/features/security/model/use-monitor-checks";
+import { CheckPanel, CheckTabs } from "@/widgets/monitor-detail/ui/check-tabs";
 
 import { SecurityPosture } from "./security-posture";
 
@@ -131,21 +136,40 @@ function Where() {
   return <p data-testid="where">{useLocation().pathname}</p>;
 }
 
+const scanHref = (scanId: string) => `/workspaces/w1/projects/p1/monitors/m1/scans/${scanId}`;
+
+/** The section as the monitor screen draws it: inside the Checks strip, whose card owns switch and Run. */
+function Section({ role }: { role: WorkspaceRole }) {
+  const checks = useMonitorChecks("m1", scanHref);
+  return (
+    <CheckTabs
+      canManage={role !== "MEMBER"}
+      checks={checks}
+      host="api.example.com"
+      onRunScan={() => {}}
+      onTabChange={() => {}}
+      scans={[]}
+      scansBusy={false}
+      tab="security"
+    >
+      <CheckPanel value="security">
+        <SecurityPosture
+          checks={checks}
+          host="api.example.com"
+          monitor={monitor}
+          project={project}
+          workspace={workspace(role)}
+        />
+      </CheckPanel>
+    </CheckTabs>
+  );
+}
+
 function renderSection(role: WorkspaceRole = "OWNER") {
   return render(
     <MemoryRouter initialEntries={["/monitor"]}>
       <Routes>
-        <Route
-          element={
-            <SecurityPosture
-              host="api.example.com"
-              monitor={monitor}
-              project={project}
-              workspace={workspace(role)}
-            />
-          }
-          path="/monitor"
-        />
+        <Route element={<Section role={role} />} path="/monitor" />
         <Route element={<Where />} path="*" />
       </Routes>
     </MemoryRouter>,
@@ -156,6 +180,9 @@ beforeEach(() => {
   Object.values(mocks).forEach((mock) => mock.mockReset());
   mocks.checkSettings.mockResolvedValue(settings(true));
   mocks.latestSecurityScan.mockRejectedValue(noScan());
+  mocks.latestDnsScan.mockRejectedValue(
+    new ApiError({ statusCode: 404, code: "NO_DNS_SCAN", message: "No DNS watch scan found" }),
+  );
   mocks.edgeProfile.mockRejectedValue(noEdgeProfile());
 });
 
@@ -550,5 +577,134 @@ describe("Edge layers card", () => {
     await screen.findByText("No security scan yet. Run one to see what is observed on this host.");
     expect(mocks.edgeProfile).not.toHaveBeenCalled();
     expect(screen.queryByRole("heading", { name: "Edge layers" })).not.toBeInTheDocument();
+  });
+});
+
+describe("Exposed-file checks", () => {
+  const withProbes = (overrides: Partial<CheckSettings> = {}): CheckSettings => ({
+    ...settings(true),
+    ...overrides,
+  });
+
+  it("enables only through the confirmation, sending the acknowledgment with the switch", async () => {
+    const user = userEvent.setup();
+    mocks.updateCheckSettings.mockResolvedValue(
+      withProbes({ pathProbesEnabled: true, pathProbesAcknowledgedAt: "2026-10-20T10:00:00Z" }),
+    );
+    renderSection();
+
+    await user.click(await screen.findByRole("switch", { name: "Exposed-file checks" }));
+    const dialog = screen.getByRole("dialog", { name: "Check for exposed files?" });
+    expect(mocks.updateCheckSettings).not.toHaveBeenCalled();
+    expect(within(dialog).getByRole("button", { name: "Turn on" })).toBeDisabled();
+
+    await user.click(within(dialog).getByRole("checkbox"));
+    await user.click(within(dialog).getByRole("button", { name: "Turn on" }));
+
+    await waitFor(() =>
+      expect(mocks.updateCheckSettings).toHaveBeenCalledWith("m1", {
+        pathProbesEnabled: true,
+        pathProbesAcknowledged: true,
+      }),
+    );
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+    expect(screen.getByRole("switch", { name: "Exposed-file checks" })).toBeChecked();
+    expect(screen.getByTestId("path-probes-state")).toHaveTextContent(/^On\. Acknowledged /);
+  });
+
+  it("sends nothing when the confirmation is cancelled", async () => {
+    const user = userEvent.setup();
+    renderSection();
+
+    await user.click(await screen.findByRole("switch", { name: "Exposed-file checks" }));
+    await user.click(screen.getByRole("button", { name: "Cancel" }));
+
+    expect(mocks.updateCheckSettings).not.toHaveBeenCalled();
+    expect(screen.getByRole("switch", { name: "Exposed-file checks" })).not.toBeChecked();
+    expect(screen.getByTestId("path-probes-state")).toHaveTextContent("Off. Not requested.");
+  });
+
+  it("shows the API refusal inside the dialog and leaves the checks off", async () => {
+    const user = userEvent.setup();
+    mocks.updateCheckSettings.mockRejectedValue(
+      new ApiError({
+        statusCode: 403,
+        code: "INSUFFICIENT_WORKSPACE_ROLE",
+        message: "Insufficient workspace role",
+        requestId: "req-p",
+      }),
+    );
+    renderSection("ADMIN");
+
+    await user.click(await screen.findByRole("switch", { name: "Exposed-file checks" }));
+    await user.click(screen.getByRole("checkbox"));
+    await user.click(screen.getByRole("button", { name: "Turn on" }));
+
+    expect(await screen.findByText("Insufficient workspace role")).toBeVisible();
+    expect(screen.getByText("Request ID: req-p")).toBeVisible();
+    expect(screen.getByRole("dialog")).toBeVisible();
+    expect(screen.getByTestId("path-probes-state")).toHaveTextContent("Off. Not requested.");
+  });
+
+  it("turns off without a dialog and sends only the switch", async () => {
+    const user = userEvent.setup();
+    mocks.checkSettings.mockResolvedValue(
+      withProbes({ pathProbesEnabled: true, pathProbesAcknowledgedAt: "2026-10-20T10:00:00Z" }),
+    );
+    mocks.updateCheckSettings.mockResolvedValue(withProbes());
+    renderSection();
+
+    await user.click(await screen.findByRole("switch", { name: "Exposed-file checks" }));
+
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(mocks.updateCheckSettings).toHaveBeenCalledWith("m1", { pathProbesEnabled: false });
+    await waitFor(() =>
+      expect(screen.getByTestId("path-probes-state")).toHaveTextContent("Off. Not requested."),
+    );
+  });
+
+  it("rolls the switch back and says why when turning off is refused", async () => {
+    const user = userEvent.setup();
+    mocks.checkSettings.mockResolvedValue(
+      withProbes({ pathProbesEnabled: true, pathProbesAcknowledgedAt: "2026-10-20T10:00:00Z" }),
+    );
+    mocks.updateCheckSettings.mockRejectedValue(
+      new ApiError({ statusCode: 500, code: "BOOM", message: "Down" }),
+    );
+    renderSection();
+
+    await user.click(await screen.findByRole("switch", { name: "Exposed-file checks" }));
+
+    await waitFor(() => expect(mocks.toastError).toHaveBeenCalledWith("Down"));
+    expect(screen.getByRole("switch", { name: "Exposed-file checks" })).toBeChecked();
+    expect(screen.getByTestId("path-probes-state")).toHaveTextContent(/^On\. Acknowledged /);
+  });
+
+  it("gives a member the state as text, with no switch and no dialog", async () => {
+    mocks.checkSettings.mockResolvedValue(
+      withProbes({ pathProbesEnabled: true, pathProbesAcknowledgedAt: "2026-10-20T10:00:00Z" }),
+    );
+    renderSection("MEMBER");
+
+    expect(await screen.findByTestId("path-probes-state")).toHaveTextContent(/^On\. Acknowledged /);
+    expect(screen.queryByRole("switch", { name: "Exposed-file checks" })).not.toBeInTheDocument();
+  });
+
+  it("stays visible when the security checks are off and says nothing runs yet", async () => {
+    mocks.checkSettings.mockResolvedValue(withProbes({ securityPostureEnabled: false }));
+    renderSection();
+
+    expect(await screen.findByRole("heading", { name: "Exposed-file checks" })).toBeVisible();
+    expect(screen.getByText(/Security checks are off, so nothing runs yet\./)).toBeVisible();
+  });
+
+  it("does not show the panel while the settings failed to load", async () => {
+    mocks.checkSettings.mockRejectedValueOnce(
+      new ApiError({ statusCode: 500, code: "BOOM", message: "Down" }),
+    );
+    renderSection();
+
+    await screen.findByText("Couldn’t load the security settings.");
+    expect(screen.queryByRole("heading", { name: "Exposed-file checks" })).not.toBeInTheDocument();
   });
 });

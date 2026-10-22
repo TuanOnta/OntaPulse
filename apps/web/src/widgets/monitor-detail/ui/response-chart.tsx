@@ -33,7 +33,7 @@ export function ResponseChart({ scans, freshId }: { scans: Scan[]; freshId: stri
   return (
     <section
       aria-labelledby="response-chart-title"
-      className="mt-[26px] animate-dash-rise rounded-[22px] border border-landing-border bg-landing-surface/[.72] p-[22px] max-[520px]:p-4 motion-reduce:animate-none"
+      className="mb-[26px] animate-dash-rise rounded-[22px] border border-landing-border bg-landing-surface/[.72] p-[22px] max-[520px]:p-4 motion-reduce:animate-none"
       style={riseStyle(3)}
     >
       <div className="mb-[18px] flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2">

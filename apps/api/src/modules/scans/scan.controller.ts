@@ -87,6 +87,24 @@ export class ScanController {
     return reply.send(scans);
   };
 
+  findLatestDnsWatch = async (request: FastifyRequest, reply: FastifyReply) => {
+    const userId = getAuthenticatedUserId(request);
+    const parsedParams = monitorIdParamsSchema.safeParse(request.params);
+
+    if (!parsedParams.success) {
+      throw new AppError(
+        "Request validation failed",
+        400,
+        "VALIDATION_ERROR",
+        parsedParams.error.flatten().fieldErrors,
+      );
+    }
+
+    const scan = await this.scanService.findLatestDnsWatch(parsedParams.data.monitorId, userId);
+
+    return reply.send(scan);
+  };
+
   findLatestSecurityPosture = async (request: FastifyRequest, reply: FastifyReply) => {
     const userId = getAuthenticatedUserId(request);
     const parsedParams = monitorIdParamsSchema.safeParse(request.params);

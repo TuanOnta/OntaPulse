@@ -9,6 +9,7 @@ from uuid import UUID, uuid4
 from sqlalchemy import text
 from sqlalchemy.orm import Session, sessionmaker
 
+from ontapulse_worker.modules.dns_watch.domain.snapshot import MAX_SNAPSHOT_BYTES
 from ontapulse_worker.modules.edge_detection.domain.fingerprints import MAX_EDGE_PROFILE_BYTES
 from ontapulse_worker.modules.scans.domain.errors import (
     PermanentScanJobError,
@@ -17,6 +18,7 @@ from ontapulse_worker.modules.scans.domain.errors import (
 )
 from ontapulse_worker.modules.scans.domain.models import (
     ClaimedScan,
+    DnsOutcome,
     EdgeProfile,
     ScanFinding,
     ScanJob,
@@ -115,6 +117,69 @@ UPSERT_EDGE_PROFILE = text(
     WHERE "MonitorEdgeProfile"."observedAt" <= EXCLUDED."observedAt"
     """
 )
+# One current baseline per monitor; an older scan never overwrites a newer snapshot. The monitor
+# id comes
+# from the scan row. A history row exists only for a scan that changed something; the latest 50
+# are kept.
+MAX_DNS_CHANGE_HISTORY = 50
+MAX_DNS_CHANGES_PER_ENTRY = 12
+MAX_DNS_CHANGE_VALUES = 20
+MAX_DNS_CHANGE_VALUE_CHARS = 255
+UPSERT_DNS_BASELINE = text(
+    """
+    INSERT INTO "DnsBaseline" (
+        id,
+        "monitorId",
+        "scanId",
+        host,
+        "organizationDomain",
+        snapshot,
+        "observedAt",
+        "createdAt",
+        "updatedAt"
+    )
+    SELECT
+        :id,
+        scan."monitorId",
+        scan.id,
+        :host,
+        :organization_domain,
+        CAST(:snapshot AS JSONB),
+        :observed_at,
+        :observed_at,
+        :observed_at
+    FROM "Scan" AS scan
+    WHERE scan.id = :scan_id
+    ON CONFLICT ("monitorId") DO UPDATE
+    SET "scanId" = EXCLUDED."scanId",
+        host = EXCLUDED.host,
+        "organizationDomain" = EXCLUDED."organizationDomain",
+        snapshot = EXCLUDED.snapshot,
+        "observedAt" = EXCLUDED."observedAt",
+        "updatedAt" = EXCLUDED."updatedAt"
+    WHERE "DnsBaseline"."observedAt" <= EXCLUDED."observedAt"
+    """
+)
+INSERT_DNS_CHANGE = text(
+    """
+    INSERT INTO "DnsChange" (id, "monitorId", "scanId", "observedAt", changes, "createdAt")
+    SELECT :id, scan."monitorId", scan.id, :observed_at, CAST(:changes AS JSONB), :observed_at
+    FROM "Scan" AS scan
+    WHERE scan.id = :scan_id
+    """
+)
+PRUNE_DNS_CHANGES = text(
+    """
+    DELETE FROM "DnsChange"
+    WHERE "monitorId" = (SELECT "monitorId" FROM "Scan" WHERE id = :scan_id)
+      AND id NOT IN (
+          SELECT id FROM "DnsChange"
+          WHERE "monitorId" = (SELECT "monitorId" FROM "Scan" WHERE id = :scan_id)
+          ORDER BY "observedAt" DESC, "createdAt" DESC
+          LIMIT :keep
+      )
+    """
+)
 INSERT_SCAN_FINDING = text(
     """
     INSERT INTO "ScanFinding" (
@@ -202,6 +267,7 @@ class SqlAlchemyScanRepository:
                 target_url=str(row["targetUrl"]),
                 kind=str(row.get("kind") or ScanKind.HTTP_PROBE.value),
                 path_probes_enabled=bool(row.get("pathProbesEnabled")),
+                monitor_id=job.monitor_id,
             )
 
     def succeed(self, scan_id: UUID, result: ScanResult) -> None:
@@ -242,6 +308,9 @@ class SqlAlchemyScanRepository:
                     UPSERT_EDGE_PROFILE,
                     self._edge_profile_params(scan_id, result.edge_profile, finished_at),
                 )
+
+            if result.dns_outcome is not None:
+                self._write_dns_outcome(session, scan_id, result.dns_outcome, finished_at)
 
             if result.findings:
                 session.execute(
@@ -296,6 +365,64 @@ class SqlAlchemyScanRepository:
             "evidence": evidence,
             "created_at": created_at,
         }
+
+    @staticmethod
+    def _write_dns_outcome(
+        session: Session,
+        scan_id: UUID,
+        outcome: DnsOutcome,
+        observed_at: datetime,
+    ) -> None:
+        """Baseline, history row, and pruning: in the transaction of the terminal status."""
+        snapshot = json.dumps(outcome.snapshot)
+
+        if len(snapshot.encode()) > MAX_SNAPSHOT_BYTES:
+            # The domain bounds the document; a larger one is a bug and must not be stored.
+            raise ValueError("DNS snapshot exceeds its bound")
+
+        session.execute(
+            UPSERT_DNS_BASELINE,
+            {
+                "id": uuid4(),
+                "scan_id": scan_id,
+                "host": outcome.host,
+                "organization_domain": outcome.organization_domain,
+                "snapshot": snapshot,
+                "observed_at": observed_at,
+            },
+        )
+
+        if not outcome.changes:
+            return
+
+        session.execute(
+            INSERT_DNS_CHANGE,
+            {
+                "id": uuid4(),
+                "scan_id": scan_id,
+                "observed_at": observed_at,
+                "changes": SqlAlchemyScanRepository._serialize_dns_changes(outcome),
+            },
+        )
+        session.execute(PRUNE_DNS_CHANGES, {"scan_id": scan_id, "keep": MAX_DNS_CHANGE_HISTORY})
+
+    @staticmethod
+    def _serialize_dns_changes(outcome: DnsOutcome) -> str:
+        return json.dumps(
+            [
+                {
+                    "scope": change.scope,
+                    "type": change.record_type,
+                    "added": [v[:MAX_DNS_CHANGE_VALUE_CHARS] for v in change.added][
+                        :MAX_DNS_CHANGE_VALUES
+                    ],
+                    "removed": [v[:MAX_DNS_CHANGE_VALUE_CHARS] for v in change.removed][
+                        :MAX_DNS_CHANGE_VALUES
+                    ],
+                }
+                for change in outcome.changes[:MAX_DNS_CHANGES_PER_ENTRY]
+            ]
+        )
 
     @staticmethod
     def _edge_profile_params(

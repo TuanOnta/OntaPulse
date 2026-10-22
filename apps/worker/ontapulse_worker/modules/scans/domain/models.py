@@ -26,6 +26,7 @@ class ClaimedScan:
     kind: str = ScanKind.HTTP_PROBE.value
     # True only when path probes are enabled for the monitor AND an acknowledgment time is stored.
     path_probes_enabled: bool = False
+    monitor_id: UUID | None = None
 
 
 @dataclass(frozen=True)
@@ -33,6 +34,7 @@ class ScanOptions:
     """Per-scan settings read at claim time (the queue payload stays unchanged)."""
 
     path_probes_enabled: bool = False
+    monitor_id: UUID | None = None
 
 
 class FindingSeverity(StrEnum):
@@ -124,6 +126,26 @@ class EdgeProfile:
 
 
 @dataclass(frozen=True)
+class RecordChange:
+    """Added and removed normalized values of one DNS record type in one scope."""
+
+    scope: str
+    record_type: str
+    added: tuple[str, ...]
+    removed: tuple[str, ...]
+
+
+@dataclass(frozen=True)
+class DnsOutcome:
+    """What a DNS_WATCH scan stores besides findings: the baseline document and what changed."""
+
+    host: str
+    organization_domain: str
+    snapshot: dict[str, object]
+    changes: tuple[RecordChange, ...] = ()
+
+
+@dataclass(frozen=True)
 class ScanResult:
     # None only for kinds whose request never produced a response (see SECURITY_POSTURE).
     status_code: int | None
@@ -132,3 +154,5 @@ class ScanResult:
     sub_checks: tuple[SubCheckResult, ...] = ()
     # None when the kind produces no edge observation or the check was skipped.
     edge_profile: EdgeProfile | None = None
+    # None for every kind but DNS_WATCH.
+    dns_outcome: DnsOutcome | None = None

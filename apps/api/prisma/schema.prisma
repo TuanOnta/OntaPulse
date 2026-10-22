@@ -123,6 +123,8 @@ model Monitor {
   scans         Scan[]
   checkSettings MonitorCheckSettings?
   edgeProfile   MonitorEdgeProfile?
+  dnsBaseline   DnsBaseline?
+  dnsChanges    DnsChange[]
 
   @@unique([projectId, targetUrl])
   @@index([projectId])
@@ -163,8 +165,42 @@ model Scan {
   findings     ScanFinding[]
   outboxEvents ScanOutboxEvent[]
   edgeProfile  MonitorEdgeProfile?
+  dnsBaseline  DnsBaseline?
+  dnsChange    DnsChange?
 
   @@index([monitorId, createdAt])
+}
+
+// Latest normalized DNS snapshot per monitor. The first successful DNS_WATCH scan stores it without findings.
+// The worker is the only writer.
+model DnsBaseline {
+  id                 String   @id @default(uuid()) @db.Uuid
+  monitorId          String   @unique @db.Uuid
+  scanId             String   @unique @db.Uuid
+  host               String
+  organizationDomain String
+  snapshot           Json
+  observedAt         DateTime
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  monitor Monitor @relation(fields: [monitorId], references: [id], onDelete: Cascade)
+  scan    Scan    @relation(fields: [scanId], references: [id], onDelete: Cascade)
+}
+
+// One row per scan that changed something; the worker keeps the latest 50 per monitor.
+model DnsChange {
+  id         String   @id @default(uuid()) @db.Uuid
+  monitorId  String   @db.Uuid
+  scanId     String   @unique @db.Uuid
+  observedAt DateTime
+  changes    Json
+  createdAt  DateTime @default(now())
+
+  monitor Monitor @relation(fields: [monitorId], references: [id], onDelete: Cascade)
+  scan    Scan    @relation(fields: [scanId], references: [id], onDelete: Cascade)
+
+  @@index([monitorId, observedAt])
 }
 
 // Current edge (CDN, WAF, anti-bot) observation per monitor. The worker is the only writer.

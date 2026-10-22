@@ -3,11 +3,14 @@ import { useState } from "react";
 import {
   HISTORY_FILTERS,
   HISTORY_LIMIT,
+  KIND_FILTERS,
   SCAN_ROW_GRID,
   ScanRow,
   countByFilter,
   filterScans,
+  filterScansByKind,
   type HistoryFilter,
+  type KindFilter,
 } from "@/entities/scan";
 import { riseStyle } from "@/shared/lib/rise";
 import type { Scan } from "@/shared/types/domain";
@@ -72,14 +75,16 @@ export function ScanHistory({
   onReload,
 }: ScanHistoryProps) {
   const [filter, setFilter] = useState<HistoryFilter>("ALL");
-  const counts = countByFilter(scans);
-  const matching = filterScans(scans, filter);
+  const [kind, setKind] = useState<KindFilter>("ALL");
+  const ofKind = filterScansByKind(scans, kind);
+  const counts = countByFilter(ofKind);
+  const matching = filterScans(ofKind, filter);
   const visible = matching.slice(0, HISTORY_LIMIT);
 
   return (
     <section aria-labelledby="scan-history-title">
       <div
-        className="mt-[30px] mb-4 flex animate-dash-rise flex-wrap items-center justify-between gap-3.5 motion-reduce:animate-none"
+        className="mb-4 flex animate-dash-rise flex-wrap items-center justify-between gap-3.5 motion-reduce:animate-none"
         style={riseStyle(4)}
       >
         <div>
@@ -92,26 +97,46 @@ export function ScanHistory({
           <p className="mt-0.5 text-[15px] text-landing-muted">Open a scan to see its findings.</p>
         </div>
         {status === "ready" && scans.length > 0 ? (
-          <div aria-label="Filter scans" className="flex flex-wrap gap-2" role="group">
-            {HISTORY_FILTERS.map(({ id, label }) => (
-              <button
-                aria-pressed={filter === id}
-                className={cn(
-                  "min-h-10 cursor-pointer rounded-full border px-4 text-[15px] font-medium transition-colors duration-200 motion-reduce:transition-none",
-                  filter === id
-                    ? "border-landing-muted bg-landing-surface-2 text-landing-text"
-                    : "border-landing-border text-landing-text-2 hover:border-landing-border-strong hover:text-landing-text",
-                )}
-                key={id}
-                onClick={() => setFilter(id)}
-                type="button"
-              >
-                {label}
-                <span className="ml-1.5 font-mono text-[13px] text-landing-muted">
-                  {counts[id]}
-                </span>
-              </button>
-            ))}
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
+            <div aria-label="Filter by check" className="flex flex-wrap gap-2" role="group">
+              {KIND_FILTERS.map(({ id, label }) => (
+                <button
+                  aria-pressed={kind === id}
+                  className={cn(
+                    "min-h-10 cursor-pointer rounded-full border px-4 text-[15px] font-medium transition-colors duration-200 motion-reduce:transition-none",
+                    kind === id
+                      ? "border-landing-status-border bg-landing-accent/[.06] text-landing-status-text"
+                      : "border-landing-border text-landing-text-2 hover:border-landing-border-strong hover:text-landing-text",
+                  )}
+                  key={id}
+                  onClick={() => setKind(id)}
+                  type="button"
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            <div aria-label="Filter scans" className="flex flex-wrap gap-2" role="group">
+              {HISTORY_FILTERS.map(({ id, label }) => (
+                <button
+                  aria-pressed={filter === id}
+                  className={cn(
+                    "min-h-10 cursor-pointer rounded-full border px-4 text-[15px] font-medium transition-colors duration-200 motion-reduce:transition-none",
+                    filter === id
+                      ? "border-landing-muted bg-landing-surface-2 text-landing-text"
+                      : "border-landing-border text-landing-text-2 hover:border-landing-border-strong hover:text-landing-text",
+                  )}
+                  key={id}
+                  onClick={() => setFilter(id)}
+                  type="button"
+                >
+                  {label}
+                  <span className="ml-1.5 font-mono text-[13px] text-landing-muted">
+                    {counts[id]}
+                  </span>
+                </button>
+              ))}
+            </div>
           </div>
         ) : null}
       </div>
@@ -151,7 +176,7 @@ export function ScanHistory({
           </div>
         ) : matching.length === 0 ? (
           <div className={PANEL}>
-            <h2 className={PANEL_TITLE}>No {filter.toLowerCase()} scans</h2>
+            <h2 className={PANEL_TITLE}>No scans to show</h2>
             <p className={PANEL_TEXT}>Nothing in the scan history matches this filter.</p>
           </div>
         ) : (

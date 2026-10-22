@@ -36,7 +36,7 @@ export function ScanDetail({
     context
       ? `/workspaces/${context.workspace.id}/projects/${context.project.id}/monitors/${context.monitor.id}/scans/${scanId}`
       : `/scans/${scanId}`;
-  const { run, busy } = useRunAgain(scan.monitorId, hrefFor);
+  const { run, busy } = useRunAgain(scan.monitorId, hrefFor, scan.kind);
 
   let action: HeroAction = "none";
   if (context) action = canManageWorkspace(context.workspace.role) ? "run" : "view-only";

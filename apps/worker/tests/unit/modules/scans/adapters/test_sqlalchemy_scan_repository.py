@@ -366,3 +366,117 @@ def test_a_claim_without_the_setting_column_defaults_to_no_probes() -> None:
 
     assert claimed_scan is not None
     assert claimed_scan.path_probes_enabled is False
+
+
+def dns_outcome(changes=()):
+    from ontapulse_worker.modules.scans.domain.models import DnsOutcome
+
+    return DnsOutcome(
+        host="www.example.com",
+        organization_domain="example.com",
+        snapshot={
+            "host": {"name": "www.example.com", "A": ["93.184.216.34"]},
+            "organization": {"name": "example.com", "NS": [], "MX": []},
+        },
+        changes=tuple(changes),
+    )
+
+
+def a_change():
+    from ontapulse_worker.modules.scans.domain.models import RecordChange
+
+    return RecordChange("host", "A", ("93.184.216.35",), ("93.184.216.34",))
+
+
+def test_the_first_dns_scan_writes_the_baseline_and_no_history_row() -> None:
+    repository, session = create_repository(update_result(), Mock())
+
+    repository.succeed(SCAN_ID, ScanResult(None, None, dns_outcome=dns_outcome()))
+
+    assert session.execute.call_count == 2
+    statement = str(session.execute.call_args_list[1].args[0])
+    params = session.execute.call_args_list[1].args[1]
+    assert 'INSERT INTO "DnsBaseline"' in statement
+    assert 'ON CONFLICT ("monitorId") DO UPDATE' in statement
+    # An older scan never overwrites a newer baseline.
+    assert 'WHERE "DnsBaseline"."observedAt" <= EXCLUDED."observedAt"' in statement
+    assert params["scan_id"] == SCAN_ID
+    assert params["host"] == "www.example.com"
+    assert params["organization_domain"] == "example.com"
+    assert params["observed_at"] == NOW
+    assert '"A": ["93.184.216.34"]' in params["snapshot"]
+
+
+def test_a_changed_dns_scan_also_writes_one_history_row_and_prunes() -> None:
+    repository, session = create_repository(update_result(), Mock(), Mock(), Mock())
+
+    repository.succeed(SCAN_ID, ScanResult(None, None, dns_outcome=dns_outcome([a_change()])))
+
+    statements = [str(call.args[0]) for call in session.execute.call_args_list]
+    assert 'INSERT INTO "DnsBaseline"' in statements[1]
+    assert 'INSERT INTO "DnsChange"' in statements[2]
+    assert 'DELETE FROM "DnsChange"' in statements[3]
+    insert = session.execute.call_args_list[2].args[1]
+    assert insert["scan_id"] == SCAN_ID
+    assert insert["observed_at"] == NOW
+    assert insert["changes"] == (
+        '[{"scope": "host", "type": "A", "added": ["93.184.216.35"], "removed": ["93.184.216.34"]}]'
+    )
+    assert session.execute.call_args_list[3].args[1] == {"scan_id": SCAN_ID, "keep": 50}
+    assert repository._sessions.begin.call_count == 1
+
+
+def test_dns_history_values_are_bounded() -> None:
+    import json
+
+    from ontapulse_worker.modules.scans.domain.models import RecordChange
+
+    many = RecordChange("host", "TXT", tuple("v" * 600 for _ in range(40)), ())
+    repository, session = create_repository(update_result(), Mock(), Mock(), Mock())
+
+    repository.succeed(SCAN_ID, ScanResult(None, None, dns_outcome=dns_outcome([many] * 20)))
+
+    stored = json.loads(session.execute.call_args_list[2].args[1]["changes"])
+    assert len(stored) == 12
+    assert len(stored[0]["added"]) == 20
+    assert all(len(value) == 255 for value in stored[0]["added"])
+
+
+def test_an_oversized_dns_snapshot_is_never_stored() -> None:
+    from ontapulse_worker.modules.scans.domain.models import DnsOutcome
+
+    huge = DnsOutcome("h", "o", {"host": {"A": ["x" * 20_000]}, "organization": {}})
+    repository, _ = create_repository(update_result(), Mock())
+
+    with pytest.raises(ValueError, match="bound"):
+        repository.succeed(SCAN_ID, ScanResult(None, None, dns_outcome=huge))
+
+
+def test_a_result_without_dns_data_does_not_touch_the_dns_tables() -> None:
+    repository, session = create_repository(update_result())
+
+    repository.succeed(SCAN_ID, ScanResult(status_code=200, response_time_ms=10))
+
+    assert session.execute.call_count == 1
+
+
+def test_a_failed_scan_never_touches_the_baseline() -> None:
+    repository, session = create_repository(update_result())
+
+    repository.fail(SCAN_ID, "The host name could not be resolved")
+
+    statements = " ".join(str(call.args[0]) for call in session.execute.call_args_list)
+    assert "DnsBaseline" not in statements
+    assert "DnsChange" not in statements
+
+
+def test_claim_hands_the_monitor_id_to_the_executor_options() -> None:
+    repository, _ = create_repository(
+        query_result({"status": "QUEUED", "targetUrl": "https://example.com", "kind": "DNS_WATCH"}),
+        update_result(),
+    )
+
+    claimed_scan = repository.claim(JOB)
+
+    assert claimed_scan is not None
+    assert claimed_scan.monitor_id == MONITOR_ID

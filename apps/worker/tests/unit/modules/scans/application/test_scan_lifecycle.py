@@ -198,3 +198,58 @@ def test_an_http_probe_is_executed_exactly_as_before_without_options() -> None:
     ScanLifecycleService(repository, executor).handle(JOB)
 
     executor.execute.assert_called_once_with("https://example.com")
+
+
+def test_the_monitor_id_reaches_the_dns_executor_through_the_options() -> None:
+    repository = Mock()
+    repository.claim.return_value = ClaimedScan(
+        scan_id=SCAN_ID,
+        target_url="https://example.com",
+        kind=ScanKind.DNS_WATCH.value,
+        monitor_id=MONITOR_ID,
+    )
+    dns_executor = Mock()
+    dns_executor.execute.return_value = ScanResult(status_code=None, response_time_ms=None)
+
+    ScanLifecycleService(repository, Mock(), executors={ScanKind.DNS_WATCH: dns_executor}).handle(
+        JOB
+    )
+
+    dns_executor.execute.assert_called_once_with(
+        "https://example.com", options=ScanOptions(monitor_id=MONITOR_ID)
+    )
+    repository.succeed.assert_called_once()
+
+
+def test_dns_results_are_persisted_as_returned_without_http_policy() -> None:
+    repository = Mock()
+    repository.claim.return_value = ClaimedScan(
+        scan_id=SCAN_ID, target_url="https://example.com", kind=ScanKind.DNS_WATCH.value
+    )
+    dns_executor = Mock()
+    result = ScanResult(status_code=None, response_time_ms=None)
+    dns_executor.execute.return_value = result
+
+    ScanLifecycleService(repository, Mock(), executors={ScanKind.DNS_WATCH: dns_executor}).handle(
+        JOB
+    )
+
+    repository.succeed.assert_called_once_with(SCAN_ID, result)
+
+
+def test_an_unresolvable_host_fails_the_dns_scan_with_the_safe_message() -> None:
+    from ontapulse_worker.modules.scans.domain.errors import ScanExecutionError
+
+    repository = Mock()
+    repository.claim.return_value = ClaimedScan(
+        scan_id=SCAN_ID, target_url="https://example.com", kind=ScanKind.DNS_WATCH.value
+    )
+    dns_executor = Mock()
+    dns_executor.execute.side_effect = ScanExecutionError("The host name could not be resolved")
+
+    ScanLifecycleService(repository, Mock(), executors={ScanKind.DNS_WATCH: dns_executor}).handle(
+        JOB
+    )
+
+    repository.fail.assert_called_once_with(SCAN_ID, "The host name could not be resolved")
+    repository.succeed.assert_not_called()

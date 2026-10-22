@@ -404,6 +404,8 @@ export const ModelName = {
   Monitor: 'Monitor',
   MonitorCheckSettings: 'MonitorCheckSettings',
   Scan: 'Scan',
+  DnsBaseline: 'DnsBaseline',
+  DnsChange: 'DnsChange',
   MonitorEdgeProfile: 'MonitorEdgeProfile',
   ScanOutboxEvent: 'ScanOutboxEvent',
   OperationsAuditLog: 'OperationsAuditLog',
@@ -423,7 +425,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "workspace" | "workspaceMember" | "project" | "monitor" | "monitorCheckSettings" | "scan" | "monitorEdgeProfile" | "scanOutboxEvent" | "operationsAuditLog" | "scanFinding"
+    modelProps: "user" | "workspace" | "workspaceMember" | "project" | "monitor" | "monitorCheckSettings" | "scan" | "dnsBaseline" | "dnsChange" | "monitorEdgeProfile" | "scanOutboxEvent" | "operationsAuditLog" | "scanFinding"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -945,6 +947,154 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    DnsBaseline: {
+      payload: Prisma.$DnsBaselinePayload<ExtArgs>
+      fields: Prisma.DnsBaselineFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.DnsBaselineFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DnsBaselinePayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.DnsBaselineFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DnsBaselinePayload>
+        }
+        findFirst: {
+          args: Prisma.DnsBaselineFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DnsBaselinePayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.DnsBaselineFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DnsBaselinePayload>
+        }
+        findMany: {
+          args: Prisma.DnsBaselineFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DnsBaselinePayload>[]
+        }
+        create: {
+          args: Prisma.DnsBaselineCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DnsBaselinePayload>
+        }
+        createMany: {
+          args: Prisma.DnsBaselineCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.DnsBaselineCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DnsBaselinePayload>[]
+        }
+        delete: {
+          args: Prisma.DnsBaselineDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DnsBaselinePayload>
+        }
+        update: {
+          args: Prisma.DnsBaselineUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DnsBaselinePayload>
+        }
+        deleteMany: {
+          args: Prisma.DnsBaselineDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.DnsBaselineUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.DnsBaselineUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DnsBaselinePayload>[]
+        }
+        upsert: {
+          args: Prisma.DnsBaselineUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DnsBaselinePayload>
+        }
+        aggregate: {
+          args: Prisma.DnsBaselineAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateDnsBaseline>
+        }
+        groupBy: {
+          args: Prisma.DnsBaselineGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.DnsBaselineGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.DnsBaselineCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.DnsBaselineCountAggregateOutputType> | number
+        }
+      }
+    }
+    DnsChange: {
+      payload: Prisma.$DnsChangePayload<ExtArgs>
+      fields: Prisma.DnsChangeFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.DnsChangeFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DnsChangePayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.DnsChangeFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DnsChangePayload>
+        }
+        findFirst: {
+          args: Prisma.DnsChangeFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DnsChangePayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.DnsChangeFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DnsChangePayload>
+        }
+        findMany: {
+          args: Prisma.DnsChangeFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DnsChangePayload>[]
+        }
+        create: {
+          args: Prisma.DnsChangeCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DnsChangePayload>
+        }
+        createMany: {
+          args: Prisma.DnsChangeCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.DnsChangeCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DnsChangePayload>[]
+        }
+        delete: {
+          args: Prisma.DnsChangeDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DnsChangePayload>
+        }
+        update: {
+          args: Prisma.DnsChangeUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DnsChangePayload>
+        }
+        deleteMany: {
+          args: Prisma.DnsChangeDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.DnsChangeUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.DnsChangeUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DnsChangePayload>[]
+        }
+        upsert: {
+          args: Prisma.DnsChangeUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$DnsChangePayload>
+        }
+        aggregate: {
+          args: Prisma.DnsChangeAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateDnsChange>
+        }
+        groupBy: {
+          args: Prisma.DnsChangeGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.DnsChangeGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.DnsChangeCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.DnsChangeCountAggregateOutputType> | number
+        }
+      }
+    }
     MonitorEdgeProfile: {
       payload: Prisma.$MonitorEdgeProfilePayload<ExtArgs>
       fields: Prisma.MonitorEdgeProfileFieldRefs
@@ -1369,6 +1519,33 @@ export const ScanScalarFieldEnum = {
 } as const
 
 export type ScanScalarFieldEnum = (typeof ScanScalarFieldEnum)[keyof typeof ScanScalarFieldEnum]
+
+
+export const DnsBaselineScalarFieldEnum = {
+  id: 'id',
+  monitorId: 'monitorId',
+  scanId: 'scanId',
+  host: 'host',
+  organizationDomain: 'organizationDomain',
+  snapshot: 'snapshot',
+  observedAt: 'observedAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type DnsBaselineScalarFieldEnum = (typeof DnsBaselineScalarFieldEnum)[keyof typeof DnsBaselineScalarFieldEnum]
+
+
+export const DnsChangeScalarFieldEnum = {
+  id: 'id',
+  monitorId: 'monitorId',
+  scanId: 'scanId',
+  observedAt: 'observedAt',
+  changes: 'changes',
+  createdAt: 'createdAt'
+} as const
+
+export type DnsChangeScalarFieldEnum = (typeof DnsChangeScalarFieldEnum)[keyof typeof DnsChangeScalarFieldEnum]
 
 
 export const MonitorEdgeProfileScalarFieldEnum = {
@@ -1816,6 +1993,8 @@ export type GlobalOmitConfig = {
   monitor?: Prisma.MonitorOmit
   monitorCheckSettings?: Prisma.MonitorCheckSettingsOmit
   scan?: Prisma.ScanOmit
+  dnsBaseline?: Prisma.DnsBaselineOmit
+  dnsChange?: Prisma.DnsChangeOmit
   monitorEdgeProfile?: Prisma.MonitorEdgeProfileOmit
   scanOutboxEvent?: Prisma.ScanOutboxEventOmit
   operationsAuditLog?: Prisma.OperationsAuditLogOmit

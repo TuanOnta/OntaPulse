@@ -13,6 +13,7 @@ export { ScanRunChip } from "./ui/scan-run-chip";
 export {
   CHART_BARS,
   HISTORY_FILTERS,
+  KIND_FILTERS,
   HISTORY_LIMIT,
   SLOW_MS,
   barHeightPercent,
@@ -21,6 +22,7 @@ export {
   chartScans,
   countByFilter,
   filterScans,
+  filterScansByKind,
   formatMs,
   httpTone,
   isBusyScan,
@@ -29,6 +31,7 @@ export {
   relativeTime,
   statusChip,
   type HistoryFilter,
+  type KindFilter,
   type HttpTone,
 } from "./model/scan-history";
 export { ScanChip } from "./ui/scan-run-chip";
@@ -54,6 +57,9 @@ export {
 } from "./model/scan-view";
 export {
   formatWait,
+  checkKindName,
+  isCheckScan,
+  isDnsScan,
   isSecurityScan,
   subCheckCounts,
   subCheckLabel,

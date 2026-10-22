@@ -18,6 +18,14 @@ type State =
 const GENERIC_ERROR = "Check your connection and try again.";
 
 function finishedMessage(scan: Scan): { ok: boolean; text: string } {
+  if (scan.kind === "DNS_WATCH") {
+    return scan.status === "FAILED"
+      ? {
+          ok: false,
+          text: `DNS scan failed: ${scan.errorMessage || "the host could not be resolved."}`,
+        }
+      : { ok: true, text: "DNS scan finished." };
+  }
   if (scan.kind === "SECURITY_POSTURE") {
     return scan.status === "FAILED"
       ? {

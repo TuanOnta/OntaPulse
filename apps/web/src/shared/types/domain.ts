@@ -1,14 +1,7 @@
 export type ScanStatus = "QUEUED" | "RUNNING" | "SUCCEEDED" | "FAILED";
 export type ScanKind = "HTTP_PROBE" | "SECURITY_POSTURE" | "DNS_WATCH";
 export type FindingCategory =
-  | "HEADERS"
-  | "COOKIES"
-  | "CORS"
-  | "REDIRECT"
-  | "TLS"
-  | "EXPOSED_FILES"
-  | "DNS"
-  | "EMAIL_AUTH";
+  "HEADERS" | "COOKIES" | "CORS" | "REDIRECT" | "TLS" | "EXPOSED_FILES" | "DNS" | "EMAIL_AUTH";
 export type FindingConfidence = "LOW" | "MEDIUM" | "HIGH";
 export type FindingSeverity = "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
 export type WorkspaceRole = "OWNER" | "ADMIN" | "MEMBER";
@@ -113,6 +106,45 @@ export interface EdgeProfile {
   challengeObserved: boolean;
   observedAt: string;
   detections: EdgeDetection[];
+}
+export interface DnsSnapshot {
+  host: {
+    name: string;
+    A: string[];
+    AAAA: string[];
+    CNAME: string[];
+    NS: string[];
+    MX: string[];
+    TXT: string[];
+  };
+  organization: { name: string; NS: string[]; MX: string[] };
+}
+export interface DnsRecordChange {
+  scope: "host" | "organization";
+  type: string;
+  added: string[];
+  removed: string[];
+}
+export interface DnsChangeEntry {
+  scanId: string;
+  observedAt: string;
+  changes: DnsRecordChange[];
+}
+export interface DnsBaseline {
+  monitorId: string;
+  scanId: string;
+  host: string;
+  organizationDomain: string;
+  observedAt: string;
+  snapshot: DnsSnapshot;
+  changes: DnsChangeEntry[];
+}
+/** Body of PATCH /monitors/:id/check-settings. Enabling path probes also needs `pathProbesAcknowledged`. */
+export interface CheckSettingsUpdate {
+  securityPostureEnabled?: boolean;
+  dnsWatchEnabled?: boolean;
+  pathProbesEnabled?: boolean;
+  pathProbesAcknowledged?: boolean;
 }
 export interface ApiErrorShape {
   statusCode: number;

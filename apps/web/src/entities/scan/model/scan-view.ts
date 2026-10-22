@@ -1,7 +1,7 @@
 import type { Finding, FindingSeverity, ScanDetail } from "@/shared/types/domain";
 
 import { SLOW_MS } from "./scan-history";
-import { isSecurityScan, subCheckCounts } from "./security-scan";
+import { checkKindName, isCheckScan, subCheckCounts } from "./security-scan";
 
 /** Top of the response-time meter on the scan screen; the 2 s tick sits at SLOW_MS / METER_MAX_MS. */
 export const METER_MAX_MS = 3000;
@@ -39,31 +39,37 @@ export function severityCounts(
 type ScanLike = Pick<ScanDetail, "status" | "statusCode" | "responseTimeMs" | "findings"> &
   Partial<Pick<ScanDetail, "kind" | "subChecks">>;
 
-/** Hero headline of a security check: what was observed, never a verdict on the whole site. */
-function securityOutcome(scan: ScanLike, host?: string): ScanOutcome {
+/** Hero headline of a security or DNS check: what was observed, never a verdict on the whole site. */
+function checkOutcome(scan: ScanLike, host?: string): ScanOutcome {
   const target = host ?? "the target";
+  const dns = checkKindName(scan) === "DNS";
+  const noun = dns ? "DNS" : "security";
   if (scan.status === "QUEUED") {
     return {
       tone: "queued",
       orb: "queued",
       title: "Waiting for a worker",
-      sub: "The security check is queued and will start shortly.",
+      sub: `The ${noun} check is queued and will start shortly.`,
     };
   }
   if (scan.status === "RUNNING") {
     return {
       tone: "running",
       orb: "running",
-      title: "Running security checks…",
-      sub: `A worker is inspecting ${target}.`,
+      title: `Running ${noun} checks…`,
+      sub: dns
+        ? `A worker is looking up the DNS records of ${target}.`
+        : `A worker is inspecting ${target}.`,
     };
   }
   if (scan.status === "FAILED") {
     return {
       tone: "bad",
       orb: "failed",
-      title: "The security check could not complete",
-      sub: "The target could not be reached for any of the checks.",
+      title: `The ${noun} check could not complete`,
+      sub: dns
+        ? "No DNS record could be checked. The reason is shown below."
+        : "The target could not be reached for any of the checks.",
     };
   }
   const { ran } = subCheckCounts(scan.subChecks);
@@ -72,7 +78,7 @@ function securityOutcome(scan: ScanLike, host?: string): ScanOutcome {
     return {
       tone: "ok",
       orb: "ok",
-      title: "Security check complete",
+      title: `${checkKindName(scan)} check complete`,
       sub: `${checks}, nothing was flagged.`,
     };
   }
@@ -81,14 +87,14 @@ function securityOutcome(scan: ScanLike, host?: string): ScanOutcome {
   return {
     tone: top >= HIGH_RANK ? "bad" : "warn",
     orb: "warn",
-    title: `Security check complete, with ${count} finding${count > 1 ? "s" : ""}`,
+    title: `${checkKindName(scan)} check complete, with ${count} finding${count > 1 ? "s" : ""}`,
     sub: `${checks}. Review what was observed below.`,
   };
 }
 
 /** Headline of the hero: what happened, in words, with the colour tone and orb that go with it. */
 export function scanOutcome(scan: ScanLike, host?: string): ScanOutcome {
-  if (isSecurityScan(scan)) return securityOutcome(scan, host);
+  if (isCheckScan(scan)) return checkOutcome(scan, host);
   const target = host ?? "the target";
   if (scan.status === "QUEUED") {
     return {
@@ -197,10 +203,12 @@ export type TimelineStep = {
   at: string | null;
 };
 
-type TimelineScan = Pick<ScanDetail, "status" | "createdAt" | "startedAt" | "finishedAt">;
+type TimelineScan = Pick<ScanDetail, "status" | "createdAt" | "startedAt" | "finishedAt"> &
+  Partial<Pick<ScanDetail, "kind">>;
 
 /** Queued, Running and Finished steps with what is known about each. */
 export function scanTimeline(scan: TimelineScan): TimelineStep[] {
+  const dns = scan.kind === "DNS_WATCH";
   const waited = duration(scan.createdAt, scan.startedAt);
   const ran = duration(scan.startedAt, scan.finishedAt);
   const steps: TimelineStep[] = [
@@ -222,14 +230,16 @@ export function scanTimeline(scan: TimelineScan): TimelineStep[] {
     steps.push({
       state: "active",
       title: "Running",
-      sub: "Request in flight…",
+      sub: dns ? "Looking up DNS records…" : "Request in flight…",
       at: scan.startedAt ?? null,
     });
   } else {
     steps.push({
       state: "done",
       title: "Running",
-      sub: "Worker validated the URL and sent the request",
+      sub: dns
+        ? "Worker resolved the host name and queried its DNS records"
+        : "Worker validated the URL and sent the request",
       at: scan.startedAt ?? null,
     });
   }
@@ -237,7 +247,11 @@ export function scanTimeline(scan: TimelineScan): TimelineStep[] {
     steps.push({
       state: "done",
       title: "Succeeded",
-      sub: ran ? `Took ${ran} end to end` : "The target answered",
+      sub: ran
+        ? `Took ${ran} end to end`
+        : dns
+          ? "The DNS records were checked"
+          : "The target answered",
       at: scan.finishedAt ?? null,
     });
   } else if (scan.status === "FAILED") {

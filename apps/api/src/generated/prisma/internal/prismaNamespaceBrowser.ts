@@ -58,6 +58,8 @@ export const ModelName = {
   Monitor: 'Monitor',
   MonitorCheckSettings: 'MonitorCheckSettings',
   Scan: 'Scan',
+  DnsBaseline: 'DnsBaseline',
+  DnsChange: 'DnsChange',
   MonitorEdgeProfile: 'MonitorEdgeProfile',
   ScanOutboxEvent: 'ScanOutboxEvent',
   OperationsAuditLog: 'OperationsAuditLog',
@@ -169,6 +171,33 @@ export const ScanScalarFieldEnum = {
 } as const
 
 export type ScanScalarFieldEnum = (typeof ScanScalarFieldEnum)[keyof typeof ScanScalarFieldEnum]
+
+
+export const DnsBaselineScalarFieldEnum = {
+  id: 'id',
+  monitorId: 'monitorId',
+  scanId: 'scanId',
+  host: 'host',
+  organizationDomain: 'organizationDomain',
+  snapshot: 'snapshot',
+  observedAt: 'observedAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type DnsBaselineScalarFieldEnum = (typeof DnsBaselineScalarFieldEnum)[keyof typeof DnsBaselineScalarFieldEnum]
+
+
+export const DnsChangeScalarFieldEnum = {
+  id: 'id',
+  monitorId: 'monitorId',
+  scanId: 'scanId',
+  observedAt: 'observedAt',
+  changes: 'changes',
+  createdAt: 'createdAt'
+} as const
+
+export type DnsChangeScalarFieldEnum = (typeof DnsChangeScalarFieldEnum)[keyof typeof DnsChangeScalarFieldEnum]
 
 
 export const MonitorEdgeProfileScalarFieldEnum = {

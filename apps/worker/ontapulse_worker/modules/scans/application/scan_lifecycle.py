@@ -62,7 +62,10 @@ class ScanLifecycleService:
                 else:
                     raw_result = executor.execute(
                         claimed_scan.target_url,
-                        options=ScanOptions(path_probes_enabled=claimed_scan.path_probes_enabled),
+                        options=ScanOptions(
+                            path_probes_enabled=claimed_scan.path_probes_enabled,
+                            monitor_id=claimed_scan.monitor_id,
+                        ),
                     )
                 # Only the HTTP probe uses the status/latency policy. Other kinds return findings
                 # that are already final.

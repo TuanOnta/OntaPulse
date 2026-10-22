@@ -23,6 +23,7 @@ export function useCheckSettings(monitorId: string) {
   const [state, setState] = useState<State>({ status: "loading" });
   const [attempt, setAttempt] = useState(0);
   const [saving, setSaving] = useState(false);
+  const [probesSaving, setProbesSaving] = useState(false);
   const alive = useRef(false);
 
   useEffect(() => {
@@ -59,14 +60,15 @@ export function useCheckSettings(monitorId: string) {
     setAttempt((value) => value + 1);
   }, []);
 
-  const setSecurityPosture = useCallback(
-    async (enabled: boolean) => {
+  /** One on/off switch of the settings: optimistic, rolled back with a toast when the API refuses. */
+  const setSwitch = useCallback(
+    async (field: "securityPostureEnabled" | "dnsWatchEnabled", enabled: boolean) => {
       if (state.status !== "ready") return;
       const previous = state.settings;
       setSaving(true);
-      setState({ status: "ready", settings: { ...previous, securityPostureEnabled: enabled } });
+      setState({ status: "ready", settings: { ...previous, [field]: enabled } });
       try {
-        const saved = await api.updateCheckSettings(monitorId, { securityPostureEnabled: enabled });
+        const saved = await api.updateCheckSettings(monitorId, { [field]: enabled });
         if (alive.current) setState({ status: "ready", settings: saved });
       } catch (error) {
         if (!alive.current) return;
@@ -79,5 +81,56 @@ export function useCheckSettings(monitorId: string) {
     [monitorId, state],
   );
 
-  return { ...state, saving, reload, setSecurityPosture };
+  const setSecurityPosture = useCallback(
+    (enabled: boolean) => setSwitch("securityPostureEnabled", enabled),
+    [setSwitch],
+  );
+  const setDnsWatch = useCallback(
+    (enabled: boolean) => setSwitch("dnsWatchEnabled", enabled),
+    [setSwitch],
+  );
+
+  /**
+   * Turns the exposed-file checks on. Not optimistic: the API must accept the acknowledgment first, so this waits
+   * for the answer and throws the API error for the confirmation dialog to show.
+   */
+  const enablePathProbes = useCallback(async () => {
+    const saved = await api.updateCheckSettings(monitorId, {
+      pathProbesEnabled: true,
+      pathProbesAcknowledged: true,
+    });
+    if (alive.current) setState({ status: "ready", settings: saved });
+  }, [monitorId]);
+
+  /** Turns them off (no acknowledgment needed). Optimistic, rolled back with a toast when the API refuses. */
+  const disablePathProbes = useCallback(async () => {
+    if (state.status !== "ready") return;
+    const previous = state.settings;
+    setProbesSaving(true);
+    setState({
+      status: "ready",
+      settings: { ...previous, pathProbesEnabled: false, pathProbesAcknowledgedAt: null },
+    });
+    try {
+      const saved = await api.updateCheckSettings(monitorId, { pathProbesEnabled: false });
+      if (alive.current) setState({ status: "ready", settings: saved });
+    } catch (error) {
+      if (!alive.current) return;
+      setState({ status: "ready", settings: previous });
+      toast.error(getErrorMessage(error));
+    } finally {
+      if (alive.current) setProbesSaving(false);
+    }
+  }, [monitorId, state]);
+
+  return {
+    ...state,
+    saving,
+    probesSaving,
+    reload,
+    setSecurityPosture,
+    setDnsWatch,
+    enablePathProbes,
+    disablePathProbes,
+  };
 }

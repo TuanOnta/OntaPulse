@@ -12,7 +12,7 @@ import {
   relativeTime,
   statusChip,
 } from "../model/scan-history";
-import { isSecurityScan } from "../model/security-scan";
+import { checkKindName, isCheckScan } from "../model/security-scan";
 import { ScanChip } from "./scan-run-chip";
 
 const HTTP_TONE = {
@@ -56,9 +56,9 @@ export function ScanRow({
         role="cell"
       >
         <ScanChip label={chip.label} live={false} tone={chip.tone} />
-        {isSecurityScan(scan) ? (
+        {isCheckScan(scan) ? (
           <span className="ml-2 font-mono text-[12px] leading-[normal] tracking-[.08em] text-landing-muted uppercase">
-            Security
+            {checkKindName(scan)}
           </span>
         ) : null}
       </span>
@@ -119,7 +119,7 @@ export function ScanRow({
         )}
       />
       <Link
-        aria-label={`Open ${isSecurityScan(scan) ? "security " : ""}scan from ${when}, ${chip.label.toLowerCase()}`}
+        aria-label={`Open ${isCheckScan(scan) ? `${checkKindName(scan).toLowerCase()} ` : ""}scan from ${when}, ${chip.label.toLowerCase()}`}
         className="absolute inset-0 z-[1] focus-visible:outline-offset-[-3px]"
         to={href}
       />

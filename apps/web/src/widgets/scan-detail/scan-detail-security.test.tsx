@@ -1,15 +1,30 @@
 import { render, screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router-dom";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { ApiError } from "@/shared/api/client";
 import type { EdgeProfile, Finding, ScanDetail as ScanDetailData } from "@/shared/types/domain";
 
-const mocks = vi.hoisted(() => ({ edgeProfile: vi.fn() }));
+const mocks = vi.hoisted(() => ({
+  edgeProfile: vi.fn(),
+  triggerScan: vi.fn(),
+  triggerSecurityScan: vi.fn(),
+  triggerDnsScan: vi.fn(),
+}));
 
 vi.mock("@/shared/api/client", async (importOriginal) => {
   const original = await importOriginal<typeof import("@/shared/api/client")>();
-  return { ...original, api: { ...original.api, edgeProfile: mocks.edgeProfile } };
+  return {
+    ...original,
+    api: {
+      ...original.api,
+      edgeProfile: mocks.edgeProfile,
+      triggerScan: mocks.triggerScan,
+      triggerSecurityScan: mocks.triggerSecurityScan,
+      triggerDnsScan: mocks.triggerDnsScan,
+    },
+  };
 });
 
 import { ScanDetail } from "./scan-detail";
@@ -34,7 +49,7 @@ const profile = (overrides: Partial<EdgeProfile> = {}): EdgeProfile => ({
 });
 
 beforeEach(() => {
-  mocks.edgeProfile.mockReset();
+  Object.values(mocks).forEach((mock) => mock.mockReset());
   mocks.edgeProfile.mockRejectedValue(noProfile());
 });
 
@@ -242,5 +257,164 @@ describe("ScanDetail edge layers", () => {
 
     expect(await screen.findByText("Couldn’t load the edge layers.")).toBeVisible();
     expect(screen.getByRole("button", { name: "Try again" })).toBeVisible();
+  });
+});
+
+describe("ScanDetail for a DNS scan", () => {
+  const dnsScan: ScanDetailData = {
+    ...base,
+    id: "scn-dns",
+    kind: "DNS_WATCH",
+    statusCode: null,
+    responseTimeMs: null,
+    subChecks: [
+      { name: "dns_records", state: "ran", reason: null },
+      { name: "dangling_cname", state: "skipped", reason: "not_applicable" },
+      { name: "email_auth", state: "ran", reason: null },
+    ],
+  };
+
+  it("words the hero and the tiles for DNS, with no HTTP tile", () => {
+    renderScan(dnsScan);
+
+    expect(screen.getByRole("heading", { name: "DNS check complete" })).toBeVisible();
+    expect(screen.getByText("Checks run")).toBeVisible();
+    expect(screen.getByText("2/3")).toBeVisible();
+    expect(screen.getByText("1 skipped, see below")).toBeVisible();
+    expect(screen.queryByText("HTTPS status")).not.toBeInTheDocument();
+    expect(screen.queryByText("HTTP status")).not.toBeInTheDocument();
+    expect(screen.queryByText("Response time")).not.toBeInTheDocument();
+    expect(screen.getAllByText("Findings").length).toBeGreaterThan(0);
+  });
+
+  it("describes the method as DNS queries and says the host is not contacted", () => {
+    renderScan(dnsScan);
+
+    expect(
+      screen.getByText("DNS queries to public resolvers, the host itself is not contacted"),
+    ).toBeVisible();
+  });
+
+  it("lists the findings and the DNS checks with their labels and reasons", () => {
+    renderScan({
+      ...dnsScan,
+      findings: [
+        finding({
+          code: "EMAIL_SPF_MISSING",
+          checkId: "EMAIL_SPF_MISSING",
+          category: "EMAIL_AUTH",
+          severity: "MEDIUM",
+          title: "SPF record not observed",
+          description: "No SPF record was observed.",
+          evidence: { domain: "example.com" },
+        }),
+      ],
+    });
+
+    expect(
+      screen.getByRole("heading", { name: "DNS check complete, with 1 finding" }),
+    ).toBeVisible();
+    expect(screen.getByRole("heading", { name: "SPF record not observed" })).toBeVisible();
+    const checks = within(screen.getByRole("list", { name: "Checks in this scan" }));
+    expect(checks.getByText("DNS records")).toBeVisible();
+    expect(checks.getByText("Dangling CNAME")).toBeVisible();
+    expect(checks.getByText("Email authentication")).toBeVisible();
+    expect(checks.getByText("Skipped: not applicable")).toBeVisible();
+  });
+
+  it("explains a failed DNS scan without talking about HTTP", () => {
+    renderScan({
+      ...dnsScan,
+      status: "FAILED",
+      errorMessage: "The host name could not be resolved",
+      findings: [],
+      subChecks: null,
+    });
+
+    expect(screen.getByRole("heading", { name: "The DNS check could not complete" })).toBeVisible();
+    expect(screen.getByText("The host name could not be resolved")).toBeVisible();
+    expect(screen.getByText(/the baseline is unchanged/)).toBeVisible();
+    expect(screen.queryByText(/no HTTP result to evaluate/)).not.toBeInTheDocument();
+  });
+
+  it("does not ask for an edge profile: that card belongs to security scans", () => {
+    renderScan(dnsScan);
+
+    expect(mocks.edgeProfile).not.toHaveBeenCalled();
+    expect(screen.queryByRole("heading", { name: "Edge layers" })).not.toBeInTheDocument();
+  });
+});
+
+describe("ScanDetail run again", () => {
+  const context = {
+    workspace: {
+      id: "w1",
+      name: "OntaPulse",
+      role: "OWNER" as const,
+      createdAt: "2026-03-04T08:12:00Z",
+      updatedAt: "2026-03-04T08:12:00Z",
+    },
+    project: {
+      id: "p1",
+      workspaceId: "w1",
+      name: "Core API",
+      description: null,
+      createdAt: "2026-03-18T14:20:00Z",
+      updatedAt: "2026-03-18T14:20:00Z",
+    },
+    monitor: {
+      id: "m1",
+      projectId: "p1",
+      name: "www.example.com",
+      targetUrl: "https://www.example.com/",
+      intervalSeconds: 300,
+      isActive: true,
+      createdAt: "2026-03-18T14:40:00Z",
+      updatedAt: "2026-03-18T14:40:00Z",
+    },
+  };
+
+  async function runAgain(kind: ScanDetailData["kind"]) {
+    const queued = { ...base, id: "next", status: "QUEUED" as const };
+    mocks.triggerScan.mockResolvedValue(queued);
+    mocks.triggerSecurityScan.mockResolvedValue(queued);
+    mocks.triggerDnsScan.mockResolvedValue(queued);
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter>
+        <ScanDetail context={context} scan={{ ...base, kind }} />
+      </MemoryRouter>,
+    );
+
+    await user.click(screen.getByRole("button", { name: /Run scan again/ }));
+    await vi.waitFor(() =>
+      expect(
+        mocks.triggerScan.mock.calls.length +
+          mocks.triggerSecurityScan.mock.calls.length +
+          mocks.triggerDnsScan.mock.calls.length,
+      ).toBe(1),
+    );
+  }
+
+  it("runs a DNS scan again as a DNS scan, not as an HTTP probe", async () => {
+    await runAgain("DNS_WATCH");
+
+    expect(mocks.triggerDnsScan).toHaveBeenCalledWith("m1");
+    expect(mocks.triggerScan).not.toHaveBeenCalled();
+  });
+
+  it("runs a security scan again as a security scan", async () => {
+    await runAgain("SECURITY_POSTURE");
+
+    expect(mocks.triggerSecurityScan).toHaveBeenCalledWith("m1");
+    expect(mocks.triggerScan).not.toHaveBeenCalled();
+  });
+
+  it("still runs an HTTP probe again as an HTTP probe", async () => {
+    await runAgain("HTTP_PROBE");
+
+    expect(mocks.triggerScan).toHaveBeenCalledWith("m1");
+    expect(mocks.triggerDnsScan).not.toHaveBeenCalled();
+    expect(mocks.triggerSecurityScan).not.toHaveBeenCalled();
   });
 });

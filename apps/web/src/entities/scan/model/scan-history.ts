@@ -20,6 +20,25 @@ export const HISTORY_FILTERS: readonly { id: HistoryFilter; label: string }[] = 
   { id: "FAILED", label: "Failed" },
 ];
 
+export type KindFilter = "ALL" | "HTTP_PROBE" | "SECURITY_POSTURE" | "DNS_WATCH";
+
+export const KIND_FILTERS: readonly { id: KindFilter; label: string }[] = [
+  { id: "ALL", label: "All checks" },
+  { id: "HTTP_PROBE", label: "Availability" },
+  { id: "SECURITY_POSTURE", label: "Security" },
+  { id: "DNS_WATCH", label: "DNS" },
+];
+
+/** A scan without a kind comes from an older API and is an HTTP probe. */
+export function filterScansByKind<T extends Pick<Scan, "kind">>(
+  scans: readonly T[],
+  filter: KindFilter,
+): T[] {
+  return filter === "ALL"
+    ? [...scans]
+    : scans.filter((scan) => (scan.kind ?? "HTTP_PROBE") === filter);
+}
+
 export function isBusyScan(scan: Pick<Scan, "status">): boolean {
   return scan.status === "QUEUED" || scan.status === "RUNNING";
 }
@@ -79,9 +98,12 @@ export function chartScans<T extends Pick<Scan, "status" | "kind">>(
   scans: readonly T[],
   limit: number = CHART_BARS,
 ): T[] {
-  // Response time is an HTTP probe measure; security scans are not charted.
+  // Response time is an HTTP probe measure; security and DNS scans are not charted.
   return scans
-    .filter((scan) => isFinishedScan(scan) && scan.kind !== "SECURITY_POSTURE")
+    .filter(
+      (scan) =>
+        isFinishedScan(scan) && scan.kind !== "SECURITY_POSTURE" && scan.kind !== "DNS_WATCH",
+    )
     .slice(0, limit)
     .reverse();
 }
