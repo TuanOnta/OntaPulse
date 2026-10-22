@@ -19,6 +19,7 @@ const mocks = vi.hoisted(() => ({
   checkSettings: vi.fn(),
   updateCheckSettings: vi.fn(),
   latestSecurityScan: vi.fn(),
+  latestDnsScan: vi.fn(),
   edgeProfile: vi.fn(),
   triggerSecurityScan: vi.fn(),
   toastSuccess: vi.fn(),
@@ -34,6 +35,7 @@ vi.mock("@/shared/api/client", async (importOriginal) => {
       checkSettings: mocks.checkSettings,
       updateCheckSettings: mocks.updateCheckSettings,
       latestSecurityScan: mocks.latestSecurityScan,
+      latestDnsScan: mocks.latestDnsScan,
       edgeProfile: mocks.edgeProfile,
       triggerSecurityScan: mocks.triggerSecurityScan,
     },
@@ -42,6 +44,9 @@ vi.mock("@/shared/api/client", async (importOriginal) => {
 vi.mock("sonner", () => ({
   toast: { success: mocks.toastSuccess, error: mocks.toastError },
 }));
+
+import { useMonitorChecks } from "@/features/security/model/use-monitor-checks";
+import { CheckPanel, CheckTabs } from "@/widgets/monitor-detail/ui/check-tabs";
 
 import { SecurityPosture } from "./security-posture";
 
@@ -131,21 +136,40 @@ function Where() {
   return <p data-testid="where">{useLocation().pathname}</p>;
 }
 
+const scanHref = (scanId: string) => `/workspaces/w1/projects/p1/monitors/m1/scans/${scanId}`;
+
+/** The section as the monitor screen draws it: inside the Checks strip, whose card owns switch and Run. */
+function Section({ role }: { role: WorkspaceRole }) {
+  const checks = useMonitorChecks("m1", scanHref);
+  return (
+    <CheckTabs
+      canManage={role !== "MEMBER"}
+      checks={checks}
+      host="api.example.com"
+      onRunScan={() => {}}
+      onTabChange={() => {}}
+      scans={[]}
+      scansBusy={false}
+      tab="security"
+    >
+      <CheckPanel value="security">
+        <SecurityPosture
+          checks={checks}
+          host="api.example.com"
+          monitor={monitor}
+          project={project}
+          workspace={workspace(role)}
+        />
+      </CheckPanel>
+    </CheckTabs>
+  );
+}
+
 function renderSection(role: WorkspaceRole = "OWNER") {
   return render(
     <MemoryRouter initialEntries={["/monitor"]}>
       <Routes>
-        <Route
-          element={
-            <SecurityPosture
-              host="api.example.com"
-              monitor={monitor}
-              project={project}
-              workspace={workspace(role)}
-            />
-          }
-          path="/monitor"
-        />
+        <Route element={<Section role={role} />} path="/monitor" />
         <Route element={<Where />} path="*" />
       </Routes>
     </MemoryRouter>,
@@ -156,6 +180,9 @@ beforeEach(() => {
   Object.values(mocks).forEach((mock) => mock.mockReset());
   mocks.checkSettings.mockResolvedValue(settings(true));
   mocks.latestSecurityScan.mockRejectedValue(noScan());
+  mocks.latestDnsScan.mockRejectedValue(
+    new ApiError({ statusCode: 404, code: "NO_DNS_SCAN", message: "No DNS watch scan found" }),
+  );
   mocks.edgeProfile.mockRejectedValue(noEdgeProfile());
 });
 

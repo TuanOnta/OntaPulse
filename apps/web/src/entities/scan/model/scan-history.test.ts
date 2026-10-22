@@ -7,6 +7,7 @@ import {
   chartScans,
   countByFilter,
   filterScans,
+  filterScansByKind,
   formatMs,
   httpTone,
   isBusyScan,
@@ -91,5 +92,27 @@ describe("scan history helpers", () => {
     expect(relativeTime(ago(3 * 3_600_000), now)).toBe("3 h ago");
     expect(relativeTime(ago(2 * 86_400_000), now)).toBe("2 d ago");
     expect(relativeTime(new Date(now + 5000).toISOString(), now)).toBe("just now");
+  });
+});
+
+describe("filterScansByKind", () => {
+  const list = [
+    { id: "a" },
+    { id: "b", kind: "HTTP_PROBE" as const },
+    { id: "c", kind: "SECURITY_POSTURE" as const },
+    { id: "d", kind: "DNS_WATCH" as const },
+  ];
+
+  it("keeps everything for ALL", () => {
+    expect(filterScansByKind(list, "ALL")).toHaveLength(4);
+  });
+
+  it("treats a scan without a kind as an HTTP probe", () => {
+    expect(filterScansByKind(list, "HTTP_PROBE").map((item) => item.id)).toEqual(["a", "b"]);
+  });
+
+  it("filters security and DNS scans", () => {
+    expect(filterScansByKind(list, "SECURITY_POSTURE").map((item) => item.id)).toEqual(["c"]);
+    expect(filterScansByKind(list, "DNS_WATCH").map((item) => item.id)).toEqual(["d"]);
   });
 });

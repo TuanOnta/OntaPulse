@@ -1,7 +1,6 @@
 import { TONE_VAR, type WorkspaceTone } from "@/entities/workspace";
 import { riseStyle } from "@/shared/lib/rise";
 import { LockIcon } from "@/shared/ui/lock-icon";
-import { ActionButton } from "@/shared/ui/pill-button";
 
 const GlobeIcon = () => (
   <svg aria-hidden="true" fill="none" height="28" viewBox="0 0 22 22" width="28">
@@ -15,21 +14,14 @@ const GlobeIcon = () => (
   </svg>
 );
 
-const PlayIcon = () => (
-  <svg aria-hidden="true" fill="none" height="16" viewBox="0 0 16 16" width="16">
-    <path d="M4.5 3 L12.5 8 L4.5 13 Z" fill="currentColor" />
-  </svg>
-);
-
-/** Host, protocol tag and path of the target, with "Run scan" (or the view-only note). */
+/** Host, protocol tag and path of the target, with the overall finding count (or the view-only note). */
 export function MonitorHeader({
   protocol,
   host,
   path,
   tone,
   canRun,
-  busy,
-  onRun,
+  overall,
 }: {
   protocol: string;
   host: string;
@@ -37,8 +29,8 @@ export function MonitorHeader({
   /** Same tone as the workspace card on the dashboard. */
   tone: WorkspaceTone;
   canRun: boolean;
-  busy: boolean;
-  onRun: () => void;
+  /** One line about the stored findings of all checks, or nothing while they load. */
+  overall: string | null;
 }) {
   return (
     <header
@@ -66,17 +58,13 @@ export function MonitorHeader({
           </p>
         </div>
       </div>
-      <div className="relative flex flex-wrap gap-2.5 max-[520px]:w-full">
-        {canRun ? (
-          <ActionButton
-            className="max-[520px]:flex-[1_1_140px] max-[520px]:px-4 max-[520px]:whitespace-nowrap"
-            disabled={busy}
-            onClick={onRun}
-          >
-            <PlayIcon />
-            {busy ? "Scanning…" : "Run scan"}
-          </ActionButton>
-        ) : (
+      <div className="relative flex flex-wrap items-center gap-2.5 max-[520px]:w-full">
+        {overall ? (
+          <p className="rounded-full border border-landing-border bg-landing-bg/50 px-3.5 py-2 text-[15px] text-landing-text-2">
+            {overall}
+          </p>
+        ) : null}
+        {canRun ? null : (
           <div className="flex items-center gap-2.5 rounded-[14px] border border-landing-border bg-landing-bg/50 px-3.5 py-2.5 text-[15px] text-landing-muted">
             <LockIcon />
             View-only access. Owners and admins run scans.

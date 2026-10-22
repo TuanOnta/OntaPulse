@@ -20,6 +20,25 @@ export const HISTORY_FILTERS: readonly { id: HistoryFilter; label: string }[] = 
   { id: "FAILED", label: "Failed" },
 ];
 
+export type KindFilter = "ALL" | "HTTP_PROBE" | "SECURITY_POSTURE" | "DNS_WATCH";
+
+export const KIND_FILTERS: readonly { id: KindFilter; label: string }[] = [
+  { id: "ALL", label: "All checks" },
+  { id: "HTTP_PROBE", label: "Availability" },
+  { id: "SECURITY_POSTURE", label: "Security" },
+  { id: "DNS_WATCH", label: "DNS" },
+];
+
+/** A scan without a kind comes from an older API and is an HTTP probe. */
+export function filterScansByKind<T extends Pick<Scan, "kind">>(
+  scans: readonly T[],
+  filter: KindFilter,
+): T[] {
+  return filter === "ALL"
+    ? [...scans]
+    : scans.filter((scan) => (scan.kind ?? "HTTP_PROBE") === filter);
+}
+
 export function isBusyScan(scan: Pick<Scan, "status">): boolean {
   return scan.status === "QUEUED" || scan.status === "RUNNING";
 }

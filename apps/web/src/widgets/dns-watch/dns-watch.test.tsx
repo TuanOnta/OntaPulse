@@ -19,6 +19,7 @@ const mocks = vi.hoisted(() => ({
   checkSettings: vi.fn(),
   updateCheckSettings: vi.fn(),
   latestDnsScan: vi.fn(),
+  latestSecurityScan: vi.fn(),
   dnsBaseline: vi.fn(),
   triggerDnsScan: vi.fn(),
   toastSuccess: vi.fn(),
@@ -34,6 +35,7 @@ vi.mock("@/shared/api/client", async (importOriginal) => {
       checkSettings: mocks.checkSettings,
       updateCheckSettings: mocks.updateCheckSettings,
       latestDnsScan: mocks.latestDnsScan,
+      latestSecurityScan: mocks.latestSecurityScan,
       dnsBaseline: mocks.dnsBaseline,
       triggerDnsScan: mocks.triggerDnsScan,
     },
@@ -42,6 +44,9 @@ vi.mock("@/shared/api/client", async (importOriginal) => {
 vi.mock("sonner", () => ({
   toast: { success: mocks.toastSuccess, error: mocks.toastError },
 }));
+
+import { useMonitorChecks } from "@/features/security/model/use-monitor-checks";
+import { CheckPanel, CheckTabs } from "@/widgets/monitor-detail/ui/check-tabs";
 
 import { DnsWatch } from "./dns-watch";
 
@@ -143,21 +148,34 @@ function Where() {
   return <p data-testid="where">{useLocation().pathname}</p>;
 }
 
+const scanHref = (scanId: string) => `/workspaces/w1/projects/p1/monitors/m1/scans/${scanId}`;
+
+/** The section as the monitor screen draws it: inside the Checks strip, whose card owns switch and Run. */
+function Section({ role }: { role: WorkspaceRole }) {
+  const checks = useMonitorChecks("m1", scanHref);
+  return (
+    <CheckTabs
+      canManage={role !== "MEMBER"}
+      checks={checks}
+      host="www.example.com"
+      onRunScan={() => {}}
+      onTabChange={() => {}}
+      scans={[]}
+      scansBusy={false}
+      tab="dns"
+    >
+      <CheckPanel value="dns">
+        <DnsWatch checks={checks} monitor={monitor} project={project} workspace={workspace(role)} />
+      </CheckPanel>
+    </CheckTabs>
+  );
+}
+
 function renderSection(role: WorkspaceRole = "OWNER") {
   return render(
     <MemoryRouter initialEntries={["/monitor"]}>
       <Routes>
-        <Route
-          element={
-            <DnsWatch
-              host="www.example.com"
-              monitor={monitor}
-              project={project}
-              workspace={workspace(role)}
-            />
-          }
-          path="/monitor"
-        />
+        <Route element={<Section role={role} />} path="/monitor" />
         <Route element={<Where />} path="*" />
       </Routes>
     </MemoryRouter>,
@@ -168,6 +186,9 @@ beforeEach(() => {
   Object.values(mocks).forEach((mock) => mock.mockReset());
   mocks.checkSettings.mockResolvedValue(settings(true));
   mocks.latestDnsScan.mockRejectedValue(noScan());
+  mocks.latestSecurityScan.mockRejectedValue(
+    new ApiError({ statusCode: 404, code: "NO_SECURITY_SCAN", message: "No security scan found" }),
+  );
   mocks.dnsBaseline.mockRejectedValue(noBaseline());
 });
 

@@ -87,9 +87,9 @@ const HISTORY: Scan[] = [
   makeScan("s3", "FAILED", { errorMessage: "timeout" }),
 ];
 
-function renderPage() {
+function renderPage(search = "") {
   return render(
-    <MemoryRouter initialEntries={["/workspaces/w1/projects/p1/monitors/m1"]}>
+    <MemoryRouter initialEntries={[`/workspaces/w1/projects/p1/monitors/m1${search}`]}>
       <Routes>
         <Route
           element={<MonitorPage />}
@@ -277,5 +277,100 @@ describe("MonitorPage", () => {
     expect(await main().findByText("Couldn’t load the scan history.")).toBeVisible();
     await user.click(main().getByRole("button", { name: "Try again" }));
     expect(await main().findByRole("table", { name: "Scan history" })).toBeVisible();
+  });
+
+  describe("Checks strip", () => {
+    it("shows Availability, Security and Domain & DNS as tabs, with the overview selected", async () => {
+      renderPage();
+      const tabs = await main().findAllByRole("tab");
+      expect(tabs.map((tab) => tab.textContent)).toEqual([
+        expect.stringContaining("Availability"),
+        expect.stringContaining("Security"),
+        expect.stringContaining("Domain & DNS"),
+      ]);
+      expect(tabs[0]).toHaveAttribute("aria-selected", "true");
+      expect(await main().findByRole("table", { name: "Scan history" })).toBeVisible();
+      expect(main().queryByRole("heading", { name: "Security" })).not.toBeInTheDocument();
+    });
+
+    it("switches the panel with one click and keeps the other cards' controls in place", async () => {
+      const user = userEvent.setup();
+      renderPage();
+      await user.click(await main().findByRole("tab", { name: /Security/ }));
+      expect(await main().findByRole("heading", { name: "Security" })).toBeVisible();
+      expect(main().queryByRole("table", { name: "Scan history" })).not.toBeInTheDocument();
+      await user.click(main().getByRole("tab", { name: /Domain & DNS/ }));
+      expect(await main().findByRole("heading", { name: "Domain and DNS" })).toBeVisible();
+    });
+
+    it("opens the tab named in the URL and falls back to the overview for an unknown one", async () => {
+      const first = renderPage("?tab=dns");
+      expect(await main().findByRole("heading", { name: "Domain and DNS" })).toBeVisible();
+      first.unmount();
+      renderPage("?tab=nonsense");
+      expect(await main().findByRole("table", { name: "Scan history" })).toBeVisible();
+    });
+
+    it("does not change the tab when a switch or Run on a card is used", async () => {
+      const user = userEvent.setup();
+      renderPage();
+      await user.click(await main().findByRole("switch", { name: "Security checks" }));
+      expect(main().getByRole("tab", { name: /Availability/ })).toHaveAttribute(
+        "aria-selected",
+        "true",
+      );
+    });
+
+    it("summarizes the stored security result on its card and in the header", async () => {
+      mocks.checkSettings.mockResolvedValue({
+        monitorId: "m1",
+        securityPostureEnabled: true,
+        dnsWatchEnabled: false,
+        pathProbesEnabled: false,
+        pathProbesAcknowledgedAt: null,
+      });
+      mocks.latestSecurityScan.mockResolvedValue({
+        ...makeScan("sec1", "SUCCEEDED", { kind: "SECURITY_POSTURE" }),
+        findings: [
+          {
+            id: "f1",
+            scanId: "sec1",
+            code: "SEC_HDR_CSP_MISSING",
+            title: "Content-Security-Policy not observed",
+            severity: "MEDIUM",
+            description: "d",
+          },
+        ],
+        subChecks: [],
+      });
+      renderPage();
+      const card = await main().findByRole("tab", { name: /Security/ });
+      expect(await within(card).findByText("1 medium")).toBeVisible();
+      expect(main().getByText("1 finding observed")).toBeVisible();
+    });
+
+    it("gives a member the state as text and no switch or Run on the cards", async () => {
+      mocks.workspaces.mockResolvedValue([workspace("MEMBER")]);
+      renderPage();
+      expect(await main().findByText("Security checks are off")).toBeVisible();
+      expect(main().queryByRole("switch")).not.toBeInTheDocument();
+      expect(main().queryByRole("button", { name: /Run/ })).not.toBeInTheDocument();
+    });
+  });
+
+  it("filters the history by check kind", async () => {
+    const user = userEvent.setup();
+    mocks.scans.mockResolvedValue([
+      makeScan("h1", "SUCCEEDED", { statusCode: 200, responseTimeMs: 100 }),
+      makeScan("sec1", "SUCCEEDED", { kind: "SECURITY_POSTURE" }),
+      makeScan("dns1", "SUCCEEDED", { kind: "DNS_WATCH" }),
+    ]);
+    renderPage();
+    const table = await main().findByRole("table", { name: "Scan history" });
+    expect(within(table).getAllByRole("link")).toHaveLength(3);
+    await user.click(main().getByRole("button", { name: "Security" }));
+    expect(within(table).getAllByRole("link")).toHaveLength(1);
+    await user.click(main().getByRole("button", { name: "All checks" }));
+    expect(within(table).getAllByRole("link")).toHaveLength(3);
   });
 });
