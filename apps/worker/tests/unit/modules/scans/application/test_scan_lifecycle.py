@@ -12,6 +12,7 @@ from ontapulse_worker.modules.scans.domain.models import (
     ClaimedScan,
     ScanJob,
     ScanKind,
+    ScanOptions,
     ScanResult,
 )
 
@@ -124,7 +125,9 @@ def test_registered_kind_is_dispatched_to_its_own_executor() -> None:
     ).handle(JOB)
 
     http_executor.execute.assert_not_called()
-    posture_executor.execute.assert_called_once_with("https://example.com")
+    posture_executor.execute.assert_called_once_with(
+        "https://example.com", options=ScanOptions(path_probes_enabled=False)
+    )
     repository.succeed.assert_called_once()
 
 
@@ -161,3 +164,37 @@ def test_posture_results_are_persisted_as_returned_without_http_policy() -> None
     ).handle(JOB)
 
     repository.succeed.assert_called_once_with(SCAN_ID, result)
+
+
+@pytest.mark.parametrize("enabled", [True, False])
+def test_the_path_probe_setting_reaches_non_http_executors_only(enabled: bool) -> None:
+    repository = Mock()
+    repository.claim.return_value = ClaimedScan(
+        scan_id=SCAN_ID,
+        target_url="https://example.com",
+        kind=ScanKind.SECURITY_POSTURE.value,
+        path_probes_enabled=enabled,
+    )
+    posture_executor = Mock()
+    posture_executor.execute.return_value = ScanResult(status_code=200, response_time_ms=10)
+
+    ScanLifecycleService(
+        repository, Mock(), executors={ScanKind.SECURITY_POSTURE: posture_executor}
+    ).handle(JOB)
+
+    posture_executor.execute.assert_called_once_with(
+        "https://example.com", options=ScanOptions(path_probes_enabled=enabled)
+    )
+
+
+def test_an_http_probe_is_executed_exactly_as_before_without_options() -> None:
+    repository = Mock()
+    repository.claim.return_value = ClaimedScan(
+        scan_id=SCAN_ID, target_url="https://example.com", path_probes_enabled=True
+    )
+    executor = Mock()
+    executor.execute.return_value = ScanResult(status_code=200, response_time_ms=10)
+
+    ScanLifecycleService(repository, executor).handle(JOB)
+
+    executor.execute.assert_called_once_with("https://example.com")

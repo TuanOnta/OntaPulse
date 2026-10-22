@@ -77,8 +77,8 @@ Names are final only once they appear in `schema.prisma`.
 
 Phase 2 makes `SECURITY_POSTURE` runnable (headers, cookies, CORS, and the HTTP to HTTPS redirect); Phase 3 adds the
 TLS and certificate check (one verified handshake); Phase 4 adds edge detection (a pure evaluator over the data
-the posture scan already holds, stored as one `MonitorEdgeProfile` per monitor). Path probes, DNS watch, and
-recurring runs are later phases.
+the posture scan already holds, stored as one `MonitorEdgeProfile` per monitor). Phase 5 adds opt-in path probes (three fixed GETs, a bounded body match; enabling needs an acknowledgment).
+DNS watch and recurring runs are later phases.
 
 Implemented so far (scan kind plumbing): `Scan.kind`, `ScanFinding.checkId`, `category`, and `confidence`, and the
 `MonitorCheckSettings` table. Only `HTTP_PROBE` is runnable; the worker dispatches by kind through a registry and

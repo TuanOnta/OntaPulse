@@ -228,22 +228,171 @@ describe("security posture API", () => {
       await expect(prisma.monitorCheckSettings.count()).resolves.toBe(0);
     });
 
-    it.each([{}, { pathProbesEnabled: true }, { securityPostureEnabled: "yes" }])(
-      "rejects the invalid body %j",
-      async (payload) => {
-        const fixture = await createFixture();
+    it.each([
+      {},
+      { pathProbesAcknowledged: true },
+      { securityPostureEnabled: "yes" },
+      { pathProbesEnabled: "yes" },
+      { pathProbesEnabled: true, pathProbesAcknowledged: "yes" },
+      { pathProbesEnabled: true, pathProbesAcknowledgedById: "x" },
+    ])("rejects the invalid body %j", async (payload) => {
+      const fixture = await createFixture();
 
-        const response = await app.inject({
+      const response = await app.inject({
+        method: "PATCH",
+        url: `/api/monitors/${fixture.monitorId}/check-settings`,
+        headers: { cookie: fixture.ownerCookie },
+        payload,
+      });
+
+      expect(response.statusCode).toBe(400);
+      expect(response.json()).toMatchObject({ code: "VALIDATION_ERROR" });
+    });
+
+    describe("path probes", () => {
+      function patch(monitorId: string, cookie: string, payload: Record<string, unknown>) {
+        return app.inject({
           method: "PATCH",
-          url: `/api/monitors/${fixture.monitorId}/check-settings`,
-          headers: { cookie: fixture.ownerCookie },
+          url: `/api/monitors/${monitorId}/check-settings`,
+          headers: { cookie },
           payload,
         });
+      }
+
+      it.each(["ownerCookie", "adminCookie"] as const)(
+        "lets the %s enable them with the acknowledgment and stores who and when",
+        async (role) => {
+          const fixture = await createFixture();
+          const before = Date.now();
+
+          const response = await patch(fixture.monitorId, fixture[role], {
+            pathProbesEnabled: true,
+            pathProbesAcknowledged: true,
+          });
+
+          expect(response.statusCode).toBe(200);
+          const body = response.json();
+          expect(body.pathProbesEnabled).toBe(true);
+          expect(new Date(body.pathProbesAcknowledgedAt).getTime()).toBeGreaterThanOrEqual(
+            before - 1000,
+          );
+          const stored = await prisma.monitorCheckSettings.findUniqueOrThrow({
+            where: { monitorId: fixture.monitorId },
+          });
+          expect(stored.pathProbesEnabled).toBe(true);
+          expect(stored.pathProbesAcknowledgedById).toBe(
+            (
+              await prisma.user.findUniqueOrThrow({
+                where: {
+                  email: role === "ownerCookie" ? "owner-sec@example.com" : "admin-sec@example.com",
+                },
+              })
+            ).id,
+          );
+          // The read route reports the same state.
+          const read = await app.inject({
+            method: "GET",
+            url: `/api/monitors/${fixture.monitorId}/check-settings`,
+            headers: { cookie: fixture.memberCookie },
+          });
+          expect(read.json()).toMatchObject({ pathProbesEnabled: true });
+          expect(read.json().pathProbesAcknowledgedAt).not.toBeNull();
+        },
+      );
+
+      it.each([
+        { pathProbesEnabled: true },
+        { pathProbesEnabled: true, pathProbesAcknowledged: false },
+      ])("refuses to enable them without the acknowledgment: %j", async (payload) => {
+        const fixture = await createFixture();
+
+        const response = await patch(fixture.monitorId, fixture.ownerCookie, payload);
 
         expect(response.statusCode).toBe(400);
-        expect(response.json()).toMatchObject({ code: "VALIDATION_ERROR" });
-      },
-    );
+        expect(response.json()).toMatchObject({ code: "PATH_PROBE_ACKNOWLEDGMENT_REQUIRED" });
+        await expect(prisma.monitorCheckSettings.count()).resolves.toBe(0);
+      });
+
+      it("rejects a MEMBER even with the acknowledgment, and answers 404 outside the workspace", async () => {
+        const fixture = await createFixture();
+        const payload = { pathProbesEnabled: true, pathProbesAcknowledged: true };
+
+        const member = await patch(fixture.monitorId, fixture.memberCookie, payload);
+        const outsider = await patch(fixture.monitorId, fixture.outsiderCookie, payload);
+        const missing = await patch(NON_EXISTENT_ID, fixture.ownerCookie, payload);
+
+        expect(member.statusCode).toBe(403);
+        expect(outsider.statusCode).toBe(404);
+        expect(missing.statusCode).toBe(404);
+        await expect(prisma.monitorCheckSettings.count()).resolves.toBe(0);
+      });
+
+      it("checks the role before the acknowledgment", async () => {
+        const fixture = await createFixture();
+
+        const response = await patch(fixture.monitorId, fixture.memberCookie, {
+          pathProbesEnabled: true,
+        });
+
+        expect(response.statusCode).toBe(403);
+      });
+
+      it("clears the acknowledgment when disabled, and enabling again needs a fresh one", async () => {
+        const fixture = await createFixture();
+        await patch(fixture.monitorId, fixture.ownerCookie, {
+          pathProbesEnabled: true,
+          pathProbesAcknowledged: true,
+        });
+
+        const disabled = await patch(fixture.monitorId, fixture.adminCookie, {
+          pathProbesEnabled: false,
+        });
+
+        expect(disabled.statusCode).toBe(200);
+        expect(disabled.json()).toMatchObject({
+          pathProbesEnabled: false,
+          pathProbesAcknowledgedAt: null,
+        });
+        const stored = await prisma.monitorCheckSettings.findUniqueOrThrow({
+          where: { monitorId: fixture.monitorId },
+        });
+        expect(stored.pathProbesAcknowledgedById).toBeNull();
+
+        const again = await patch(fixture.monitorId, fixture.ownerCookie, {
+          pathProbesEnabled: true,
+        });
+        expect(again.statusCode).toBe(400);
+      });
+
+      it("keeps the acknowledgment when only another switch changes", async () => {
+        const fixture = await createFixture();
+        await patch(fixture.monitorId, fixture.ownerCookie, {
+          pathProbesEnabled: true,
+          pathProbesAcknowledged: true,
+        });
+
+        const response = await enable(fixture.monitorId, fixture.ownerCookie);
+
+        expect(response.json()).toMatchObject({
+          securityPostureEnabled: true,
+          pathProbesEnabled: true,
+        });
+        expect(response.json().pathProbesAcknowledgedAt).not.toBeNull();
+      });
+
+      it("records the newest acknowledgment when the user acknowledges again", async () => {
+        const fixture = await createFixture();
+        const payload = { pathProbesEnabled: true, pathProbesAcknowledged: true };
+        const first = await patch(fixture.monitorId, fixture.ownerCookie, payload);
+
+        await new Promise((resolve) => setTimeout(resolve, 15));
+        const second = await patch(fixture.monitorId, fixture.adminCookie, payload);
+
+        expect(new Date(second.json().pathProbesAcknowledgedAt).getTime()).toBeGreaterThan(
+          new Date(first.json().pathProbesAcknowledgedAt).getTime(),
+        );
+      });
+    });
 
     it("requires a session", async () => {
       const fixture = await createFixture();

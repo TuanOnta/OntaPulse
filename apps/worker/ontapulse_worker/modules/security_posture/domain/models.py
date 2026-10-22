@@ -34,6 +34,16 @@ class PostureResponse:
         return values[0] if values else None
 
 
+@dataclass(frozen=True)
+class ProbeResponse:
+    """One path probe answer. `body_prefix` (at most 4 KB) is for in-memory matching only."""
+
+    status_code: int
+    headers: Mapping[str, tuple[str, ...]]
+    cookie_names: tuple[str, ...]
+    body_prefix: bytes
+
+
 class TlsOutcome(StrEnum):
     HANDSHAKE_OK = "handshake_ok"
     CERT_VERIFICATION_FAILED = "cert_verification_failed"

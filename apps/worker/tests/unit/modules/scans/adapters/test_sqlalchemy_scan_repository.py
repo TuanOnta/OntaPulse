@@ -327,3 +327,42 @@ def test_an_oversized_edge_profile_drops_trailing_detections_to_fit() -> None:
     stored = session.execute.call_args_list[1].args[1]["detections"]
     assert len(stored.encode()) <= MAX_EDGE_PROFILE_BYTES
     assert stored.count('"vendor"') < 5
+
+
+@pytest.mark.parametrize(
+    ("column", "expected"),
+    [(True, True), (False, False), (None, False)],
+)
+def test_claim_reads_whether_path_probes_are_enabled_and_acknowledged(column, expected) -> None:
+    repository, session = create_repository(
+        query_result(
+            {
+                "status": "QUEUED",
+                "targetUrl": "https://example.com",
+                "kind": "SECURITY_POSTURE",
+                "pathProbesEnabled": column,
+            }
+        ),
+        update_result(),
+    )
+
+    claimed_scan = repository.claim(JOB)
+
+    assert claimed_scan is not None
+    assert claimed_scan.path_probes_enabled is expected
+    statement = str(session.execute.call_args_list[0].args[0])
+    # Enabled alone is not enough: an acknowledgment time must be stored (defense in depth).
+    assert '"pathProbesEnabled" AND settings."pathProbesAcknowledgedAt" IS NOT NULL' in statement
+    assert 'LEFT JOIN "MonitorCheckSettings"' in statement
+
+
+def test_a_claim_without_the_setting_column_defaults_to_no_probes() -> None:
+    repository, _ = create_repository(
+        query_result({"status": "QUEUED", "targetUrl": "https://example.com"}),
+        update_result(),
+    )
+
+    claimed_scan = repository.claim(JOB)
+
+    assert claimed_scan is not None
+    assert claimed_scan.path_probes_enabled is False

@@ -2,7 +2,11 @@
 
 from typing import Protocol
 
-from ontapulse_worker.modules.security_posture.domain.models import PostureResponse, TlsObservation
+from ontapulse_worker.modules.security_posture.domain.models import (
+    PostureResponse,
+    ProbeResponse,
+    TlsObservation,
+)
 
 
 class PostureConnectionError(Exception):
@@ -24,6 +28,14 @@ class TlsInspector(Protocol):
 
 
 class PostureHttpClient(Protocol):
+    def probe(self, url: str) -> ProbeResponse:
+        """One GET of an allowlisted path, redirects not followed, at most 4 KB of the body read.
+
+        Same validation as `fetch`. Raises `ScanExecutionError` when the target is not allowed and
+        `PostureConnectionError` when the request fails.
+        """
+        ...
+
     def fetch(self, url: str) -> PostureResponse:
         """One GET, redirects not followed, body not read.
 

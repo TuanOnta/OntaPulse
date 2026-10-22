@@ -24,6 +24,15 @@ class ClaimedScan:
     target_url: str
     # Kept as text: a kind added by a newer API must not crash an older worker's claim.
     kind: str = ScanKind.HTTP_PROBE.value
+    # True only when path probes are enabled for the monitor AND an acknowledgment time is stored.
+    path_probes_enabled: bool = False
+
+
+@dataclass(frozen=True)
+class ScanOptions:
+    """Per-scan settings read at claim time (the queue payload stays unchanged)."""
+
+    path_probes_enabled: bool = False
 
 
 class FindingSeverity(StrEnum):

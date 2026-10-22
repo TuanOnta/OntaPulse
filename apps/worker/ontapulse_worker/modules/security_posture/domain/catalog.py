@@ -15,6 +15,7 @@ from ontapulse_worker.modules.scans.domain.models import (
 # Budget (docs/security-checks.md section 4).
 MAX_REQUESTS_PER_SCAN = 2
 MAX_TLS_HANDSHAKES_PER_SCAN = 1
+# Path probes (section 8) have their own budget: one request per allowlisted path, opt-in only.
 USER_AGENT_PRODUCT = "OntaPulse-SecurityScanner"
 USER_AGENT_PROJECT_URL = "https://github.com/TuanOnta/OntaPulse"
 
@@ -25,9 +26,11 @@ SUB_CHECK_CORS = "cors"
 SUB_CHECK_REDIRECT = "redirect"
 SUB_CHECK_TLS = "tls"
 SUB_CHECK_EDGE = "edge"
+SUB_CHECK_EXPOSED_FILES = "exposed_files"
 REASON_CONNECTION_FAILED = "connection_failed"
 REASON_CHALLENGE_RESPONSE = "challenge_response"
 REASON_PREREQUISITE_FAILED = "prerequisite_failed"
+REASON_NOT_ENABLED = "not_enabled"
 
 # Thresholds.
 HSTS_MIN_MAX_AGE_SECONDS = 15_552_000
@@ -66,6 +69,7 @@ COOKIE = FindingCategory.COOKIES
 CORS = FindingCategory.CORS
 REDIRECT = FindingCategory.REDIRECT
 TLS = FindingCategory.TLS
+EXPOSED = FindingCategory.EXPOSED_FILES
 LOW = FindingSeverity.LOW
 MEDIUM = FindingSeverity.MEDIUM
 HIGH = FindingSeverity.HIGH
@@ -317,6 +321,35 @@ CATALOG: dict[str, CatalogEntry] = {
         "HTTPS was not available",
         "A connection to the HTTPS port succeeded but the server did not complete a TLS handshake.",
         "Serve the site over HTTPS.",
+    ),
+    "SEC_EXPOSED_ENV_FILE": CatalogEntry(
+        EXPOSED,
+        CRITICAL,
+        "An environment file appears to be exposed",
+        "The path /.env returned 200 and its content matched the dotenv signature.",
+        "Remove the file from the web root and rotate every secret it held.",
+    ),
+    "SEC_EXPOSED_GIT_HEAD": CatalogEntry(
+        EXPOSED,
+        HIGH,
+        "Git repository metadata appears to be exposed",
+        "The path /.git/HEAD returned 200 and its content matched the git HEAD signature.",
+        "Block the .git directory from the web root.",
+    ),
+    "SEC_EXPOSED_GIT_CONFIG": CatalogEntry(
+        EXPOSED,
+        HIGH,
+        "Git configuration appears to be exposed",
+        "The path /.git/config returned 200 and its content matched the git config signature.",
+        "Block the .git directory from the web root.",
+    ),
+    "SEC_EXPOSED_PATH_STATUS_ONLY": CatalogEntry(
+        EXPOSED,
+        LOW,
+        "A sensitive path answered 200",
+        "A path from the exposed-file list returned 200, but its content did not match the "
+        "expected signature.",
+        "Verify that the path is not serving sensitive content.",
     ),
 }
 

@@ -53,7 +53,11 @@ export const getCheckSettingsRouteSchema: FastifySchema = {
 export const updateCheckSettingsRouteSchema: FastifySchema = {
   tags: ["Check settings"],
   summary: "Enable or disable security checks for a monitor",
-  description: "OWNER and ADMIN only. Path-probe settings are not accepted yet.",
+  description:
+    "OWNER and ADMIN only. Enabling path probes (requests to a fixed list of sensitive paths such as /.env) also needs " +
+    "pathProbesAcknowledged: true, the caller's statement that they are authorized to test the target; without it the " +
+    "request is rejected with 400 PATH_PROBE_ACKNOWLEDGMENT_REQUIRED. The acknowledging user and time are stored. " +
+    "Disabling clears the acknowledgment.",
   params: monitorIdParamsSchema,
   body: {
     type: "object",
@@ -62,7 +66,11 @@ export const updateCheckSettingsRouteSchema: FastifySchema = {
     properties: {
       securityPostureEnabled: { type: "boolean" },
       dnsWatchEnabled: { type: "boolean" },
+      pathProbesEnabled: { type: "boolean" },
+      pathProbesAcknowledged: { type: "boolean" },
     },
+    // Same rules as the Zod schema: the acknowledgment only travels with the switch it belongs to.
+    dependencies: { pathProbesAcknowledged: ["pathProbesEnabled"] },
   },
   response: {
     200: checkSettingsResponseSchema,

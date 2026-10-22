@@ -27,7 +27,14 @@ from ontapulse_worker.modules.security_posture.domain.catalog import (
     USER_AGENT_PROJECT_URL,
 )
 from ontapulse_worker.modules.security_posture.domain.cookie_rules import parse_set_cookie
-from ontapulse_worker.modules.security_posture.domain.models import CookieInfo, PostureResponse
+from ontapulse_worker.modules.security_posture.domain.models import (
+    CookieInfo,
+    PostureResponse,
+    ProbeResponse,
+)
+from ontapulse_worker.modules.security_posture.domain.path_probe_rules import (
+    MAX_PROBE_BODY_BYTES,
+)
 
 CONNECT_TIMEOUT_SECONDS = 5.0
 READ_TIMEOUT_SECONDS = 30.0
@@ -69,7 +76,8 @@ class PinnedHttpxClient:
         self._clock = clock
         self._user_agent = build_user_agent()
 
-    def fetch(self, url: str) -> PostureResponse:
+    def _prepare(self, url: str) -> tuple[str, str, dict[str, str]]:
+        """Validate, resolve once, and return the pinned URL, Host header, and extensions."""
         parts = urlsplit(url)
         hostname, port = self._validated_host_and_port(url)
         address = resolve_pinned_address(self._resolver, hostname, port)
@@ -81,6 +89,60 @@ class PinnedHttpxClient:
         default_port = 443 if parts.scheme == "https" else 80
         host_header = hostname if port == default_port else f"{hostname}:{port}"
         extensions = {"sni_hostname": hostname} if parts.scheme == "https" else {}
+
+        return pinned_url, host_header, extensions
+
+    def probe(self, url: str) -> ProbeResponse:
+        pinned_url, host_header, extensions = self._prepare(url)
+
+        try:
+            with self._client.stream(
+                "GET",
+                pinned_url,
+                # Identity encoding: the 4 KB cap is 4 KB of body, nothing is decompressed.
+                headers={
+                    "Host": host_header,
+                    "User-Agent": self._user_agent,
+                    "Accept-Encoding": "identity",
+                },
+                extensions=extensions,
+            ) as response:
+                body_prefix = self._read_prefix(response)
+                headers = self._collect_headers(response)
+                cookie_names = tuple(cookie.name for cookie in self._collect_cookies(response))
+                status_code = response.status_code
+        except httpx.RequestError as error:
+            raise PostureConnectionError("probe failed") from error
+
+        return ProbeResponse(
+            status_code=status_code,
+            headers=headers,
+            cookie_names=cookie_names,
+            body_prefix=body_prefix,
+        )
+
+    @staticmethod
+    def _read_prefix(response: httpx.Response) -> bytes:
+        """At most MAX_PROBE_BODY_BYTES of the raw body; the rest is never read."""
+        chunks: list[bytes] = []
+        remaining = MAX_PROBE_BODY_BYTES
+
+        try:
+            for chunk in response.iter_raw():
+                part = chunk[:remaining]
+                chunks.append(part)
+                remaining -= len(part)
+
+                if remaining <= 0:
+                    break
+        except httpx.StreamConsumed:
+            # An in-memory response (a test transport) has no stream left; the body is here.
+            return bytes(response.content[:MAX_PROBE_BODY_BYTES])
+
+        return b"".join(chunks)
+
+    def fetch(self, url: str) -> PostureResponse:
+        pinned_url, host_header, extensions = self._prepare(url)
         started_at = self._clock()
 
         try:

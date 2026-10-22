@@ -109,6 +109,7 @@ def test_a_clean_target_has_no_findings_and_every_sub_check_ran() -> None:
         "redirect": ("ran", None),
         "tls": ("ran", None),
         "edge": ("ran", None),
+        "exposed_files": ("skipped", "not_enabled"),
     }
 
 
@@ -166,6 +167,7 @@ def test_a_failed_https_request_skips_header_cookie_and_cors_checks() -> None:
         "redirect": ("ran", None),
         "tls": ("ran", None),
         "edge": ("ran", None),
+        "exposed_files": ("skipped", "not_enabled"),
     }
 
 
@@ -286,6 +288,7 @@ def test_a_confirmed_challenge_suppresses_the_findings_of_that_response() -> Non
         "redirect": ("ran", None),
         "tls": ("ran", None),
         "edge": ("ran", None),
+        "exposed_files": ("skipped", "not_enabled"),
     }
 
 

@@ -1,6 +1,6 @@
 import { AppError } from "../../infrastructure/errors/app-error.js";
 import type { WorkspaceAccessService } from "../workspaces/workspace-access.service.js";
-import { CheckSettingsRepository } from "./check-settings.repository.js";
+import { CheckSettingsRepository, type CheckSettingsWrite } from "./check-settings.repository.js";
 import type { UpdateCheckSettingsInput } from "./check-settings.schema.js";
 
 const DEFAULT_SETTINGS = {
@@ -40,7 +40,7 @@ export class CheckSettingsService {
       monitorNotFound(),
     );
 
-    return this.repository.upsert(monitorId, input);
+    return this.repository.upsert(monitorId, toWrite(input, userId));
   }
 
   private async requireMonitor(monitorId: string) {
@@ -52,6 +52,36 @@ export class CheckSettingsService {
 
     return monitor;
   }
+}
+
+/**
+ * Path probes are opt-in. Switching them on needs the explicit acknowledgment and records who gave it and when;
+ * switching them off clears it, so "enabled" always implies a stored acknowledgment and re-enabling needs a new one.
+ */
+function toWrite(input: UpdateCheckSettingsInput, userId: string): CheckSettingsWrite {
+  const { pathProbesAcknowledged, ...switches } = input;
+
+  if (input.pathProbesEnabled === true) {
+    if (pathProbesAcknowledged !== true) {
+      throw new AppError(
+        "Enabling path probes needs the acknowledgment that you are authorized to test this target",
+        400,
+        "PATH_PROBE_ACKNOWLEDGMENT_REQUIRED",
+      );
+    }
+
+    return {
+      ...switches,
+      pathProbesAcknowledgedById: userId,
+      pathProbesAcknowledgedAt: new Date(),
+    };
+  }
+
+  if (input.pathProbesEnabled === false) {
+    return { ...switches, pathProbesAcknowledgedById: null, pathProbesAcknowledgedAt: null };
+  }
+
+  return switches;
 }
 
 function monitorNotFound(): AppError {

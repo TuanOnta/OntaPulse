@@ -108,6 +108,8 @@ the same, with these additions:
 - Findings, observations (the edge profile upsert), the DNS baseline update, and the terminal status are written in one transaction. A
   duplicate delivery of a terminal Scan writes no second set of findings and no second DNS baseline.
 - Retry rules, topology, and the `x-scan-retry-count` header are unchanged.
+- Phase 5: the worker also reads the monitor's check settings when it claims a Scan (path probes enabled and acknowledged).
+  The queue payload stays `{ scanId, monitorId }`.
 - `SECURITY_POSTURE` is implemented: it makes at most two requests (one HTTPS GET and one HTTP GET, redirects not
   followed, bodies not read) and one TLS handshake, each connecting to the single validated address. Its result is
   persisted as returned (the `HTTP_PROBE` status and latency policy does not apply), together with `Scan.subChecks`.
