@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { ApiError, api } from "./client";
+import { ApiError, api, onUnauthenticated } from "./client";
 
 describe("API client", () => {
   afterEach(() => {
@@ -124,5 +124,69 @@ describe("API client", () => {
 
     expect(error).toBeInstanceOf(ApiError);
     expect((error as ApiError).payload.details?.retryAfterSeconds).toBe(90);
+  });
+
+  describe("expired session", () => {
+    const unauthenticated = () =>
+      new Response(
+        JSON.stringify({
+          statusCode: 401,
+          code: "UNAUTHENTICATED",
+          message: "Authentication required",
+        }),
+        { status: 401 },
+      );
+
+    it("tells the registered handler when a signed-in request is refused with 401", async () => {
+      const handler = vi.fn();
+      const off = onUnauthenticated(handler);
+      vi.stubGlobal(
+        "fetch",
+        vi.fn(() => Promise.resolve(unauthenticated())),
+      );
+
+      await expect(api.workspaces()).rejects.toBeInstanceOf(ApiError);
+
+      expect(handler).toHaveBeenCalledTimes(1);
+      off();
+    });
+
+    it("leaves the sign-in calls alone, because a wrong password is also a 401", async () => {
+      const handler = vi.fn();
+      const off = onUnauthenticated(handler);
+      vi.stubGlobal(
+        "fetch",
+        vi.fn(() => Promise.resolve(unauthenticated())),
+      );
+
+      await expect(api.me()).rejects.toBeInstanceOf(ApiError);
+      await expect(api.login("a@b.co", "wrong-password-123")).rejects.toBeInstanceOf(ApiError);
+
+      expect(handler).not.toHaveBeenCalled();
+      off();
+    });
+
+    it("ignores other errors and stops calling a handler that was removed", async () => {
+      const handler = vi.fn();
+      const off = onUnauthenticated(handler);
+      vi.stubGlobal(
+        "fetch",
+        vi.fn().mockResolvedValueOnce(
+          new Response(JSON.stringify({ statusCode: 403, code: "FORBIDDEN", message: "No" }), {
+            status: 403,
+          }),
+        ),
+      );
+      await expect(api.workspaces()).rejects.toBeInstanceOf(ApiError);
+      expect(handler).not.toHaveBeenCalled();
+
+      off();
+      vi.stubGlobal(
+        "fetch",
+        vi.fn(() => Promise.resolve(unauthenticated())),
+      );
+      await expect(api.workspaces()).rejects.toBeInstanceOf(ApiError);
+      expect(handler).not.toHaveBeenCalled();
+    });
   });
 });

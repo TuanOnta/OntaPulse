@@ -16,6 +16,20 @@ import type {
 
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? "";
 
+let unauthenticatedHandler: (() => void) | null = null;
+
+/**
+ * Registers who is told when a request of a signed-in screen is refused with `401 UNAUTHENTICATED`, which means
+ * the session expired. The sign-in calls (`/auth/...`) are left out: they answer 401 for a wrong password and
+ * show that themselves. Returns a function that removes the handler.
+ */
+export function onUnauthenticated(handler: () => void): () => void {
+  unauthenticatedHandler = handler;
+  return () => {
+    if (unauthenticatedHandler === handler) unauthenticatedHandler = null;
+  };
+}
+
 export class ApiError extends Error {
   constructor(readonly payload: ApiErrorShape) {
     super(payload.message);
@@ -41,6 +55,14 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
     body = undefined;
   }
   if (!response.ok) {
+    if (
+      response.status === 401 &&
+      isApiErrorShape(body) &&
+      body.code === "UNAUTHENTICATED" &&
+      !path.startsWith("/auth/")
+    ) {
+      unauthenticatedHandler?.();
+    }
     throw new ApiError(
       (isApiErrorShape(body)
         ? body
