@@ -8,7 +8,22 @@ const DEFAULT_SETTINGS = {
   dnsWatchEnabled: false,
   pathProbesEnabled: false,
   pathProbesAcknowledgedAt: null,
+  securityNextScanAt: null,
+  dnsNextScanAt: null,
 } as const;
+
+type StoredSettings = NonNullable<Awaited<ReturnType<CheckSettingsRepository["findByMonitorId"]>>>;
+
+/** The API names the stored next-run times `...NextScanAt`: when the next recurring scan is due, or null while off. */
+function toResponse(settings: StoredSettings) {
+  const { securityNextScheduledAt, dnsNextScheduledAt, ...rest } = settings;
+
+  return {
+    ...rest,
+    securityNextScanAt: securityNextScheduledAt,
+    dnsNextScanAt: dnsNextScheduledAt,
+  };
+}
 
 export class CheckSettingsService {
   constructor(
@@ -27,7 +42,7 @@ export class CheckSettingsService {
 
     const settings = await this.repository.findByMonitorId(monitorId);
 
-    return settings ?? { monitorId, ...DEFAULT_SETTINGS };
+    return settings ? toResponse(settings) : { monitorId, ...DEFAULT_SETTINGS };
   }
 
   async update(monitorId: string, userId: string, input: UpdateCheckSettingsInput) {
@@ -40,7 +55,7 @@ export class CheckSettingsService {
       monitorNotFound(),
     );
 
-    return this.repository.upsert(monitorId, toWrite(input, userId));
+    return toResponse(await this.repository.upsert(monitorId, toWrite(input, userId)));
   }
 
   private async requireMonitor(monitorId: string) {
