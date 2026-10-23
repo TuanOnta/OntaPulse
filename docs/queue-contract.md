@@ -8,8 +8,9 @@ The TypeScript API producer and Python worker consumer are implemented and
 active.
 
 The producer publishes persistent messages through a confirm channel. The worker
-performs strict message validation, idempotent database claiming, HTTP execution,
-finding persistence, bounded delayed retries, and explicit delivery settlement.
+performs strict message validation, idempotent database claiming, execution of the check for the scan's
+kind (HTTP probe, security posture, or DNS watch), finding persistence, bounded delayed retries, and
+explicit delivery settlement.
 
 ## RabbitMQ topology
 
@@ -97,7 +98,7 @@ Scan creation also creates a `ScanOutboxEvent` in the same PostgreSQL transactio
 
 ### Security and DNS scans
 
-Applies to `SECURITY_POSTURE` and `DNS_WATCH` (planned; `HTTP_PROBE` is unchanged). The consumer steps above stay
+Applies to `SECURITY_POSTURE` and `DNS_WATCH` (`HTTP_PROBE` is unchanged). The consumer steps above stay
 the same, with these additions:
 
 - After loading the Scan, the worker reads its kind and dispatches to the matching check family.

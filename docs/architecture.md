@@ -2,14 +2,14 @@
 
 ## System components
 
-| Component  | Responsibility                                                                     |
-| ---------- | ---------------------------------------------------------------------------------- |
-| Web        | User interface for projects, monitors, scans, and findings                         |
-| API        | HTTP contract, validation, business orchestration, persistence, and job publishing |
-| PostgreSQL | Source of truth for projects, monitors, scans, and findings                        |
-| RabbitMQ   | Durable delivery of scan jobs from the API to workers                              |
-| Worker     | Fetches targets, performs checks, and persists scan results                        |
-| Redis      | Cache, rate limiting, locks, and temporary state; not the primary scan queue       |
+| Component  | Responsibility                                                                                               |
+| ---------- | ------------------------------------------------------------------------------------------------------------ |
+| Web        | User interface for workspaces, projects, monitors, scans, findings, and security results                     |
+| API        | HTTP contract, validation, business orchestration, persistence, and job publishing                           |
+| PostgreSQL | Source of truth for users, workspaces, projects, monitors, scans, findings, edge profiles, and DNS baselines |
+| RabbitMQ   | Durable delivery of scan jobs from the API to workers                                                        |
+| Worker     | Fetches targets, inspects TLS, queries DNS, performs checks, and persists scan results                       |
+| Redis      | Cache, rate limiting, locks, and temporary state; not the primary scan queue                                 |
 
 ## Implementation status
 
@@ -30,61 +30,68 @@ The Python worker is active and implements:
 - connection recovery;
 - graceful shutdown with active-job draining;
 - structured logging;
+- dispatch by scan kind (`HTTP_PROBE`, `SECURITY_POSTURE`, `DNS_WATCH`);
 - unit and RabbitMQ integration tests.
 
-Session-based authentication and workspace authorization are implemented. The web client implements auth, workspaces, projects, monitors, and scans.
+Session-based authentication and workspace authorization are implemented. The web client implements auth, workspaces, projects, monitors, scans, and the security, domain and DNS, and edge profile views of a monitor.
 
-### Planned: security features
+The API also exposes monitor update and delete, check settings, and owner-only operations endpoints (queue health and dead-letter redrive). The web client does not use the monitor update/delete or operations endpoints yet.
 
-Three capability areas are designed in [security-checks.md](security-checks.md) and are built in phases on top of
-the existing monitors. None of them is implemented yet.
+### Security features
+
+Three capability areas are defined in [security-checks.md](security-checks.md) and run on top of the existing
+monitors. All of them are implemented.
 
 - Web security posture (`SECURITY_POSTURE`): headers, cookies, CORS, HTTP to HTTPS redirect, TLS and certificate,
   opt-in exposed-file probes.
 - Domain and DNS watch (`DNS_WATCH`): record changes against a baseline, dangling CNAME, SPF, DKIM, DMARC.
 - Edge detection: WAF, CDN, and anti-bot vendor profile, derived from data the two scan kinds already collect.
 
-All checks are passive. The existing `HTTP_PROBE` behavior and contract do not change.
+All checks are passive. Security and DNS checks are off until an `OWNER` or `ADMIN` enables them per monitor, and they recur on their own schedule (see Scan flow). The existing `HTTP_PROBE` behavior and contract did not change.
 
 ## Domain model
 
 ```text
 Project
 └── Monitor
+    ├── MonitorCheckSettings
+    ├── MonitorEdgeProfile
+    ├── DnsBaseline / DnsChange
     └── Scan
         └── ScanFinding
 ```
 
 - A Project groups related monitors.
 - A Monitor defines one HTTP or HTTPS target and its interval.
-- A Scan represents one execution for a monitor.
+- A Scan represents one execution of one kind for a monitor.
 - A ScanFinding records an issue discovered during a scan.
+- MonitorCheckSettings, MonitorEdgeProfile, and the DNS tables hold the security and DNS data described below.
 
 Refer to `apps/api/prisma/schema.prisma` for exact fields, enums, relations, indexes, and deletion behavior.
 
-### Planned additions (additive)
+### Security data model (additive)
 
-| Concept                    | Purpose                                                                                 |
-| -------------------------- | --------------------------------------------------------------------------------------- |
-| Scan kind                  | `HTTP_PROBE` (default), `SECURITY_POSTURE`, `DNS_WATCH`, stored on the Scan row         |
-| Finding fields             | Stable `checkId`, category, optional confidence, bounded sanitized evidence             |
-| Observation (edge profile) | Non-finding result: detected WAF, CDN, anti-bot vendors, confidence, supporting signals |
-| DNS baseline               | Latest normalized record snapshot per monitored host plus a bounded change history      |
-| Monitor check settings     | Enabled scan kinds; path-probe opt-in with acknowledging user and time                  |
+| Concept                    | Purpose                                                                                                        |
+| -------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| Scan kind                  | `HTTP_PROBE` (default), `SECURITY_POSTURE`, `DNS_WATCH`, stored on the Scan row                                |
+| Finding fields             | Stable `checkId`, category, optional confidence, bounded sanitized evidence                                    |
+| Observation (edge profile) | Non-finding result: detected WAF, CDN, anti-bot vendors, confidence, supporting signals                        |
+| DNS baseline               | `DnsBaseline`: latest normalized record snapshot per monitor, plus `DnsChange` history                         |
+| Monitor check settings     | `MonitorCheckSettings`: enabled scan kinds, path-probe opt-in with acknowledging user and time, next run times |
 
 Existing rows keep working: new columns are nullable or defaulted, and enums are extended, never renamed.
-Names are final only once they appear in `schema.prisma`.
+`schema.prisma` has the exact names.
 
-Phase 2 makes `SECURITY_POSTURE` runnable (headers, cookies, CORS, and the HTTP to HTTPS redirect); Phase 3 adds the
-TLS and certificate check (one verified handshake); Phase 4 adds edge detection (a pure evaluator over the data
-the posture scan already holds, stored as one `MonitorEdgeProfile` per monitor). Phase 5 adds opt-in path probes (three fixed GETs, a bounded body match; enabling needs an acknowledgment).
-Phase 6 makes DNS watch runnable: a `DnsResolver` port over `dnspython` and public resolvers, a per-monitor
-baseline (`DnsBaseline`) with a bounded change history (`DnsChange`), dangling CNAME, SPF, DMARC, and best-effort DKIM. Recurring runs are a later phase.
+How the pieces fit:
 
-Implemented so far (scan kind plumbing): `Scan.kind`, `ScanFinding.checkId`, `category`, and `confidence`, and the
-`MonitorCheckSettings` table. Only `HTTP_PROBE` is runnable; the worker dispatches by kind through a registry and
-the API rejects other kinds on trigger until their checks ship. The edge profile and DNS baseline tables are added
-in the phases that use them.
+- `SECURITY_POSTURE` runs headers, cookies, CORS, the HTTP to HTTPS redirect, the TLS and certificate check (one verified
+  handshake), and opt-in path probes (three fixed GETs, a bounded body match; enabling needs an acknowledgment).
+- Edge detection is a pure evaluator over the data the posture scan already holds. Its result is stored as one
+  `MonitorEdgeProfile` per monitor.
+- `DNS_WATCH` uses a `DnsResolver` port over `dnspython` and public resolvers. It keeps a per-monitor baseline
+  (`DnsBaseline`) with a bounded change history (`DnsChange`), and checks dangling CNAME, SPF, DMARC, and best-effort DKIM.
+- `Scan.kind`, `ScanFinding.checkId`, `category`, and `confidence`, and `Scan.subChecks` carry the results. The worker
+  dispatches by kind through a registry, and the API accepts a kind on trigger only when that check is enabled for the monitor.
 
 ## Scan flow
 
@@ -124,8 +131,8 @@ emits the structured `Scan scheduler run completed` event with `dueMonitorCount`
 `scheduledCount`, and `durationMs` for log-derived metrics.
 
 The scheduler and the manual trigger create a Scan with its kind (default `HTTP_PROBE`). Security and DNS scan
-kinds use their own limits from the catalog, not the 60 second `HTTP_PROBE` floor: a short cooldown for manual runs and an hourly
-minimum for scheduled runs.
+kinds use their own limits from the catalog, not the 60 second `HTTP_PROBE` floor: a 60 second cooldown for manual runs and an hourly
+minimum for scheduled runs. Each workspace is limited to 60 scans per hour for each of the two kinds.
 
 Each cycle has two passes. The availability pass is the one described above and is unchanged. The check pass then
 creates recurring `SECURITY_POSTURE` and `DNS_WATCH` scans for monitors that enabled them. The monitor's
@@ -182,13 +189,15 @@ Infrastructure implementations are accessed through interfaces where tests need 
 
 Authenticated API resources are isolated by workspace membership. `OWNER` and `ADMIN` roles may create projects and monitors and trigger scans, while every workspace member may read projects, monitors, and scans. Requests for resources outside the user's workspaces return `404` to avoid exposing resource existence.
 
+The API modules are `auth`, `workspaces`, `projects`, `monitors`, `scans`, `check-settings`, `domain-watch`, `edge-profile`, and `operations`. Each follows the same four layers.
+
 `server.ts` is the composition root. Development and production construct `RabbitMqScanQueue`; test mode uses `NoopScanQueue`, while scan integration tests inject a recording fake. The RabbitMQ connection is opened lazily and is closed together with Prisma during Fastify shutdown.
 
 ## Worker module boundaries
 
 Worker features live under `ontapulse_worker/modules/<feature>`. The scan module owns
 its domain models and errors, application ports and lifecycle service, and
-RabbitMQ, HTTP, and SQLAlchemy adapters. Adapters depend on application/domain;
+RabbitMQ, HTTP, and SQLAlchemy adapters. The `security_posture`, `dns_watch`, and `edge_detection` modules follow the same split. Adapters depend on application/domain;
 the domain does not import HTTPX, Pika, or SQLAlchemy.
 
 `platform` provides shared settings, connection factories, and logging without scan
@@ -225,23 +234,23 @@ entrypoints
 Domain and application code do not import Pika, HTTPX, SQLAlchemy, or process
 configuration. Concrete dependencies are assembled in the bootstrap layer.
 
-### Planned: check families and dispatch
+### Check families and dispatch
 
 The lifecycle module dispatches by scan kind through a registry built in `bootstrap`. Each check family keeps the
 same domain, application, adapters split:
 
 ```text
-modules/http_probe         existing check (behavior unchanged)
+modules/scans              lifecycle, RabbitMQ consumer, and the HTTP probe (behavior unchanged)
 modules/security_posture   headers, cookies, CORS, redirect, TLS, path probes
 modules/dns_watch          baseline, diff, dangling CNAME, SPF, DKIM, DMARC
 modules/edge_detection     WAF, CDN, anti-bot evaluator (pure, no I/O of its own)
 ```
 
-New external dependencies get a port first (`HttpClient`, `TlsInspector`, `DnsResolver`); tests use fakes. Pure
+External dependencies sit behind a port (the HTTP client, `TlsInspector`, `DnsResolver`); tests use fakes. Pure
 evaluators take plain data and an injected clock. A check family never touches the broker or claims scans.
 The worker never imports API code and never runs Prisma; schema changes originate in the API migration.
 
-### Planned: security data flow
+### Security data flow
 
 ```text
 web -> API (auth, role check, create Scan with kind + outbox in one tx) -> RabbitMQ
