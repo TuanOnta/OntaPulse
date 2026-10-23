@@ -44,6 +44,13 @@ export const SECURITY_POSTURE_WORKSPACE_LIMIT_PER_HOUR = 60;
 export const DNS_WATCH_MANUAL_COOLDOWN_SECONDS = 60;
 export const DNS_WATCH_SCHEDULE_MIN_INTERVAL_SECONDS = 3_600;
 export const DNS_WATCH_WORKSPACE_LIMIT_PER_HOUR = 60;
+/**
+ * How often a kind runs on its own once enabled (docs/security-checks.md section 4). These are fixed catalog
+ * values, not the monitor's `intervalSeconds`: a one-minute availability monitor must not become a one-minute
+ * stream of header, TLS, and DNS requests. Each is above the kind's minimum scheduled interval.
+ */
+export const SECURITY_POSTURE_SCHEDULE_INTERVAL_SECONDS = 86_400;
+export const DNS_WATCH_SCHEDULE_INTERVAL_SECONDS = 21_600;
 export const WORKSPACE_LIMIT_WINDOW_SECONDS = 3_600;
 
 export const SCAN_KIND_LIMITS: Partial<
@@ -60,3 +67,25 @@ export const SCAN_KIND_LIMITS: Partial<
 };
 
 export const SUB_CHECK_STATES = ["ran", "skipped"] as const;
+
+export type ScheduledScanKind = Exclude<ScanKind, "HTTP_PROBE">;
+
+/**
+ * The kinds the scheduler creates besides `HTTP_PROBE`. Their switch and next-run time are columns of
+ * `MonitorCheckSettings`; `HTTP_PROBE` keeps using `Monitor.nextScheduledAt`.
+ */
+export const SCHEDULED_KINDS: Record<
+  ScheduledScanKind,
+  { intervalSeconds: number; minIntervalSeconds: number; workspaceLimitPerWindow: number }
+> = {
+  SECURITY_POSTURE: {
+    intervalSeconds: SECURITY_POSTURE_SCHEDULE_INTERVAL_SECONDS,
+    minIntervalSeconds: SECURITY_POSTURE_SCHEDULE_MIN_INTERVAL_SECONDS,
+    workspaceLimitPerWindow: SECURITY_POSTURE_WORKSPACE_LIMIT_PER_HOUR,
+  },
+  DNS_WATCH: {
+    intervalSeconds: DNS_WATCH_SCHEDULE_INTERVAL_SECONDS,
+    minIntervalSeconds: DNS_WATCH_SCHEDULE_MIN_INTERVAL_SECONDS,
+    workspaceLimitPerWindow: DNS_WATCH_WORKSPACE_LIMIT_PER_HOUR,
+  },
+};

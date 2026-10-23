@@ -6,7 +6,9 @@ import { prisma } from "../src/infrastructure/database/prisma.js";
 import type { ScanJob, ScanQueue } from "../src/infrastructure/queue/scan-queue.js";
 import type { SessionStore } from "../src/infrastructure/session/session-store.js";
 import {
+  DNS_WATCH_SCHEDULE_INTERVAL_SECONDS,
   SECURITY_POSTURE_MANUAL_COOLDOWN_SECONDS,
+  SECURITY_POSTURE_SCHEDULE_INTERVAL_SECONDS,
   SECURITY_POSTURE_SCHEDULE_MIN_INTERVAL_SECONDS,
   SECURITY_POSTURE_WORKSPACE_LIMIT_PER_HOUR,
 } from "../src/modules/scans/scan-kinds.js";
@@ -162,6 +164,73 @@ describe("security posture API", () => {
         dnsWatchEnabled: false,
         pathProbesEnabled: false,
         pathProbesAcknowledgedAt: null,
+        securityNextScanAt: null,
+        dnsNextScanAt: null,
+      });
+    });
+
+    describe("recurring schedule", () => {
+      const patch = (fixture: Fixture, payload: Record<string, boolean>) =>
+        app.inject({
+          method: "PATCH",
+          url: `/api/monitors/${fixture.monitorId}/check-settings`,
+          headers: { cookie: fixture.ownerCookie },
+          payload,
+        });
+      const secondsFromNow = (value: string) => (new Date(value).getTime() - Date.now()) / 1_000;
+
+      it("starts the schedule one interval out when a check is switched on", async () => {
+        const fixture = await createFixture();
+
+        const security = await patch(fixture, { securityPostureEnabled: true });
+        expect(security.statusCode).toBe(200);
+        expect(secondsFromNow(security.json().securityNextScanAt)).toBeGreaterThan(
+          SECURITY_POSTURE_SCHEDULE_INTERVAL_SECONDS - 60,
+        );
+        expect(security.json().dnsNextScanAt).toBeNull();
+
+        const dns = await patch(fixture, { dnsWatchEnabled: true });
+        expect(secondsFromNow(dns.json().dnsNextScanAt)).toBeGreaterThan(
+          DNS_WATCH_SCHEDULE_INTERVAL_SECONDS - 60,
+        );
+        expect(secondsFromNow(dns.json().dnsNextScanAt)).toBeLessThanOrEqual(
+          DNS_WATCH_SCHEDULE_INTERVAL_SECONDS,
+        );
+
+        const read = await app.inject({
+          method: "GET",
+          url: `/api/monitors/${fixture.monitorId}/check-settings`,
+          headers: { cookie: fixture.memberCookie },
+        });
+        expect(read.json().securityNextScanAt).toBe(security.json().securityNextScanAt);
+        expect(read.json().dnsNextScanAt).toBe(dns.json().dnsNextScanAt);
+      });
+
+      it("does not move a schedule that is already running when the switch is sent again", async () => {
+        const fixture = await createFixture();
+        const first = await patch(fixture, { securityPostureEnabled: true });
+        const second = await patch(fixture, { securityPostureEnabled: true });
+
+        expect(second.json().securityNextScanAt).toBe(first.json().securityNextScanAt);
+      });
+
+      it("clears the schedule when the check is switched off, and leaves the other kind alone", async () => {
+        const fixture = await createFixture();
+        await patch(fixture, { securityPostureEnabled: true, dnsWatchEnabled: true });
+
+        const off = await patch(fixture, { securityPostureEnabled: false });
+
+        expect(off.json().securityNextScanAt).toBeNull();
+        expect(off.json().dnsNextScanAt).not.toBeNull();
+      });
+
+      it("does not schedule anything for a change that touches neither check", async () => {
+        const fixture = await createFixture();
+
+        const response = await patch(fixture, { pathProbesEnabled: false });
+
+        expect(response.json().securityNextScanAt).toBeNull();
+        expect(response.json().dnsNextScanAt).toBeNull();
       });
     });
 

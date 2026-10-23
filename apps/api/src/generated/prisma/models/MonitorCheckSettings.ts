@@ -32,6 +32,8 @@ export type MonitorCheckSettingsMinAggregateOutputType = {
   pathProbesEnabled: boolean | null
   pathProbesAcknowledgedById: string | null
   pathProbesAcknowledgedAt: Date | null
+  securityNextScheduledAt: Date | null
+  dnsNextScheduledAt: Date | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -44,6 +46,8 @@ export type MonitorCheckSettingsMaxAggregateOutputType = {
   pathProbesEnabled: boolean | null
   pathProbesAcknowledgedById: string | null
   pathProbesAcknowledgedAt: Date | null
+  securityNextScheduledAt: Date | null
+  dnsNextScheduledAt: Date | null
   createdAt: Date | null
   updatedAt: Date | null
 }
@@ -56,6 +60,8 @@ export type MonitorCheckSettingsCountAggregateOutputType = {
   pathProbesEnabled: number
   pathProbesAcknowledgedById: number
   pathProbesAcknowledgedAt: number
+  securityNextScheduledAt: number
+  dnsNextScheduledAt: number
   createdAt: number
   updatedAt: number
   _all: number
@@ -70,6 +76,8 @@ export type MonitorCheckSettingsMinAggregateInputType = {
   pathProbesEnabled?: true
   pathProbesAcknowledgedById?: true
   pathProbesAcknowledgedAt?: true
+  securityNextScheduledAt?: true
+  dnsNextScheduledAt?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -82,6 +90,8 @@ export type MonitorCheckSettingsMaxAggregateInputType = {
   pathProbesEnabled?: true
   pathProbesAcknowledgedById?: true
   pathProbesAcknowledgedAt?: true
+  securityNextScheduledAt?: true
+  dnsNextScheduledAt?: true
   createdAt?: true
   updatedAt?: true
 }
@@ -94,6 +104,8 @@ export type MonitorCheckSettingsCountAggregateInputType = {
   pathProbesEnabled?: true
   pathProbesAcknowledgedById?: true
   pathProbesAcknowledgedAt?: true
+  securityNextScheduledAt?: true
+  dnsNextScheduledAt?: true
   createdAt?: true
   updatedAt?: true
   _all?: true
@@ -179,6 +191,8 @@ export type MonitorCheckSettingsGroupByOutputType = {
   pathProbesEnabled: boolean
   pathProbesAcknowledgedById: string | null
   pathProbesAcknowledgedAt: Date | null
+  securityNextScheduledAt: Date | null
+  dnsNextScheduledAt: Date | null
   createdAt: Date
   updatedAt: Date
   _count: MonitorCheckSettingsCountAggregateOutputType | null
@@ -212,6 +226,8 @@ export type MonitorCheckSettingsWhereInput = {
   pathProbesEnabled?: Prisma.BoolFilter<"MonitorCheckSettings"> | boolean
   pathProbesAcknowledgedById?: Prisma.UuidNullableFilter<"MonitorCheckSettings"> | string | null
   pathProbesAcknowledgedAt?: Prisma.DateTimeNullableFilter<"MonitorCheckSettings"> | Date | string | null
+  securityNextScheduledAt?: Prisma.DateTimeNullableFilter<"MonitorCheckSettings"> | Date | string | null
+  dnsNextScheduledAt?: Prisma.DateTimeNullableFilter<"MonitorCheckSettings"> | Date | string | null
   createdAt?: Prisma.DateTimeFilter<"MonitorCheckSettings"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"MonitorCheckSettings"> | Date | string
   monitor?: Prisma.XOR<Prisma.MonitorScalarRelationFilter, Prisma.MonitorWhereInput>
@@ -226,6 +242,8 @@ export type MonitorCheckSettingsOrderByWithRelationInput = {
   pathProbesEnabled?: Prisma.SortOrder
   pathProbesAcknowledgedById?: Prisma.SortOrderInput | Prisma.SortOrder
   pathProbesAcknowledgedAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  securityNextScheduledAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  dnsNextScheduledAt?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   monitor?: Prisma.MonitorOrderByWithRelationInput
@@ -243,6 +261,8 @@ export type MonitorCheckSettingsWhereUniqueInput = Prisma.AtLeast<{
   pathProbesEnabled?: Prisma.BoolFilter<"MonitorCheckSettings"> | boolean
   pathProbesAcknowledgedById?: Prisma.UuidNullableFilter<"MonitorCheckSettings"> | string | null
   pathProbesAcknowledgedAt?: Prisma.DateTimeNullableFilter<"MonitorCheckSettings"> | Date | string | null
+  securityNextScheduledAt?: Prisma.DateTimeNullableFilter<"MonitorCheckSettings"> | Date | string | null
+  dnsNextScheduledAt?: Prisma.DateTimeNullableFilter<"MonitorCheckSettings"> | Date | string | null
   createdAt?: Prisma.DateTimeFilter<"MonitorCheckSettings"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"MonitorCheckSettings"> | Date | string
   monitor?: Prisma.XOR<Prisma.MonitorScalarRelationFilter, Prisma.MonitorWhereInput>
@@ -257,6 +277,8 @@ export type MonitorCheckSettingsOrderByWithAggregationInput = {
   pathProbesEnabled?: Prisma.SortOrder
   pathProbesAcknowledgedById?: Prisma.SortOrderInput | Prisma.SortOrder
   pathProbesAcknowledgedAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  securityNextScheduledAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  dnsNextScheduledAt?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   _count?: Prisma.MonitorCheckSettingsCountOrderByAggregateInput
@@ -275,6 +297,8 @@ export type MonitorCheckSettingsScalarWhereWithAggregatesInput = {
   pathProbesEnabled?: Prisma.BoolWithAggregatesFilter<"MonitorCheckSettings"> | boolean
   pathProbesAcknowledgedById?: Prisma.UuidNullableWithAggregatesFilter<"MonitorCheckSettings"> | string | null
   pathProbesAcknowledgedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"MonitorCheckSettings"> | Date | string | null
+  securityNextScheduledAt?: Prisma.DateTimeNullableWithAggregatesFilter<"MonitorCheckSettings"> | Date | string | null
+  dnsNextScheduledAt?: Prisma.DateTimeNullableWithAggregatesFilter<"MonitorCheckSettings"> | Date | string | null
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"MonitorCheckSettings"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"MonitorCheckSettings"> | Date | string
 }
@@ -285,6 +309,8 @@ export type MonitorCheckSettingsCreateInput = {
   dnsWatchEnabled?: boolean
   pathProbesEnabled?: boolean
   pathProbesAcknowledgedAt?: Date | string | null
+  securityNextScheduledAt?: Date | string | null
+  dnsNextScheduledAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   monitor: Prisma.MonitorCreateNestedOneWithoutCheckSettingsInput
@@ -299,6 +325,8 @@ export type MonitorCheckSettingsUncheckedCreateInput = {
   pathProbesEnabled?: boolean
   pathProbesAcknowledgedById?: string | null
   pathProbesAcknowledgedAt?: Date | string | null
+  securityNextScheduledAt?: Date | string | null
+  dnsNextScheduledAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -309,6 +337,8 @@ export type MonitorCheckSettingsUpdateInput = {
   dnsWatchEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   pathProbesEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   pathProbesAcknowledgedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  securityNextScheduledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  dnsNextScheduledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   monitor?: Prisma.MonitorUpdateOneRequiredWithoutCheckSettingsNestedInput
@@ -323,6 +353,8 @@ export type MonitorCheckSettingsUncheckedUpdateInput = {
   pathProbesEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   pathProbesAcknowledgedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   pathProbesAcknowledgedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  securityNextScheduledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  dnsNextScheduledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -335,6 +367,8 @@ export type MonitorCheckSettingsCreateManyInput = {
   pathProbesEnabled?: boolean
   pathProbesAcknowledgedById?: string | null
   pathProbesAcknowledgedAt?: Date | string | null
+  securityNextScheduledAt?: Date | string | null
+  dnsNextScheduledAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -345,6 +379,8 @@ export type MonitorCheckSettingsUpdateManyMutationInput = {
   dnsWatchEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   pathProbesEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   pathProbesAcknowledgedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  securityNextScheduledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  dnsNextScheduledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -357,6 +393,8 @@ export type MonitorCheckSettingsUncheckedUpdateManyInput = {
   pathProbesEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   pathProbesAcknowledgedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   pathProbesAcknowledgedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  securityNextScheduledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  dnsNextScheduledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -384,6 +422,8 @@ export type MonitorCheckSettingsCountOrderByAggregateInput = {
   pathProbesEnabled?: Prisma.SortOrder
   pathProbesAcknowledgedById?: Prisma.SortOrder
   pathProbesAcknowledgedAt?: Prisma.SortOrder
+  securityNextScheduledAt?: Prisma.SortOrder
+  dnsNextScheduledAt?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -396,6 +436,8 @@ export type MonitorCheckSettingsMaxOrderByAggregateInput = {
   pathProbesEnabled?: Prisma.SortOrder
   pathProbesAcknowledgedById?: Prisma.SortOrder
   pathProbesAcknowledgedAt?: Prisma.SortOrder
+  securityNextScheduledAt?: Prisma.SortOrder
+  dnsNextScheduledAt?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -408,6 +450,8 @@ export type MonitorCheckSettingsMinOrderByAggregateInput = {
   pathProbesEnabled?: Prisma.SortOrder
   pathProbesAcknowledgedById?: Prisma.SortOrder
   pathProbesAcknowledgedAt?: Prisma.SortOrder
+  securityNextScheduledAt?: Prisma.SortOrder
+  dnsNextScheduledAt?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
@@ -496,6 +540,8 @@ export type MonitorCheckSettingsCreateWithoutPathProbesAcknowledgedByInput = {
   dnsWatchEnabled?: boolean
   pathProbesEnabled?: boolean
   pathProbesAcknowledgedAt?: Date | string | null
+  securityNextScheduledAt?: Date | string | null
+  dnsNextScheduledAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   monitor: Prisma.MonitorCreateNestedOneWithoutCheckSettingsInput
@@ -508,6 +554,8 @@ export type MonitorCheckSettingsUncheckedCreateWithoutPathProbesAcknowledgedByIn
   dnsWatchEnabled?: boolean
   pathProbesEnabled?: boolean
   pathProbesAcknowledgedAt?: Date | string | null
+  securityNextScheduledAt?: Date | string | null
+  dnsNextScheduledAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -549,6 +597,8 @@ export type MonitorCheckSettingsScalarWhereInput = {
   pathProbesEnabled?: Prisma.BoolFilter<"MonitorCheckSettings"> | boolean
   pathProbesAcknowledgedById?: Prisma.UuidNullableFilter<"MonitorCheckSettings"> | string | null
   pathProbesAcknowledgedAt?: Prisma.DateTimeNullableFilter<"MonitorCheckSettings"> | Date | string | null
+  securityNextScheduledAt?: Prisma.DateTimeNullableFilter<"MonitorCheckSettings"> | Date | string | null
+  dnsNextScheduledAt?: Prisma.DateTimeNullableFilter<"MonitorCheckSettings"> | Date | string | null
   createdAt?: Prisma.DateTimeFilter<"MonitorCheckSettings"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"MonitorCheckSettings"> | Date | string
 }
@@ -559,6 +609,8 @@ export type MonitorCheckSettingsCreateWithoutMonitorInput = {
   dnsWatchEnabled?: boolean
   pathProbesEnabled?: boolean
   pathProbesAcknowledgedAt?: Date | string | null
+  securityNextScheduledAt?: Date | string | null
+  dnsNextScheduledAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
   pathProbesAcknowledgedBy?: Prisma.UserCreateNestedOneWithoutAcknowledgedPathProbesInput
@@ -571,6 +623,8 @@ export type MonitorCheckSettingsUncheckedCreateWithoutMonitorInput = {
   pathProbesEnabled?: boolean
   pathProbesAcknowledgedById?: string | null
   pathProbesAcknowledgedAt?: Date | string | null
+  securityNextScheduledAt?: Date | string | null
+  dnsNextScheduledAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -597,6 +651,8 @@ export type MonitorCheckSettingsUpdateWithoutMonitorInput = {
   dnsWatchEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   pathProbesEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   pathProbesAcknowledgedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  securityNextScheduledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  dnsNextScheduledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   pathProbesAcknowledgedBy?: Prisma.UserUpdateOneWithoutAcknowledgedPathProbesNestedInput
@@ -609,6 +665,8 @@ export type MonitorCheckSettingsUncheckedUpdateWithoutMonitorInput = {
   pathProbesEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   pathProbesAcknowledgedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   pathProbesAcknowledgedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  securityNextScheduledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  dnsNextScheduledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -620,6 +678,8 @@ export type MonitorCheckSettingsCreateManyPathProbesAcknowledgedByInput = {
   dnsWatchEnabled?: boolean
   pathProbesEnabled?: boolean
   pathProbesAcknowledgedAt?: Date | string | null
+  securityNextScheduledAt?: Date | string | null
+  dnsNextScheduledAt?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
 }
@@ -630,6 +690,8 @@ export type MonitorCheckSettingsUpdateWithoutPathProbesAcknowledgedByInput = {
   dnsWatchEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   pathProbesEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   pathProbesAcknowledgedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  securityNextScheduledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  dnsNextScheduledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   monitor?: Prisma.MonitorUpdateOneRequiredWithoutCheckSettingsNestedInput
@@ -642,6 +704,8 @@ export type MonitorCheckSettingsUncheckedUpdateWithoutPathProbesAcknowledgedByIn
   dnsWatchEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   pathProbesEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   pathProbesAcknowledgedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  securityNextScheduledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  dnsNextScheduledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -653,6 +717,8 @@ export type MonitorCheckSettingsUncheckedUpdateManyWithoutPathProbesAcknowledged
   dnsWatchEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   pathProbesEnabled?: Prisma.BoolFieldUpdateOperationsInput | boolean
   pathProbesAcknowledgedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  securityNextScheduledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  dnsNextScheduledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -667,6 +733,8 @@ export type MonitorCheckSettingsSelect<ExtArgs extends runtime.Types.Extensions.
   pathProbesEnabled?: boolean
   pathProbesAcknowledgedById?: boolean
   pathProbesAcknowledgedAt?: boolean
+  securityNextScheduledAt?: boolean
+  dnsNextScheduledAt?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   monitor?: boolean | Prisma.MonitorDefaultArgs<ExtArgs>
@@ -681,6 +749,8 @@ export type MonitorCheckSettingsSelectCreateManyAndReturn<ExtArgs extends runtim
   pathProbesEnabled?: boolean
   pathProbesAcknowledgedById?: boolean
   pathProbesAcknowledgedAt?: boolean
+  securityNextScheduledAt?: boolean
+  dnsNextScheduledAt?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   monitor?: boolean | Prisma.MonitorDefaultArgs<ExtArgs>
@@ -695,6 +765,8 @@ export type MonitorCheckSettingsSelectUpdateManyAndReturn<ExtArgs extends runtim
   pathProbesEnabled?: boolean
   pathProbesAcknowledgedById?: boolean
   pathProbesAcknowledgedAt?: boolean
+  securityNextScheduledAt?: boolean
+  dnsNextScheduledAt?: boolean
   createdAt?: boolean
   updatedAt?: boolean
   monitor?: boolean | Prisma.MonitorDefaultArgs<ExtArgs>
@@ -709,11 +781,13 @@ export type MonitorCheckSettingsSelectScalar = {
   pathProbesEnabled?: boolean
   pathProbesAcknowledgedById?: boolean
   pathProbesAcknowledgedAt?: boolean
+  securityNextScheduledAt?: boolean
+  dnsNextScheduledAt?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type MonitorCheckSettingsOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "monitorId" | "securityPostureEnabled" | "dnsWatchEnabled" | "pathProbesEnabled" | "pathProbesAcknowledgedById" | "pathProbesAcknowledgedAt" | "createdAt" | "updatedAt", ExtArgs["result"]["monitorCheckSettings"]>
+export type MonitorCheckSettingsOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "monitorId" | "securityPostureEnabled" | "dnsWatchEnabled" | "pathProbesEnabled" | "pathProbesAcknowledgedById" | "pathProbesAcknowledgedAt" | "securityNextScheduledAt" | "dnsNextScheduledAt" | "createdAt" | "updatedAt", ExtArgs["result"]["monitorCheckSettings"]>
 export type MonitorCheckSettingsInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   monitor?: boolean | Prisma.MonitorDefaultArgs<ExtArgs>
   pathProbesAcknowledgedBy?: boolean | Prisma.MonitorCheckSettings$pathProbesAcknowledgedByArgs<ExtArgs>
@@ -741,6 +815,8 @@ export type $MonitorCheckSettingsPayload<ExtArgs extends runtime.Types.Extension
     pathProbesEnabled: boolean
     pathProbesAcknowledgedById: string | null
     pathProbesAcknowledgedAt: Date | null
+    securityNextScheduledAt: Date | null
+    dnsNextScheduledAt: Date | null
     createdAt: Date
     updatedAt: Date
   }, ExtArgs["result"]["monitorCheckSettings"]>
@@ -1175,6 +1251,8 @@ export interface MonitorCheckSettingsFieldRefs {
   readonly pathProbesEnabled: Prisma.FieldRef<"MonitorCheckSettings", 'Boolean'>
   readonly pathProbesAcknowledgedById: Prisma.FieldRef<"MonitorCheckSettings", 'String'>
   readonly pathProbesAcknowledgedAt: Prisma.FieldRef<"MonitorCheckSettings", 'DateTime'>
+  readonly securityNextScheduledAt: Prisma.FieldRef<"MonitorCheckSettings", 'DateTime'>
+  readonly dnsNextScheduledAt: Prisma.FieldRef<"MonitorCheckSettings", 'DateTime'>
   readonly createdAt: Prisma.FieldRef<"MonitorCheckSettings", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"MonitorCheckSettings", 'DateTime'>
 }

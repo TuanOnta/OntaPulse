@@ -15,6 +15,8 @@ const checkSettingsResponseSchema = {
     "dnsWatchEnabled",
     "pathProbesEnabled",
     "pathProbesAcknowledgedAt",
+    "securityNextScanAt",
+    "dnsNextScanAt",
   ],
   properties: {
     monitorId: { type: "string", format: "uuid" },
@@ -22,6 +24,9 @@ const checkSettingsResponseSchema = {
     dnsWatchEnabled: { type: "boolean" },
     pathProbesEnabled: { type: "boolean" },
     pathProbesAcknowledgedAt: { type: ["string", "null"], format: "date-time" },
+    // When the next recurring scan of the kind is due; null while the check is off.
+    securityNextScanAt: { type: ["string", "null"], format: "date-time" },
+    dnsNextScanAt: { type: ["string", "null"], format: "date-time" },
   },
 } as const;
 
@@ -40,7 +45,9 @@ const errorResponseSchema = {
 export const getCheckSettingsRouteSchema: FastifySchema = {
   tags: ["Check settings"],
   summary: "Get the security check settings of a monitor",
-  description: "A monitor without stored settings reports every check as disabled.",
+  description:
+    "A monitor without stored settings reports every check as disabled. Enabled security and DNS checks also run on " +
+    "their own; securityNextScanAt and dnsNextScanAt say when the next recurring scan is due, or null while off.",
   params: monitorIdParamsSchema,
   response: {
     200: checkSettingsResponseSchema,

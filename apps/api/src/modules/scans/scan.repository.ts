@@ -1,6 +1,40 @@
+import type { Prisma } from "../../generated/prisma/client.js";
 import { prisma } from "../../infrastructure/database/prisma.js";
 import { AppError } from "../../infrastructure/errors/app-error.js";
 import { DEFAULT_SCAN_KIND, WORKSPACE_LIMIT_WINDOW_SECONDS, type ScanKind } from "./scan-kinds.js";
+
+/**
+ * Seconds until a workspace may queue another scan of `kind`, or null while it is under its limit for the
+ * window. Shared by manual triggers (which answer 429) and the scheduler (which skips the occurrence). The
+ * caller holds the workspace advisory lock so two requests cannot both pass the count.
+ */
+export async function workspaceLimitRetryAfterSeconds(
+  transaction: Prisma.TransactionClient,
+  workspaceId: string,
+  kind: ScanKind,
+  workspaceLimitPerWindow: number,
+  now: Date,
+): Promise<number | null> {
+  const windowStart = new Date(now.getTime() - WORKSPACE_LIMIT_WINDOW_SECONDS * 1_000);
+  const recent = await transaction.scan.findMany({
+    where: { kind, createdAt: { gte: windowStart }, monitor: { project: { workspaceId } } },
+    orderBy: { createdAt: "asc" },
+    select: { createdAt: true },
+    take: workspaceLimitPerWindow,
+  });
+
+  if (recent.length < workspaceLimitPerWindow) {
+    return null;
+  }
+
+  return Math.max(
+    1,
+    Math.ceil(
+      (recent[0]!.createdAt.getTime() + WORKSPACE_LIMIT_WINDOW_SECONDS * 1_000 - now.getTime()) /
+        1_000,
+    ),
+  );
+}
 
 export class ScanRepository {
   findMonitorById(monitorId: string) {
@@ -59,27 +93,17 @@ export class ScanRepository {
         }
       }
 
-      const windowStart = new Date(now.getTime() - WORKSPACE_LIMIT_WINDOW_SECONDS * 1_000);
-      const recent = await transaction.scan.findMany({
-        where: { kind, createdAt: { gte: windowStart }, monitor: { project: { workspaceId } } },
-        orderBy: { createdAt: "asc" },
-        select: { createdAt: true },
-        take: limits.workspaceLimitPerWindow,
-      });
+      const limitRetryAfterSeconds = await workspaceLimitRetryAfterSeconds(
+        transaction,
+        workspaceId,
+        kind,
+        limits.workspaceLimitPerWindow,
+        now,
+      );
 
-      if (recent.length >= limits.workspaceLimitPerWindow) {
-        const retryAfterSeconds = Math.max(
-          1,
-          Math.ceil(
-            (recent[0]!.createdAt.getTime() +
-              WORKSPACE_LIMIT_WINDOW_SECONDS * 1_000 -
-              now.getTime()) /
-              1_000,
-          ),
-        );
-
+      if (limitRetryAfterSeconds !== null) {
         throw new AppError("Scan rate limit reached", 429, "SCAN_RATE_LIMITED", {
-          retryAfterSeconds,
+          retryAfterSeconds: limitRetryAfterSeconds,
         });
       }
 
