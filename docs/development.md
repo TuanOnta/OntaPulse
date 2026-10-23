@@ -139,6 +139,19 @@ The worker connects to PostgreSQL and RabbitMQ when it starts. Recoverable conne
 | Format worker               | `moon run worker:format`             |
 | Check worker formatting     | `moon run worker:format-check`       |
 
+### Web
+
+| Task                  | Command                  |
+| --------------------- | ------------------------ |
+| Run web client        | `moon run web:dev`       |
+| Type-check web        | `moon run web:typecheck` |
+| Run web tests         | `moon run web:test`      |
+| Generate web coverage | `moon run web:coverage`  |
+| Run e2e tests         | `moon run web:test-e2e`  |
+| Build web             | `moon run web:build`     |
+
+The e2e tests need the API and the infrastructure running.
+
 ### Repository
 
 | Task             | Command             |
@@ -224,6 +237,9 @@ ontapulse_worker/
       database_check.py
 
   modules/
+    security_posture/   headers, cookies, CORS, redirect, TLS, path probes
+    dns_watch/          DNS baseline, dangling CNAME, SPF, DKIM, DMARC
+    edge_detection/     CDN, WAF, and anti-bot evaluator (domain only)
     scans/
       domain/
         models.py
@@ -319,9 +335,11 @@ These are scan results, not RabbitMQ infrastructure failures.
 
 ## Scan findings
 
-A successful HTTP request can generate findings based on scan policies.
+A successful HTTP request can generate findings based on scan policies. Security posture and DNS watch scans
+produce findings with catalog IDs, categories, severities, and confidence; see
+[security-checks.md](security-checks.md).
 
-Current policies include:
+Current `HTTP_PROBE` policies include:
 
 | Condition                 | Finding             | Severity |
 | ------------------------- | ------------------- | -------- |
@@ -705,3 +723,83 @@ logger.info("scan.started", extra={"scan_id": str(scan_id)})
 | Pika `basic_publish()` returns `None`         | This is successful for `BlockingChannel`; rely on publisher-confirm exceptions instead of checking for `True` |
 | Internal Pika and HTTPX logs fill the console | Set `pika`, `httpx`, and `httpcore` log levels to `WARNING`                                                   |
 | Formatting check fails                        | Run the formatter, then rerun `format-check`; prefer one line when the expression fits the configured width   |
+
+## Local services and endpoints
+
+| Service             | Default URL/address            | Description                              |
+| ------------------- | ------------------------------ | ---------------------------------------- |
+| Web app             | `http://localhost:5173`        | Vite development server                  |
+| API                 | `http://localhost:3000`        | Fastify server                           |
+| Swagger UI          | `http://localhost:3000/docs`   | Interactive OpenAPI documentation        |
+| Liveness            | `http://localhost:3000/health` | Confirms that the API process is running |
+| Readiness           | `http://localhost:3000/ready`  | Confirms that PostgreSQL is reachable    |
+| PostgreSQL          | `localhost:5433`               | Host port from `.env.example`            |
+| Redis               | `localhost:6379`               | Session store                            |
+| RabbitMQ AMQP       | `localhost:5672`               | Broker connection                        |
+| RabbitMQ Management | `http://localhost:15672`       | Queue and connection inspection          |
+
+The API opens its RabbitMQ connection lazily when the first scan is triggered. The API may therefore start while the broker is unreachable, but scan-trigger requests still require a healthy RabbitMQ instance.
+
+## Troubleshooting
+
+### The API is running, but triggering a scan returns 503
+
+The API creates its RabbitMQ connection lazily. Inspect the broker, credentials, and port:
+
+```bash
+docker compose ps
+docker compose logs rabbitmq
+docker compose port rabbitmq 5672
+```
+
+Ensure that `RABBITMQ_URL` uses the credentials and port from `.env`.
+
+### The readiness endpoint returns 503
+
+Inspect PostgreSQL and `DATABASE_URL`:
+
+```bash
+docker compose ps
+docker compose logs postgres
+moon run worker:check-db
+```
+
+`/health` only confirms that the API process is running. `/ready` performs a real database check.
+
+### The web client reports that the API is unavailable
+
+Ensure that the API is running on the port targeted by the Vite proxy. The default is:
+
+```text
+VITE_API_PROXY_TARGET=http://localhost:3000
+```
+
+If the web client and API use different origins without the development proxy, set `VITE_API_BASE_URL` and configure deployment cookie/origin policies securely.
+
+### The worker does not start
+
+Synchronize dependencies and verify database connectivity:
+
+```bash
+moon run worker:sync
+moon run worker:check-db
+moon run worker:dev
+```
+
+Outside test mode, the worker requires valid `DATABASE_URL` and `RABBITMQ_URL` values.
+
+### A target is rejected as not publicly reachable
+
+This is intentional security behavior. The worker rejects `localhost`, private IPs, loopback, link-local, and other non-global addresses. Use a safe public endpoint or a fake executor in tests. Do not weaken SSRF validation to monitor internal services without a separate security design.
+
+### Credentials contain special characters
+
+Percent-encode URL-reserved characters in the password portion of a connection string. Keep the raw value in the Compose credential variable and use the encoded value in the URL.
+
+### Queue depth continues to increase
+
+- A growing `scan.jobs` queue means consumers are unavailable or worker throughput is lower than producer throughput.
+- A growing retry queue indicates transient infrastructure failures.
+- A growing `scan.jobs.dead` queue indicates invalid messages, permanent failures, or retry exhaustion that requires investigation.
+
+Use the RabbitMQ Management UI to inspect queues, connections, channels, and deliveries without exposing its credentials publicly.
