@@ -1,8 +1,9 @@
 import { useParams } from "react-router-dom";
 
-import { useMonitors } from "@/entities/monitor";
+import { splitUrl, useMonitors } from "@/entities/monitor";
 import { useProjects } from "@/entities/project";
 import { useWorkspacesContext } from "@/entities/workspace";
+import { useDocumentTitle } from "@/shared/lib/use-document-title";
 import {
   LoadErrorBanner,
   MonitorDetail,
@@ -10,12 +11,17 @@ import {
   MonitorNotFound,
 } from "@/widgets/monitor-detail";
 
-/** Monitor body. It lives inside `AppShell`, which owns the shared workspace list. */
+/** Monitor body. It renders inside `AppShell` (the layout route), which owns the shared workspace list. */
 export function MonitorContent() {
   const { workspaceId = "", projectId = "", monitorId = "" } = useParams();
   const workspaceList = useWorkspacesContext();
   const projects = useProjects(workspaceId);
   const monitors = useMonitors(projectId);
+  const target =
+    monitors.status === "ready"
+      ? monitors.monitors.find((item) => item.id === monitorId)?.targetUrl
+      : undefined;
+  useDocumentTitle(target ? splitUrl(target).host : "Monitor");
 
   if (
     workspaceList.status === "error" ||

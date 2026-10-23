@@ -107,11 +107,11 @@ Setiap anggota workspace dapat membaca daftar anggota melalui
 `email`, `role`, dan `joinedAt`. Nama, email, role, dan pemilik workspace dapat
 ditampilkan sebagai data faktual dari respons ini.
 
-### Pengelolaan workspace — terbatas
+### Pengelolaan workspace — tersedia dengan batasan role
 
-- Mengubah nama workspace.
-- Menghapus workspace.
-- Memindahkan ownership.
+- Mengubah nama workspace: `OWNER` atau `ADMIN` (`PATCH /workspaces/:workspaceId`).
+- Menghapus workspace beserta seluruh isinya: hanya `OWNER` (`DELETE /workspaces/:workspaceId`).
+- Memindahkan ownership: belum tersedia.
 
 Menambahkan anggota terdaftar dan menghapus `MEMBER` dapat dilakukan oleh
 `OWNER` atau `ADMIN`. Hanya `OWNER` yang dapat mengubah role `MEMBER`/`ADMIN`
@@ -171,7 +171,6 @@ Endpoint: `POST /workspaces/:workspaceId/projects`.
 ### Konten/aksi project yang belum tersedia
 
 - Detail project tunggal melalui endpoint khusus.
-- Ubah atau hapus project.
 - Jumlah monitor, ringkasan kesehatan, scan terakhir, atau metrik agregat per
   project. Semua ini dapat dihitung di client dengan request tambahan terbatas,
   tetapi belum disediakan sebagai data ringkasan resmi API.
@@ -209,8 +208,10 @@ Endpoint: `POST /projects/:projectId/monitors`.
 ### Konten/aksi monitor yang belum tersedia
 
 - Detail monitor tunggal melalui endpoint khusus.
-- Mengubah nama, URL, interval, atau `isActive`.
-- Menghapus monitor.
+- Mengubah nama, URL, interval, atau `isActive` dari antarmuka web. API sudah menyediakan
+  `PATCH /monitors/:monitorId` untuk `OWNER` dan `ADMIN`, tetapi web belum memakainya (jangan tampilkan aksi palsu).
+- Menghapus monitor dari antarmuka web. API sudah menyediakan `DELETE /monitors/:monitorId` untuk
+  `OWNER` dan `ADMIN`; web belum memakainya.
 - Jadwal scan berikutnya, status runtime monitor, dan ringkasan scan terakhir.
 
 ## 6. Scan
@@ -240,7 +241,9 @@ Endpoint daftar: `GET /monitors/:monitorId/scans`. Daftar diurutkan dari
 Endpoint manual: `POST /monitors/:monitorId/scans`. Monitor aktif juga membuat scan
 otomatis berdasarkan `intervalSeconds`.
 
-Permintaan tidak memiliki body. Respons sukses adalah `202 Accepted` dan scan
+Body bersifat opsional: `{ "kind": "HTTP_PROBE" | "SECURITY_POSTURE" | "DNS_WATCH" }`, default `HTTP_PROBE`.
+Scan keamanan dan DNS hanya dapat dijalankan jika pemeriksaannya diaktifkan untuk monitor
+(`409 SECURITY_CHECKS_DISABLED` jika belum). Respons sukses adalah `202 Accepted` dan scan
 berstatus awal `QUEUED`. Karena pemrosesan asynchronous, data scan perlu
 dimuat ulang hingga mencapai `SUCCEEDED` atau `FAILED`.
 
@@ -514,9 +517,9 @@ Kondisi utama yang perlu dicerminkan:
 | Domain    | Baca                                   | Buat                  | Ubah                               | Hapus                       | Kelola anggota/role                          |
 | --------- | -------------------------------------- | --------------------- | ---------------------------------- | --------------------------- | -------------------------------------------- |
 | User/sesi | Ya                                     | Register              | Tidak                              | Logout hanya menghapus sesi | Tidak relevan                                |
-| Workspace | Daftar workspace dan anggota           | Ya                    | Belum tersedia                     | Belum tersedia              | Tambah, ubah role, hapus dengan batasan role |
-| Project   | Daftar per workspace                   | Ya, OWNER/ADMIN       | Belum tersedia                     | Belum tersedia              | Tidak relevan                                |
-| Monitor   | Daftar per project                     | Ya, OWNER/ADMIN       | Belum tersedia                     | Belum tersedia              | Tidak relevan                                |
+| Workspace | Daftar workspace dan anggota           | Ya                    | Ganti nama, OWNER/ADMIN            | OWNER                       | Tambah, ubah role, hapus dengan batasan role |
+| Project   | Daftar per workspace                   | Ya, OWNER/ADMIN       | Ya, OWNER/ADMIN                    | Ya, OWNER/ADMIN             | Tidak relevan                                |
+| Monitor   | Daftar per project                     | Ya, OWNER/ADMIN       | API saja, OWNER/ADMIN              | API saja, OWNER/ADMIN       | Tidak relevan                                |
 | Scan      | Daftar per monitor dan detail per scan | Jalankan, OWNER/ADMIN | Diproses worker, bukan diedit user | Belum tersedia              | Tidak relevan                                |
 | Finding   | Dalam detail scan                      | Dibuat worker         | Belum tersedia                     | Belum tersedia              | Belum tersedia                               |
 

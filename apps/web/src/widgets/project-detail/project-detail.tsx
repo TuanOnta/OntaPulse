@@ -21,6 +21,8 @@ export type ProjectDetailProps = {
     monitors: Monitor[];
     error: MonitorsError | null;
     reload: () => void;
+    /** Fetches again without the loading state, for after a monitor was added. */
+    refresh: () => Promise<void>;
   };
 };
 
@@ -75,7 +77,7 @@ export function ProjectDetail({
       />
       <CreateMonitorDialog
         existingUrls={monitors.monitors.map((monitor) => monitor.targetUrl)}
-        onCreated={monitors.reload}
+        onCreated={monitors.refresh}
         onOpenChange={setDialogOpen}
         open={dialogOpen}
         projectId={project.id}

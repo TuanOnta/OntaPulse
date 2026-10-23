@@ -1,12 +1,6 @@
-import { AppShell } from "@/app/layouts/app-shell";
-
 import { MonitorContent } from "./monitor-content";
 
-/** /workspaces/:workspaceId/projects/:projectId/monitors/:monitorId inside the app shell. */
+/** /workspaces/:workspaceId/projects/:projectId/monitors/:monitorId. Rendered inside the app shell (see `AppLayout`), which stays mounted between screens. */
 export function MonitorPage() {
-  return (
-    <AppShell>
-      <MonitorContent />
-    </AppShell>
-  );
+  return <MonitorContent />;
 }

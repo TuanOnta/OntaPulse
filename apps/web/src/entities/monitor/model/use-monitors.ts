@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { ApiError, api } from "@/shared/api/client";
 import type { Monitor } from "@/shared/types/domain";
@@ -52,5 +52,26 @@ export function useMonitors(projectId: string) {
     setAttempt((value) => value + 1);
   }, []);
 
-  return { ...state, reload };
+  const alive = useRef(true);
+  useEffect(() => {
+    alive.current = true;
+    return () => {
+      alive.current = false;
+    };
+  }, []);
+
+  /**
+   * Fetches the list again and swaps it in while the rows on screen stay (no loading state), for after a monitor
+   * was added. If the fetch fails the normal load runs, which ends in the error banner with its retry.
+   */
+  const refresh = useCallback(async () => {
+    try {
+      const monitors = await api.monitors(projectId);
+      if (alive.current) setState({ status: "ready", monitors, error: null });
+    } catch {
+      if (alive.current) reload();
+    }
+  }, [projectId, reload]);
+
+  return { ...state, reload, refresh };
 }

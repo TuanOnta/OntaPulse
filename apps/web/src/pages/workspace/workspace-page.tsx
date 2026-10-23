@@ -1,12 +1,6 @@
-import { AppShell } from "@/app/layouts/app-shell";
-
 import { WorkspaceContent } from "./workspace-content";
 
-/** /workspaces/:workspaceId: projects and members of one workspace inside the app shell. */
+/** /workspaces/:workspaceId: projects and members of one workspace. Rendered inside the app shell (see `AppLayout`), which stays mounted between screens. */
 export function WorkspacePage() {
-  return (
-    <AppShell>
-      <WorkspaceContent />
-    </AppShell>
-  );
+  return <WorkspaceContent />;
 }

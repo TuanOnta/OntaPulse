@@ -24,6 +24,8 @@ export type WorkspaceDetailProps = {
     projects: Project[];
     error: ProjectsError | null;
     reload: () => void;
+    /** Fetches again without the loading state, for after a project was added. */
+    refresh: () => Promise<void>;
   };
   members: {
     status: "loading" | "ready" | "error";
@@ -116,7 +118,7 @@ export function WorkspaceDetail({
       <CreateProjectDialog
         onCreated={() => {
           onTabChange("projects");
-          projects.reload();
+          projects.refresh();
         }}
         onOpenChange={setProjectDialogOpen}
         open={projectDialogOpen}

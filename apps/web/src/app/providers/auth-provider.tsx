@@ -3,11 +3,14 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type PropsWithChildren,
 } from "react";
+import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 
-import { api } from "@/shared/api/client";
+import { api, onUnauthenticated } from "@/shared/api/client";
 import type { User } from "@/shared/types/domain";
 
 interface AuthContextValue {
@@ -23,6 +26,26 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 export function AuthProvider({ children }: PropsWithChildren) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const navigate = useNavigate();
+  // The latest user for the expiry handler, which must not run again for every request that fails after it.
+  const userRef = useRef<User | null>(null);
+
+  useEffect(() => {
+    userRef.current = user;
+  }, [user]);
+
+  // A request of a signed-in screen came back 401: the session expired. Say so once and go to sign in.
+  useEffect(
+    () =>
+      onUnauthenticated(() => {
+        if (!userRef.current) return;
+        userRef.current = null;
+        toast.error("Your session expired. Sign in again.");
+        navigate("/login", { replace: true });
+        setUser(null);
+      }),
+    [navigate],
+  );
 
   useEffect(() => {
     api

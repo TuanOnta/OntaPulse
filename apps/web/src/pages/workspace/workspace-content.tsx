@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 
 import { useAuth } from "@/app/providers/auth-provider";
 import { useProjects } from "@/entities/project";
 import { useWorkspaceMembers, useWorkspacesContext } from "@/entities/workspace";
+import { useDocumentTitle } from "@/shared/lib/use-document-title";
 import { DeletedPanel } from "@/shared/ui/state-panel";
 import {
   LoadErrorBanner,
@@ -15,7 +16,7 @@ import {
 
 const TAB_PARAM = "tab";
 
-/** Workspace body. It lives inside `AppShell`, which owns the shared workspace list. */
+/** Workspace body. It renders inside `AppShell` (the layout route), which owns the shared workspace list. */
 export function WorkspaceContent() {
   const { workspaceId = "" } = useParams();
   const { user } = useAuth();
@@ -24,6 +25,29 @@ export function WorkspaceContent() {
   const members = useWorkspaceMembers(workspaceId);
   const [params, setParams] = useSearchParams();
   const [deletedName, setDeletedName] = useState<string | null>(null);
+  // The workspace id that was looked up again after a miss, so "not found" only follows a fresh answer.
+  const [recheckedId, setRecheckedId] = useState<string | null>(null);
+  const { refresh, reload } = workspaceList;
+  const listReady = workspaceList.status === "ready";
+  const currentWorkspace = workspaceList.workspaces.find((item) => item.id === workspaceId);
+  const known = currentWorkspace !== undefined;
+  useDocumentTitle(currentWorkspace?.name ?? "Workspace");
+
+  // An id missing from a list loaded earlier (an invitation, a create in another tab) is looked up once more
+  // before the screen says "not found".
+  useEffect(() => {
+    if (!listReady || known || recheckedId === workspaceId || deletedName !== null) return;
+    let ignore = false;
+    void refresh().then((fresh) => {
+      if (ignore) return;
+      if (fresh === null) reload();
+      else setRecheckedId(workspaceId);
+    });
+    return () => {
+      ignore = true;
+    };
+  }, [listReady, known, workspaceId, recheckedId, deletedName, refresh, reload]);
+
   const tab: WorkspaceTab = params.get(TAB_PARAM) === "members" ? "members" : "projects";
 
   function changeTab(next: WorkspaceTab) {
@@ -66,6 +90,7 @@ export function WorkspaceContent() {
   if (workspaceList.status === "loading") return <WorkspaceDetailSkeleton />;
 
   const workspace = workspaceList.workspaces.find((item) => item.id === workspaceId);
+  if (!workspace && recheckedId !== workspaceId) return <WorkspaceDetailSkeleton />;
   if (!workspace || projects.status === "notfound") return <WorkspaceNotFound />;
 
   return (

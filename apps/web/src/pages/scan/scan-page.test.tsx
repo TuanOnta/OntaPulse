@@ -44,6 +44,7 @@ vi.mock("@/app/providers/auth-provider", () => ({
   }),
 }));
 
+import { AppShell } from "@/app/layouts/app-shell";
 import { ScanPage } from "./scan-page";
 
 const workspace = (role: WorkspaceRole): Workspace => ({
@@ -108,7 +109,11 @@ function renderNested() {
     <MemoryRouter initialEntries={["/workspaces/w1/projects/p1/monitors/m1/scans/scn-1"]}>
       <Routes>
         <Route
-          element={<ScanPage />}
+          element={
+            <AppShell>
+              <ScanPage />
+            </AppShell>
+          }
           path="/workspaces/:workspaceId/projects/:projectId/monitors/:monitorId/scans/:scanId"
         />
       </Routes>
@@ -120,7 +125,14 @@ function renderDirect() {
   return render(
     <MemoryRouter initialEntries={["/scans/scn-1"]}>
       <Routes>
-        <Route element={<ScanPage />} path="/scans/:scanId" />
+        <Route
+          element={
+            <AppShell>
+              <ScanPage />
+            </AppShell>
+          }
+          path="/scans/:scanId"
+        />
       </Routes>
       <Where />
     </MemoryRouter>,

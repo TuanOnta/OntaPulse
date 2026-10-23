@@ -3,7 +3,7 @@
 Design contract for the `SECURITY_POSTURE` and `DNS_WATCH` scan kinds and for edge (WAF, CDN, anti-bot)
 detection. `HTTP_PROBE` is the existing check and is unchanged by this document.
 
-Status: **draft. Phases 2 to 4 implemented the header, cookie, CORS, redirect, TLS, and edge checks of `SECURITY_POSTURE`.** Values marked _(draft)_ wait for the user's confirmation. Entries marked _(unverified)_
+Status: **implemented.** `SECURITY_POSTURE` (headers, cookies, CORS, redirect, TLS, edge, and opt-in path probes), `DNS_WATCH`, and recurring runs are built. Values marked _(draft)_ still wait for the user's confirmation. Entries marked _(unverified)_
 could not be checked against a primary source when this file was written and must be re-verified before the phase
 that implements them.
 
@@ -27,20 +27,20 @@ Adding or changing a check ID updates this file in the same change.
 
 ## 2. Scan kinds and sub-checks
 
-| Kind               | Sub-check ID     | Purpose                                                           | Reads                               |
-| ------------------ | ---------------- | ----------------------------------------------------------------- | ----------------------------------- |
-| `HTTP_PROBE`       | (existing)       | Status code and response time                                     | One GET, no body                    |
-| `SECURITY_POSTURE` | `headers`        | Security headers                                                  | Headers of the HTTPS GET            |
-| `SECURITY_POSTURE` | `cookies`        | Cookie flags                                                      | `Set-Cookie` names and flags        |
-| `SECURITY_POSTURE` | `cors`           | CORS response headers                                             | Headers of the HTTPS GET            |
-| `SECURITY_POSTURE` | `redirect`       | HTTP to HTTPS redirect                                            | First response of one HTTP GET      |
-| `SECURITY_POSTURE` | `tls`            | Certificate and protocol                                          | One TLS handshake                   |
-| `SECURITY_POSTURE` | `exposed_files`  | Exposed sensitive files (opt-in)                                  | Fixed path allowlist, bounded body  |
-| `SECURITY_POSTURE` | `edge`           | WAF, CDN, anti-bot profile                                        | Data already collected by the above |
-| `DNS_WATCH`        | `dns_records`    | Record snapshot and diff against the baseline                     | A, AAAA, CNAME, NS, MX, TXT         |
-| `DNS_WATCH`        | `dangling_cname` | CNAME chain resolution                                            | CNAME chain                         |
-| `DNS_WATCH`        | `email_auth`     | SPF, DKIM (best effort), DMARC                                    | TXT records                         |
-| `DNS_WATCH`        | `edge`           | WAF, CDN, anti-bot hints from CNAME and NS (not built in Phase 6) | Data already collected by the above |
+| Kind               | Sub-check ID     | Purpose                                                | Reads                               |
+| ------------------ | ---------------- | ------------------------------------------------------ | ----------------------------------- |
+| `HTTP_PROBE`       | (existing)       | Status code and response time                          | One GET, no body                    |
+| `SECURITY_POSTURE` | `headers`        | Security headers                                       | Headers of the HTTPS GET            |
+| `SECURITY_POSTURE` | `cookies`        | Cookie flags                                           | `Set-Cookie` names and flags        |
+| `SECURITY_POSTURE` | `cors`           | CORS response headers                                  | Headers of the HTTPS GET            |
+| `SECURITY_POSTURE` | `redirect`       | HTTP to HTTPS redirect                                 | First response of one HTTP GET      |
+| `SECURITY_POSTURE` | `tls`            | Certificate and protocol                               | One TLS handshake                   |
+| `SECURITY_POSTURE` | `exposed_files`  | Exposed sensitive files (opt-in)                       | Fixed path allowlist, bounded body  |
+| `SECURITY_POSTURE` | `edge`           | WAF, CDN, anti-bot profile                             | Data already collected by the above |
+| `DNS_WATCH`        | `dns_records`    | Record snapshot and diff against the baseline          | A, AAAA, CNAME, NS, MX, TXT         |
+| `DNS_WATCH`        | `dangling_cname` | CNAME chain resolution                                 | CNAME chain                         |
+| `DNS_WATCH`        | `email_auth`     | SPF, DKIM (best effort), DMARC                         | TXT records                         |
+| `DNS_WATCH`        | `edge`           | WAF, CDN, anti-bot hints from CNAME and NS (not built) | Data already collected by the above |
 
 Every sub-check records `ran` or `skipped` with a reason from this list:
 
@@ -354,7 +354,7 @@ enabled.
 
 Signals used in Phase 4: response header names (and, for the fixed rows below, a header value class), cookie names,
 status class, and challenge markers. The input model also accepts certificate issuer, CNAME suffix, and NS suffix, but
-no table row uses them yet: no primary-source patterns were verified, and DNS data arrives in Phase 6.
+no table row uses them yet: no primary-source patterns were verified. The DNS watch scan does not feed this evaluator.
 
 Observation shape (one current profile per monitor plus the scan that produced it, table `MonitorEdgeProfile`):
 
@@ -548,5 +548,6 @@ Exact names live in `apps/api/prisma/schema.prisma`.
 3. Confirm whether CDN-fronted address churn is emitted at `LOW` or suppressed.
 4. Akamai and Imperva fingerprints need a primary vendor source; until then they are not detected (section 10).
 5. `SEC_HDR_CSP_*` unsafe source semantics, `SEC_CORS_*` wildcard-with-credentials rules, and the Fetch standard
-   `X-Content-Type-Options`, `Referrer-Policy`, and `Permissions-Policy` rules need a source read in Phase 2.
-6. RFC 6265bis becomes an RFC: re-check wording of cookie rules when Phase 2 starts.
+   `X-Content-Type-Options`, `Referrer-Policy`, and `Permissions-Policy` rules were read in Phase 2 (see the notes
+   in section 6).
+6. RFC 6265bis is still a draft: re-check the wording of the cookie rules when it becomes an RFC.

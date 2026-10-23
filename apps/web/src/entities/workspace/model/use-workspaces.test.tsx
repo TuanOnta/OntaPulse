@@ -56,4 +56,41 @@ describe("useWorkspaces", () => {
     await waitFor(() => expect(result.current.status).toBe("error"));
     expect(result.current.error?.message).toBe("Check your connection and try again.");
   });
+
+  it("adds a created workspace once, without loading again", async () => {
+    mocks.workspaces.mockResolvedValue([WORKSPACE]);
+    const { result } = renderHook(() => useWorkspaces());
+    await waitFor(() => expect(result.current.status).toBe("ready"));
+    const created = { ...WORKSPACE, id: "w2", name: "Two" };
+
+    act(() => result.current.addWorkspace(created));
+    act(() => result.current.addWorkspace(created));
+
+    expect(result.current.status).toBe("ready");
+    expect(result.current.workspaces.map((item) => item.id)).toEqual(["w1", "w2"]);
+    expect(mocks.workspaces).toHaveBeenCalledTimes(1);
+  });
+
+  it("refreshes in place: the list stays ready, and a failed refresh keeps it", async () => {
+    mocks.workspaces
+      .mockResolvedValueOnce([WORKSPACE])
+      .mockResolvedValueOnce([WORKSPACE, { ...WORKSPACE, id: "w2", name: "Two" }])
+      .mockRejectedValueOnce(new Error("offline"));
+    const { result } = renderHook(() => useWorkspaces());
+    await waitFor(() => expect(result.current.status).toBe("ready"));
+
+    let fresh: unknown;
+    await act(async () => {
+      fresh = await result.current.refresh();
+    });
+    expect(fresh).toHaveLength(2);
+    expect(result.current.workspaces).toHaveLength(2);
+
+    await act(async () => {
+      fresh = await result.current.refresh();
+    });
+    expect(fresh).toBeNull();
+    expect(result.current.status).toBe("ready");
+    expect(result.current.workspaces).toHaveLength(2);
+  });
 });

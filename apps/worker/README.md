@@ -1,6 +1,16 @@
 # OntaPulse worker
 
-The worker is organized by feature. Scan behavior lives in `ontapulse_worker/modules/scans`:
+The worker is organized by feature. Check families live under `ontapulse_worker/modules`:
+
+- `scans`: the lifecycle, the RabbitMQ consumer, and the HTTP probe (described below).
+- `security_posture`: headers, cookies, CORS, redirect, TLS, and opt-in path probes. It has a pinned-address HTTP client and a TLS inspector behind ports.
+- `dns_watch`: DNS baseline and diff, dangling CNAME, SPF, DKIM, and DMARC, behind a `DnsResolver` port (`dnspython`).
+- `edge_detection`: a pure evaluator for CDN, WAF, and anti-bot layers (domain layer only).
+
+The lifecycle reads the scan kind from the database and dispatches to the matching family. The check catalog is in
+[security-checks](../../docs/security-checks.md).
+
+Scan behavior lives in `ontapulse_worker/modules/scans`:
 
 - `domain`: scan values and errors, without HTTPX, Pika, or SQLAlchemy.
 - `application`: executor and repository ports (`ports.py`) and lifecycle orchestration (`scan_lifecycle.py`).
@@ -25,7 +35,7 @@ moon run worker:format-check
 After dependency installation, `python -m ontapulse_worker` also starts the worker from
 this directory. The `ontapulse-worker-check` command only checks database readiness.
 
-Tests mirror feature ownership under `tests/unit/modules/scans` and `tests/unit/platform`.
+Tests mirror feature ownership under `tests/unit/modules/<feature>` and `tests/unit/platform`.
 `tests/unit/entrypoints` verifies startup and cleanup with fake dependencies. RabbitMQ and
 repository unit tests use mocks. `tests/integration` holds the isolated infrastructure tests;
 they are skipped unless `WORKER_INFRA_TESTS=1` is set.

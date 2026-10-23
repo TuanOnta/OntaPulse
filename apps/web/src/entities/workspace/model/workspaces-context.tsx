@@ -20,3 +20,11 @@ export function useWorkspacesContext(): WorkspacesValue {
   if (!value) throw new Error("useWorkspacesContext must be used inside WorkspacesProvider");
   return value;
 }
+
+/**
+ * The shared list when there is one, or null outside a provider. Features that only add to the list (the
+ * create form) use this so they still work where no shell wraps them.
+ */
+export function useOptionalWorkspacesContext(): WorkspacesValue | null {
+  return useContext(WorkspacesContext);
+}

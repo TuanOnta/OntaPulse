@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { ApiError, api } from "@/shared/api/client";
 import type { Project } from "@/shared/types/domain";
@@ -64,5 +64,26 @@ export function useProjects(workspaceId: string) {
     );
   }, []);
 
-  return { ...state, reload, replaceProject };
+  const alive = useRef(true);
+  useEffect(() => {
+    alive.current = true;
+    return () => {
+      alive.current = false;
+    };
+  }, []);
+
+  /**
+   * Fetches the list again and swaps it in while the rows on screen stay (no loading state), for after a project
+   * was added. If the fetch fails the normal load runs, which ends in the error banner with its retry.
+   */
+  const refresh = useCallback(async () => {
+    try {
+      const projects = await api.projects(workspaceId);
+      if (alive.current) setState({ status: "ready", projects, error: null });
+    } catch {
+      if (alive.current) reload();
+    }
+  }, [workspaceId, reload]);
+
+  return { ...state, reload, refresh, replaceProject };
 }

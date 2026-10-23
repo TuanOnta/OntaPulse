@@ -37,6 +37,7 @@ vi.mock("@/app/providers/auth-provider", () => ({
   }),
 }));
 
+import { AppShell } from "@/app/layouts/app-shell";
 import { ProjectPage } from "./project-page";
 
 const workspace = (role: WorkspaceRole): Workspace => ({
@@ -73,7 +74,14 @@ function renderPage() {
   return render(
     <MemoryRouter initialEntries={["/workspaces/w1/projects/p1"]}>
       <Routes>
-        <Route element={<ProjectPage />} path="/workspaces/:workspaceId/projects/:projectId" />
+        <Route
+          element={
+            <AppShell>
+              <ProjectPage />
+            </AppShell>
+          }
+          path="/workspaces/:workspaceId/projects/:projectId"
+        />
         <Route element={<p>Workspace</p>} path="/workspaces/:workspaceId" />
       </Routes>
     </MemoryRouter>,
