@@ -77,6 +77,7 @@ interval floor.
 | ---------------------------------------------------- | ------------------------------------------------------------- | --------------------------------- |
 | Manual re-run cooldown per monitor                   | 60 s                                                          | 60 s _(Phase 6)_                  |
 | Minimum interval between scheduled scans per monitor | 3600 s                                                        | 3600 s                            |
+| Scheduled run interval per monitor _(Phase 7)_       | 86400 s (24 h)                                                | 21600 s (6 h)                     |
 | Per-workspace scan limit                             | 60 per hour                                                   | 60 per hour _(Phase 6)_           |
 | Max HTTP requests per scan, without probes           | 2 (one HTTPS GET, one HTTP GET)                               | 0                                 |
 | Max TLS handshakes per scan                          | 1                                                             | 0                                 |
@@ -90,6 +91,13 @@ interval floor.
 `HTTP_PROBE` keeps its own constants (one GET, connect 5 s, read 30 s, write 5 s, pool 5 s). The `User-Agent`
 names OntaPulse and never impersonates a browser. The project URL value is a configuration setting added in
 Phase 2 after asking.
+
+Recurring runs (Phase 7): a check that is switched on runs on its own at the scheduled interval above, which is a
+fixed catalog value and never the monitor's `intervalSeconds`. Both intervals are above the minimum. Scheduled runs
+count toward the per-workspace limit; an occurrence that would exceed it, or that finds a scan of the same kind still
+queued or running for the monitor, is skipped and the schedule advances (no catch-up). When path probes are enabled
+and acknowledged, each scheduled posture scan makes the same allowlist requests as a manual one, so the probes recur at
+most once per 24 h per monitor.
 
 Every connection (HTTPS GET, HTTP GET, TLS handshake, each path probe) passes SSRF validation: resolve, require
 every address to be public, connect to the validated address, never re-resolve before connecting.
@@ -512,6 +520,9 @@ SPF and DMARC absence is not reported (a domain that sends no mail has no obliga
 | DNS baseline      | new table                      | One current baseline per host plus bounded history; worker is the only writer                     |
 | Monitor settings  | new table or monitor columns   | Enabled kinds; path-probe flag, acknowledging user, acknowledgment time                           |
 
+Phase 7 added `MonitorCheckSettings.securityNextScheduledAt` and `dnsNextScheduledAt` (nullable; set when the check is
+switched on, cleared when it is switched off; the scheduler claims them) and the response fields `securityNextScanAt` and
+`dnsNextScanAt` on `GET` and `PATCH /api/monitors/:monitorId/check-settings` (`null` while the check is off).
 Phase 2 added `Scan.subChecks` (nullable JSON list of `{ name, state, reason }`; `NULL` for `HTTP_PROBE`),
 the `GET`/`PATCH` `/api/monitors/:monitorId/check-settings` routes, the trigger rules for `SECURITY_POSTURE`
 (enabled per monitor, 60 s manual cooldown per monitor, 60 scans per hour per workspace; the 3600 s minimum applies to scheduled runs), and
