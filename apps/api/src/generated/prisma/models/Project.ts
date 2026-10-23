@@ -393,10 +393,6 @@ export type ProjectUncheckedUpdateManyWithoutWorkspaceNestedInput = {
   deleteMany?: Prisma.ProjectScalarWhereInput | Prisma.ProjectScalarWhereInput[]
 }
 
-export type NullableStringFieldUpdateOperationsInput = {
-  set?: string | null
-}
-
 export type ProjectCreateNestedOneWithoutMonitorsInput = {
   create?: Prisma.XOR<Prisma.ProjectCreateWithoutMonitorsInput, Prisma.ProjectUncheckedCreateWithoutMonitorsInput>
   connectOrCreate?: Prisma.ProjectCreateOrConnectWithoutMonitorsInput

@@ -5,7 +5,13 @@ import { ActionButton } from "@/shared/ui/pill-button";
 
 import { WORKSPACE_NAME_MAX, useCreateWorkspace } from "./model/use-create-workspace";
 
-function NewWorkspaceForm({ onCancel }: { onCancel: () => void }) {
+function NewWorkspaceForm({
+  onCancel,
+  onCreated,
+}: {
+  onCancel: () => void;
+  onCreated: () => void;
+}) {
   const [name, setName] = useState("");
   const { create, busy, error } = useCreateWorkspace();
   const over = name.length > WORKSPACE_NAME_MAX;
@@ -13,7 +19,8 @@ function NewWorkspaceForm({ onCancel }: { onCancel: () => void }) {
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const created = await create(name);
-    if (!created) document.getElementById("new-workspace-name")?.focus();
+    if (created) onCreated();
+    else document.getElementById("new-workspace-name")?.focus();
   }
 
   return (
@@ -72,7 +79,10 @@ function NewWorkspaceForm({ onCancel }: { onCancel: () => void }) {
   );
 }
 
-/** "New workspace" dialog; a bottom sheet below 640 px. The form is rebuilt on every open. */
+/**
+ * "New workspace" dialog; a bottom sheet below 640 px. The form is rebuilt on every open. It closes when the
+ * workspace was created (the page then opens it); a refused name keeps it open with the API message.
+ */
 export function NewWorkspaceDialog({
   open,
   onOpenChange,
@@ -86,7 +96,10 @@ export function NewWorkspaceDialog({
         className="max-w-[520px] gap-0 rounded-[24px] border-landing-border-strong bg-landing-surface p-0 text-landing-text shadow-[0_40px_80px_-20px_rgb(0_0_0/0.9)] sm:max-w-[520px] max-[640px]:top-auto max-[640px]:bottom-0 max-[640px]:left-0 max-[640px]:w-screen max-[640px]:max-w-none max-[640px]:translate-x-0 max-[640px]:translate-y-0 max-[640px]:rounded-t-[24px] max-[640px]:rounded-b-none max-[640px]:border-b-0"
         showCloseButton={false}
       >
-        <NewWorkspaceForm onCancel={() => onOpenChange(false)} />
+        <NewWorkspaceForm
+          onCancel={() => onOpenChange(false)}
+          onCreated={() => onOpenChange(false)}
+        />
       </DialogContent>
     </Dialog>
   );

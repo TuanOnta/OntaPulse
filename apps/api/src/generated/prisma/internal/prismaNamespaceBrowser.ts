@@ -97,6 +97,8 @@ export type UserScalarFieldEnum = (typeof UserScalarFieldEnum)[keyof typeof User
 export const WorkspaceScalarFieldEnum = {
   id: 'id',
   name: 'name',
+  ownerId: 'ownerId',
+  nameKey: 'nameKey',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const

@@ -84,6 +84,22 @@ yang paling awal.
 
 Endpoint: `POST /workspaces`.
 
+Nama workspace unik per pemilik (`OWNER`): dua workspace milik user yang sama
+tidak boleh bernama sama setelah di-trim dan tanpa membedakan huruf besar atau
+kecil (`Acme`, `acme`, dan `ACME` dianggap sama). Workspace yang diikuti user
+sebagai `ADMIN` atau `MEMBER` tidak dihitung, dan dua user berbeda boleh
+memiliki nama yang sama. Jika nama sudah dipakai, API menjawab
+`409 WORKSPACE_NAME_TAKEN` dengan pesan `You already have a workspace with this
+name.`; tampilkan pesan itu di bawah kolom nama dan biarkan dialog tetap
+terbuka. Aturan yang sama berlaku untuk mengubah nama workspace. Mengubah nama
+menjadi nama sendiri (termasuk hanya mengganti huruf besar atau kecil) diterima.
+Workspace lama yang sudah memiliki nama kembar tidak diubah dan tetap tampil;
+hanya yang tertua di setiap kelompok yang terkena aturan.
+
+Setelah workspace berhasil dibuat, dialog "New workspace" ditutup dan user
+diarahkan ke workspace baru. Pengiriman ganda (misalnya menekan Enter dua kali)
+hanya membuat satu workspace.
+
 ### Informasi anggota workspace — tersedia
 
 Setiap anggota workspace dapat membaca daftar anggota melalui

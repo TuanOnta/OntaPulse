@@ -1,4 +1,5 @@
 import { prisma } from "../../infrastructure/database/prisma.js";
+import { workspaceNameKey } from "../workspaces/workspace-name.js";
 
 interface CreateUserInput {
   name: string;
@@ -55,9 +56,12 @@ export class AuthRepository {
         },
       });
 
+      const workspaceName = `${input.name}'s Workspace`;
       const workspace = await tx.workspace.create({
         data: {
-          name: `${input.name}'s Workspace`,
+          name: workspaceName,
+          ownerId: user.id,
+          nameKey: workspaceNameKey(workspaceName),
         },
         select: {
           id: true,
