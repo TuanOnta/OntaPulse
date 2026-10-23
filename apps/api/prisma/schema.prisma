@@ -66,17 +66,27 @@ model User {
   updatedAt    DateTime @updatedAt
 
   workspaceMemberships   WorkspaceMember[]
+  ownedWorkspaces        Workspace[]            @relation("OwnedWorkspaces")
   acknowledgedPathProbes MonitorCheckSettings[] @relation("PathProbeAcknowledgedBy")
 }
 
 model Workspace {
   id        String   @id @default(uuid()) @db.Uuid
   name      String
+  // The owner never changes (the OWNER role cannot be moved or removed). Together with `nameKey` it makes a workspace
+  // name unique per owner. Both are NULL only for rows that predate the rule and for the newer rows of a legacy
+  // duplicate name; NULLs do not collide in the unique index, so legacy duplicates stay as they are.
+  ownerId   String?  @db.Uuid
+  // Lower-cased, trimmed, NFKC-normalized `name` (see workspaceNameKey). Internal; never returned by the API.
+  nameKey   String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  owner    User?             @relation("OwnedWorkspaces", fields: [ownerId], references: [id], onDelete: SetNull)
   members  WorkspaceMember[]
   projects Project[]
+
+  @@unique([ownerId, nameKey])
 }
 
 model WorkspaceMember {
@@ -161,7 +171,7 @@ model Scan {
   finishedAt     DateTime?
   createdAt      DateTime   @default(now())
 
-  monitor      Monitor           @relation(fields: [monitorId], references: [id], onDelete: Cascade)
+  monitor      Monitor             @relation(fields: [monitorId], references: [id], onDelete: Cascade)
   findings     ScanFinding[]
   outboxEvents ScanOutboxEvent[]
   edgeProfile  MonitorEdgeProfile?

@@ -62,7 +62,9 @@ const errorResponseSchema = {
 export const createWorkspaceRouteSchema: FastifySchema = {
   tags: ["Workspaces"],
   summary: "Create a workspace",
-  description: "Creates a workspace and assigns the authenticated user as its owner.",
+  description:
+    "Creates a workspace and assigns the authenticated user as its owner. A user cannot own two workspaces with the " +
+    "same name (trimmed, ignoring case); a duplicate is rejected with 409 WORKSPACE_NAME_TAKEN.",
   body: {
     type: "object",
     additionalProperties: false,
@@ -75,13 +77,17 @@ export const createWorkspaceRouteSchema: FastifySchema = {
     201: workspaceResponseSchema,
     400: errorResponseSchema,
     401: errorResponseSchema,
+    409: errorResponseSchema,
   },
 };
 
 export const updateWorkspaceRouteSchema: FastifySchema = {
   tags: ["Workspaces"],
   summary: "Rename a workspace",
-  description: "Owners and admins can rename a workspace.",
+  description:
+    "Owners and admins can rename a workspace. The name must stay unique among the owner's workspaces (trimmed, " +
+    "ignoring case); renaming to its own name, or changing only its case, is allowed. A clash is rejected with 409 " +
+    "WORKSPACE_NAME_TAKEN.",
   params: workspaceIdParamsSchema,
   body: {
     type: "object",
@@ -95,6 +101,7 @@ export const updateWorkspaceRouteSchema: FastifySchema = {
     401: errorResponseSchema,
     403: errorResponseSchema,
     404: errorResponseSchema,
+    409: errorResponseSchema,
   },
 };
 

@@ -1,4 +1,5 @@
 import { prisma } from "../../infrastructure/database/prisma.js";
+import { isUniqueViolation, workspaceNameKey, workspaceNameTaken } from "./workspace-name.js";
 import type { CreateWorkspaceInput, UpdateWorkspaceInput } from "./workspace.schema.js";
 
 export class WorkspaceRepository {
@@ -87,12 +88,41 @@ export class WorkspaceRepository {
     });
   }
 
-  update(workspaceId: string, input: UpdateWorkspaceInput) {
-    return prisma.workspace.update({
-      where: { id: workspaceId },
-      data: { name: input.name },
-      select: { id: true, name: true, createdAt: true, updatedAt: true },
-    });
+  /**
+   * Renames a workspace. The name must stay unique among the workspaces of its owner (case and surrounding spaces
+   * ignored); the workspace itself is not a clash, so renaming to its own name, or only changing its case, works.
+   */
+  async update(workspaceId: string, input: UpdateWorkspaceInput) {
+    const nameKey = workspaceNameKey(input.name);
+
+    try {
+      return await prisma.$transaction(async (tx) => {
+        const current = await tx.workspace.findUniqueOrThrow({
+          where: { id: workspaceId },
+          select: { ownerId: true },
+        });
+
+        if (current.ownerId) {
+          const clash = await tx.workspace.findFirst({
+            where: { ownerId: current.ownerId, nameKey, id: { not: workspaceId } },
+            select: { id: true },
+          });
+
+          if (clash) {
+            throw workspaceNameTaken();
+          }
+        }
+
+        return tx.workspace.update({
+          where: { id: workspaceId },
+          // A workspace without a known owner cannot take part in the rule, so it keeps no key.
+          data: { name: input.name, nameKey: current.ownerId ? nameKey : null },
+          select: { id: true, name: true, createdAt: true, updatedAt: true },
+        });
+      });
+    } catch (error) {
+      throw isUniqueViolation(error) ? workspaceNameTaken() : error;
+    }
   }
 
   /** Removes the workspace; members, projects, monitors, scans and findings go with it (cascade). */
@@ -100,10 +130,33 @@ export class WorkspaceRepository {
     return prisma.workspace.delete({ where: { id: workspaceId } });
   }
 
-  createWithOwner(userId: string, input: CreateWorkspaceInput) {
+  /**
+   * Creates a workspace and its OWNER membership. A user cannot own two workspaces with the same name: the check
+   * gives a clear error, and the unique index on (ownerId, nameKey) settles two requests that race.
+   */
+  async createWithOwner(userId: string, input: CreateWorkspaceInput) {
+    const nameKey = workspaceNameKey(input.name);
+
+    try {
+      return await this.createOwned(userId, input, nameKey);
+    } catch (error) {
+      throw isUniqueViolation(error) ? workspaceNameTaken() : error;
+    }
+  }
+
+  private createOwned(userId: string, input: CreateWorkspaceInput, nameKey: string) {
     return prisma.$transaction(async (tx) => {
+      const clash = await tx.workspace.findFirst({
+        where: { ownerId: userId, nameKey },
+        select: { id: true },
+      });
+
+      if (clash) {
+        throw workspaceNameTaken();
+      }
+
       const workspace = await tx.workspace.create({
-        data: { name: input.name },
+        data: { name: input.name, ownerId: userId, nameKey },
         select: {
           id: true,
           name: true,
