@@ -87,6 +87,70 @@ describe("NewWorkspaceDialog", () => {
     expect(mocks.navigate).not.toHaveBeenCalled();
   });
 
+  it("closes the dialog once the workspace was created", async () => {
+    const user = userEvent.setup();
+    mocks.createWorkspace.mockResolvedValue({ id: "workspace-1" });
+    const onOpenChange = setup();
+    await user.type(screen.getByLabelText("Workspace name"), "Acme{Enter}");
+    await waitFor(() => expect(onOpenChange).toHaveBeenCalledWith(false));
+    expect(mocks.navigate).toHaveBeenCalledWith("/workspaces/workspace-1");
+  });
+
+  it("keeps the dialog open and shows the API message when the name is already taken", async () => {
+    const user = userEvent.setup();
+    mocks.createWorkspace.mockRejectedValue(
+      new ApiError({
+        statusCode: 409,
+        code: "WORKSPACE_NAME_TAKEN",
+        message: "You already have a workspace with this name.",
+      }),
+    );
+    const onOpenChange = setup();
+    await user.type(screen.getByLabelText("Workspace name"), "Acme{Enter}");
+    expect(await screen.findByText("You already have a workspace with this name.")).toBeVisible();
+    expect(onOpenChange).not.toHaveBeenCalled();
+    expect(mocks.navigate).not.toHaveBeenCalled();
+    expect(screen.getByLabelText("Workspace name")).toHaveFocus();
+  });
+
+  it("sends one request when Enter is pressed twice while it is running", async () => {
+    const user = userEvent.setup();
+    let resolve: (workspace: { id: string }) => void = () => {};
+    mocks.createWorkspace.mockReturnValue(
+      new Promise((done) => {
+        resolve = done;
+      }),
+    );
+    setup();
+    await user.type(screen.getByLabelText("Workspace name"), "Acme{Enter}{Enter}{Enter}");
+    expect(mocks.createWorkspace).toHaveBeenCalledTimes(1);
+    resolve({ id: "workspace-1" });
+    await waitFor(() => expect(mocks.navigate).toHaveBeenCalledTimes(1));
+  });
+
+  it("does not create a second workspace when Enter is pressed again after success", async () => {
+    const user = userEvent.setup();
+    mocks.createWorkspace.mockResolvedValue({ id: "workspace-1" });
+    setup();
+    await user.type(screen.getByLabelText("Workspace name"), "Acme{Enter}");
+    await waitFor(() => expect(mocks.navigate).toHaveBeenCalledTimes(1));
+    await user.type(screen.getByLabelText("Workspace name"), "{Enter}");
+    expect(mocks.createWorkspace).toHaveBeenCalledTimes(1);
+  });
+
+  it("allows another try after a failure", async () => {
+    const user = userEvent.setup();
+    mocks.createWorkspace
+      .mockRejectedValueOnce(new ApiError({ statusCode: 500, code: "BOOM", message: "Nope." }))
+      .mockResolvedValueOnce({ id: "workspace-2" });
+    setup();
+    await user.type(screen.getByLabelText("Workspace name"), "Acme{Enter}");
+    expect(await screen.findByText("Nope.")).toBeVisible();
+    await user.type(screen.getByLabelText("Workspace name"), "{Enter}");
+    await waitFor(() => expect(mocks.navigate).toHaveBeenCalledWith("/workspaces/workspace-2"));
+    expect(mocks.createWorkspace).toHaveBeenCalledTimes(2);
+  });
+
   it("closes with Cancel", async () => {
     const user = userEvent.setup();
     const onOpenChange = setup();
