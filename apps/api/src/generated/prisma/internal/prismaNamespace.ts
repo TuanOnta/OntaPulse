@@ -1499,6 +1499,8 @@ export const MonitorCheckSettingsScalarFieldEnum = {
   pathProbesEnabled: 'pathProbesEnabled',
   pathProbesAcknowledgedById: 'pathProbesAcknowledgedById',
   pathProbesAcknowledgedAt: 'pathProbesAcknowledgedAt',
+  securityNextScheduledAt: 'securityNextScheduledAt',
+  dnsNextScheduledAt: 'dnsNextScheduledAt',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const

@@ -149,6 +149,10 @@ model MonitorCheckSettings {
   pathProbesEnabled          Boolean   @default(false)
   pathProbesAcknowledgedById String?   @db.Uuid
   pathProbesAcknowledgedAt   DateTime?
+  // Next recurring run of each kind (docs/security-checks.md section 4). Set when the check is enabled, cleared when
+  // it is disabled; the scheduler claims it by moving it forward. NULL while the check is off.
+  securityNextScheduledAt    DateTime?
+  dnsNextScheduledAt         DateTime?
   createdAt                  DateTime  @default(now())
   updatedAt                  DateTime  @updatedAt
 
@@ -156,6 +160,8 @@ model MonitorCheckSettings {
   pathProbesAcknowledgedBy User?   @relation("PathProbeAcknowledgedBy", fields: [pathProbesAcknowledgedById], references: [id], onDelete: SetNull)
 
   @@index([pathProbesAcknowledgedById])
+  @@index([securityPostureEnabled, securityNextScheduledAt])
+  @@index([dnsWatchEnabled, dnsNextScheduledAt])
 }
 
 model Scan {

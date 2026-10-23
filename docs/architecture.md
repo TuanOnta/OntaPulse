@@ -125,8 +125,21 @@ emits the structured `Scan scheduler run completed` event with `dueMonitorCount`
 
 The scheduler and the manual trigger create a Scan with its kind (default `HTTP_PROBE`). Security and DNS scan
 kinds use their own limits from the catalog, not the 60 second `HTTP_PROBE` floor: a short cooldown for manual runs and an hourly
-minimum for scheduled runs. How the scheduler
-selects kinds is decided in the recurring-runs phase after inspecting the scheduler code.
+minimum for scheduled runs.
+
+Each cycle has two passes. The availability pass is the one described above and is unchanged. The check pass then
+creates recurring `SECURITY_POSTURE` and `DNS_WATCH` scans for monitors that enabled them. The monitor's
+`intervalSeconds` does not apply to these kinds: each has a fixed interval from the catalog (24 h for security, 6 h for
+DNS) and its own next-run column on `MonitorCheckSettings` (`securityNextScheduledAt`, `dnsNextScheduledAt`). Switching a
+check on starts its schedule one interval later (only if it has none); switching it off clears it. A check pass claims a
+due check the same way as the availability pass, by moving the next-run time forward in the same transaction that creates
+the Scan and its outbox event, under the same per-workspace advisory lock as manual triggers. The occurrence is skipped,
+and the schedule still advances, when the workspace is at its hourly limit for that kind or a scan of that kind is still
+`QUEUED` or `RUNNING` for the monitor, so a full workspace or a stopped worker never builds a backlog. A deactivated
+monitor is not scheduled. The manual cooldown does not apply to scheduled runs, and a manual run does not move the
+schedule. The pass logs `Check scan scheduler run completed` with per-kind counts (`dueCount`, `scheduledCount`,
+`skippedCount` by reason, `failedCount`); it never logs hostnames or anything read from a target. The worker needs no
+change: it reads the kind from the Scan row and stays idempotent on `scanId`.
 
 RabbitMQ delivery is at-least-once. The worker must therefore treat `scanId` as an idempotency key and avoid processing a completed scan twice.
 
