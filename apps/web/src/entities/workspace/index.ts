@@ -1,5 +1,9 @@
 export { useWorkspaces, type WorkspacesError } from "./model/use-workspaces";
-export { WorkspacesProvider, useWorkspacesContext } from "./model/workspaces-context";
+export {
+  WorkspacesProvider,
+  useOptionalWorkspacesContext,
+  useWorkspacesContext,
+} from "./model/workspaces-context";
 export {
   ROLE_FILTERS,
   ROLE_LABEL,

@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
+import { useOptionalWorkspacesContext } from "@/entities/workspace";
 import { api } from "@/shared/api/client";
 import { getErrorMessage } from "@/shared/lib/api-error";
 
@@ -22,10 +23,12 @@ export function validateWorkspaceName(value: string): string | null {
  * One call at a time: while a request runs, and after it succeeded, further calls do nothing, so pressing
  * Enter twice (or again in a dialog that is still closing) cannot create a second workspace. A ref is used
  * because two submits in the same tick would both see the same `busy` state. The API refuses a name the user
- * already owns (409), and its message is shown as the error.
+ * already owns (409), and its message is shown as the error. The new workspace is added to the shared list
+ * (when there is one) before the app navigates to it.
  */
 export function useCreateWorkspace() {
   const navigate = useNavigate();
+  const workspaces = useOptionalWorkspacesContext();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const locked = useRef(false);
@@ -40,6 +43,8 @@ export function useCreateWorkspace() {
     setBusy(true);
     try {
       const workspace = await api.createWorkspace(name);
+      // Known to the sidebar, the dashboard and the workspace page before the route changes.
+      workspaces?.addWorkspace(workspace);
       toast.success(`Workspace “${name}” created. Opening it…`);
       navigate(`/workspaces/${workspace.id}`);
       return true;

@@ -31,6 +31,7 @@ vi.mock("@/app/providers/auth-provider", () => ({
   }),
 }));
 
+import { AppShell } from "@/app/layouts/app-shell";
 import { DashboardPage } from "./dashboard-page";
 
 const make = (id: string, name: string, role: Workspace["role"]): Workspace => ({
@@ -56,7 +57,14 @@ function renderDashboard() {
   return render(
     <MemoryRouter initialEntries={["/dashboard"]}>
       <Routes>
-        <Route element={<DashboardPage />} path="/dashboard" />
+        <Route
+          element={
+            <AppShell>
+              <DashboardPage />
+            </AppShell>
+          }
+          path="/dashboard"
+        />
         <Route element={<p>Landing</p>} path="/" />
       </Routes>
       <Where />

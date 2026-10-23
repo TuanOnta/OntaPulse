@@ -4,6 +4,7 @@ import { useParams } from "react-router-dom";
 import { useMonitors } from "@/entities/monitor";
 import { useProjects } from "@/entities/project";
 import { useWorkspacesContext } from "@/entities/workspace";
+import { useDocumentTitle } from "@/shared/lib/use-document-title";
 import { DeletedPanel } from "@/shared/ui/state-panel";
 import {
   LoadErrorBanner,
@@ -12,13 +13,18 @@ import {
   ProjectNotFound,
 } from "@/widgets/project-detail";
 
-/** Project body. It lives inside `AppShell`, which owns the shared workspace list. */
+/** Project body. It renders inside `AppShell` (the layout route), which owns the shared workspace list. */
 export function ProjectContent() {
   const { workspaceId = "", projectId = "" } = useParams();
   const workspaceList = useWorkspacesContext();
   const projects = useProjects(workspaceId);
   const monitors = useMonitors(projectId);
   const [deletedName, setDeletedName] = useState<string | null>(null);
+  const projectName =
+    projects.status === "ready"
+      ? projects.projects.find((item) => item.id === projectId)?.name
+      : undefined;
+  useDocumentTitle(projectName ?? "Project");
 
   if (deletedName !== null) {
     return (

@@ -1,7 +1,7 @@
 import { lazy, Suspense } from "react";
-import { Navigate, Route, Routes } from "react-router-dom";
-import { BrowserRouter } from "react-router-dom";
+import { BrowserRouter, Navigate, Outlet, Route, Routes } from "react-router-dom";
 
+import { AppShell } from "@/app/layouts/app-shell";
 import { AuthProvider, useAuth } from "@/app/providers/auth-provider";
 import { Toaster } from "@/shared/ui/sonner";
 const DashboardPage = lazy(() =>
@@ -32,6 +32,18 @@ function RouteLoading() {
   );
 }
 
+/** Shown in the content area while a screen's code loads, so the sidebar stays on screen. */
+function ContentLoading() {
+  return (
+    <div
+      aria-busy="true"
+      aria-label="Loading"
+      className="h-40 animate-pulse rounded-[22px] border border-landing-border bg-landing-surface/60 motion-reduce:animate-none"
+      role="status"
+    />
+  );
+}
+
 function Protected({ children }: { children: React.ReactNode }) {
   const { user, isLoading } = useAuth();
   if (isLoading)
@@ -49,68 +61,56 @@ function Home() {
   return user ? <Navigate to="/dashboard" replace /> : <LandingPage />;
 }
 
+/**
+ * The signed-in screens share one layout route: the app shell is mounted once and only the screen inside it
+ * changes, so the workspace list, the sidebar and the open dialogs survive navigation.
+ */
+function AppLayout() {
+  return (
+    <Protected>
+      <AppShell>
+        <Suspense fallback={<ContentLoading />}>
+          <Outlet />
+        </Suspense>
+      </AppShell>
+    </Protected>
+  );
+}
+
+export function AppRoutes() {
+  return (
+    <Suspense fallback={<RouteLoading />}>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route element={<AuthPage />}>
+          <Route path="/login" element={null} />
+          <Route path="/register" element={null} />
+        </Route>
+        <Route element={<AppLayout />}>
+          <Route path="/dashboard" element={<DashboardPage />} />
+          <Route path="/workspaces/:workspaceId" element={<WorkspacePage />} />
+          <Route path="/workspaces/:workspaceId/projects/:projectId" element={<ProjectPage />} />
+          <Route
+            path="/workspaces/:workspaceId/projects/:projectId/monitors/:monitorId"
+            element={<MonitorPage />}
+          />
+          <Route
+            path="/workspaces/:workspaceId/projects/:projectId/monitors/:monitorId/scans/:scanId"
+            element={<ScanPage />}
+          />
+          <Route path="/scans/:scanId" element={<ScanPage />} />
+        </Route>
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </Suspense>
+  );
+}
+
 export function AppRouter() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <Suspense fallback={<RouteLoading />}>
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route element={<AuthPage />}>
-              <Route path="/login" element={null} />
-              <Route path="/register" element={null} />
-            </Route>
-            <Route
-              path="/dashboard"
-              element={
-                <Protected>
-                  <DashboardPage />
-                </Protected>
-              }
-            />
-            <Route
-              path="/workspaces/:workspaceId"
-              element={
-                <Protected>
-                  <WorkspacePage />
-                </Protected>
-              }
-            />
-            <Route
-              path="/workspaces/:workspaceId/projects/:projectId"
-              element={
-                <Protected>
-                  <ProjectPage />
-                </Protected>
-              }
-            />
-            <Route
-              path="/workspaces/:workspaceId/projects/:projectId/monitors/:monitorId"
-              element={
-                <Protected>
-                  <MonitorPage />
-                </Protected>
-              }
-            />
-            <Route
-              path="/workspaces/:workspaceId/projects/:projectId/monitors/:monitorId/scans/:scanId"
-              element={
-                <Protected>
-                  <ScanPage />
-                </Protected>
-              }
-            />
-            <Route
-              path="/scans/:scanId"
-              element={
-                <Protected>
-                  <ScanPage />
-                </Protected>
-              }
-            />
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </Suspense>
+        <AppRoutes />
         <Toaster richColors theme="dark" />
       </AuthProvider>
     </BrowserRouter>

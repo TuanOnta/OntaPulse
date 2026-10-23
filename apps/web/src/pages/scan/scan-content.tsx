@@ -4,6 +4,7 @@ import { useMonitors } from "@/entities/monitor";
 import { useProjects } from "@/entities/project";
 import { useWorkspacesContext } from "@/entities/workspace";
 import { useScanDetail } from "@/features/scans/model/use-scan-detail";
+import { useDocumentTitle } from "@/shared/lib/use-document-title";
 import {
   LoadErrorBanner,
   ScanDetail,
@@ -103,9 +104,10 @@ function NestedScanContent({ workspaceId, projectId, monitorId, scanId }: Ids) {
   return <ScanDetail context={{ workspace, project, monitor }} scan={scan.scan} />;
 }
 
-/** Scan body. It lives inside `AppShell`, which owns the shared workspace list. */
+/** Scan body. It renders inside `AppShell` (the layout route), which owns the shared workspace list. */
 export function ScanContent() {
   const { workspaceId, projectId, monitorId, scanId = "" } = useParams();
+  useDocumentTitle("Scan");
   if (workspaceId && projectId && monitorId) {
     return (
       <NestedScanContent
